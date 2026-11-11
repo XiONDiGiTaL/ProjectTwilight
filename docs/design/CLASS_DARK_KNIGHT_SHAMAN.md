@@ -89,20 +89,28 @@ These are design values.
 | Sword Mastery (`SM_SWORD`, inherited) | 10 | none | +4 ATK per level with daggers and one-handed swords; mastery ATK ignores DEF. | Implemented |
 | Two-Handed Sword Mastery (`SM_TWOHAND`) | 10 | Sword Mastery 1 | +4 ATK per level with two-handed swords only. A Swordman skill, as in Pre-Renewal. | Implemented |
 | Axe Mastery (`DK_AXEMASTERY`) | 10 | Sword Mastery 3, Two-Handed Sword Mastery 3 | +3 ATK per level with one- and two-handed axes only. Dark Knight only. | Implemented |
-| Critical Rate Up | 10 | Sword Mastery 5, Two-Handed Sword Mastery 5, Axe Mastery 5 | +1% crit per level on normal attacks. The target's LUK shield still applies. | Implemented |
-| Auto Counter | 5 | Two-Handed Sword Mastery 8 | 0.4 s per level. The first melee normal attack from an attacker with range 2 or less is blocked and answered with a guaranteed crit. Ranged attacks and skills are not countered. | Implemented |
-| Dark Breath | 10 | Critical Rate Up 5 | Physical damage +(5 + 3 × level)% for 60 s. Drains 1 HP + 0.6% Max HP every 2 s. Ends by itself before HP would reach 10%, so it never kills. | Implemented |
-| Shadow Quicken | 10 | Dark Breath 3 | Attack delay −3% per level for 60 s, capped at ASPD 190 (200 ms). Same drain and safety floor as Dark Breath. | Implemented |
+| Critical Rate Up | 10 | Sword Mastery 5, Two-Handed Sword Mastery 5 | +1% crit per level on normal attacks. The target's LUK shield still applies. | Implemented |
+| Auto Counter | 5 | Two-Handed Sword Mastery 5 | 0.4 s per level. The first melee normal attack from an attacker with range 2 or less is blocked and answered with a guaranteed crit. Ranged attacks and skills are not countered. | Implemented |
+| Dark Breath | 10 | Bloody Crash 3 | Physical damage +(5 + 3 × level)% for 60 s. Drains 1 HP + 0.6% Max HP every 2 s. Ends by itself before HP would reach 10%, so it never kills. | Implemented |
+| Shadow Quicken | 10 | Dark Breath 3, Critical Rate Up 3 | Attack delay −3% per level for 60 s, capped at ASPD 190 (200 ms). Same drain and safety floor as Dark Breath. | Implemented |
 | Dark Weapon | 5 | none | Weapon element becomes Shadow for 60 s per level. Ends on weapon change or death; recasting refreshes it. Needs a weapon. | Implemented |
 | Bloody Crash | 10 | none | ATK (150 + 30 × level)%. Heals 2% per level of the damage actually applied (not on a miss). | Implemented |
 | Guillotine | 10 | Bloody Crash 3 | Axe only. ATK (200 + 40 × level)%, with a 3% per level chance to Stun. | Implemented |
-| Genocide | 10 | Guillotine 5 | Shadow-element hit on everything in the 5×5 area around the caster: ATK (100 + 30 × level)%, 4% per level chance to Blind. | Implemented |
+| Genocide | 10 | Bloody Crash 5 | Shadow-element hit on everything in the 5×5 area around the caster: ATK (100 + 30 × level)%, 4% per level chance to Blind. | Implemented |
 | Chaos | 10 | Genocide 5 | Weapon-element hit on the 5×5 area (7×7 from level 6): ATK (120 + 30 × level)%, 4% per level chance to Confuse. | Implemented |
-| Blind Wave | 10 | Chaos 5 | Sword only. A Shadow blade with range 7 that pierces every monster on the line: ATK (150 + 30 × level)%. | Implemented (visual uses orbs) |
+| Blind Wave | 10 | Sword Mastery 5, Two-Handed Sword Mastery 5, Bloody Crash 3 | Sword only. A Shadow blade with range 7 that pierces every monster on the line: ATK (150 + 30 × level)%. | Implemented (visual uses orbs) |
 | Death Blade | 10 | Sword Mastery 5, Two-Handed Sword Mastery 5, Blind Wave 5 | Sword only. 2 + level/3 hits (5 at level 10), each ATK (80 + 12 × level)% and each rolled separately for hit. | Implemented |
 | Hell Impact | 10 | Axe Mastery 5, Dark Weapon 5, Guillotine 5 | Axe only. A 1 s wind-up (moving or being hit interrupts), then a 5×5 ground smash at the target: ATK (300 + 50 × level)% in the weapon element. | Implemented |
 
-The prerequisite chain follows the owner's brief. As written, Blind Wave and Death Blade (the sword skills) sit behind the axe chain through Guillotine, Genocide and Chaos. **This needs design approval:** a pure-sword build has to invest in Guillotine (axe) to reach its sword skills.
+**Branches are independent** (owner decision, 2026-11-11; this replaces the brief's single chain):
+
+| Branch | Path |
+|---|---|
+| Sword | Sword Mastery 5 + Two-Handed Sword Mastery 5 → Critical Rate Up and Blind Wave (also Bloody Crash 3) → Death Blade; Shadow Quicken needs Critical Rate Up 3 + Dark Breath 3 |
+| Axe | Sword Mastery 3 + Two-Handed Sword Mastery 3 → Axe Mastery → Guillotine (Bloody Crash 3) → Hell Impact (also Dark Weapon 5) |
+| Dark (shared) | Bloody Crash → Dark Breath; Bloody Crash 5 → Genocide → Chaos. Dark Weapon and Bloody Crash are open to both builds. |
+
+Each specialist reaches its top skill without touching the other weapon family; `test_branches_are_independent` checks this. Sword Mastery 3 and Two-Handed Sword Mastery 3 stay the entry for Axe Mastery, since they are inherited Swordman basics.
 
 **Build directions:**
 - **Sword specialist:** Critical Rate Up, Shadow Quicken, Death Blade and Blind Wave.
@@ -197,7 +205,6 @@ The tests are `tests/unit/test_dark_knight.gd` (14 cases) and `tests/unit/test_s
 
 ## Decisions needing approval
 
-1. **Prerequisite chain:** the sword skills currently require the axe chain, as the brief specifies (see above).
-2. **Spiritual Blessing** cannot target the caster. That makes it pure party support; solo Shamans rely on Auto Heal instead.
-3. **The second-job EXP table** is provisional.
-4. **Spiritual Prayer** competes with the offline 3 s auto-revive. A "return to save point" button would make resurrection more meaningful.
+1. **Spiritual Blessing** cannot target the caster. That makes it pure party support; solo Shamans rely on Auto Heal instead.
+2. **The second-job EXP table** is provisional.
+3. **Spiritual Prayer** competes with the offline 3 s auto-revive. A "return to save point" button would make resurrection more meaningful.

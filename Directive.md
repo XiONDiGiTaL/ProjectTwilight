@@ -123,7 +123,7 @@ Full brief: Swordman → **Dark Knight**, female Acolyte → **Shaman**, with fu
 
 ### Follow-ups from this task (open)
 
-- [ ] **Design approval:** the sword skills (Blind Wave, Death Blade) require the axe chain, as written in the brief. Confirm or relax.
+- [x] **Design approval:** the owner chose separate branches; the Dark Knight sword, axe and dark lines are independent.
 - [ ] **Spiritual Prayer vs the offline auto-revive (3 s):** add a "return to save point" choice so resurrection matters.
 - [ ] Replace the provisional `job_second` EXP table with the cross-checked Pre-Renewal table.
 - [ ] Custom icons for the DK_* / SH_* skills.

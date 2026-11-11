@@ -7,6 +7,7 @@
   - Both have full skill trees (13 + 15 skills, plus Two-Handed Sword Mastery for Swordman), adapted from Ragnarok Online DS concepts. See `docs/design/CLASS_DARK_KNIGHT_SHAMAN.md`.
   - The Job Guide offers second jobs at first-job Job Level 40.
   - Weapons and masteries are per class; two-handed weapons block shields.
+  - The Dark Knight sword, axe and dark branches are independent: each specialist reaches its top skill without the other weapon family.
 - **Status effects and buffs:** Stun, Sleep, Stone, Silence, Blind and Confusion, with stat resistance, plus timed buffs, HP-drain buffs with a safety floor, and weapon element enchantments.
 - **New weapons** at a Prontera Weapon Dealer: Katana, Claymore, Axe, Battle Axe, Club, Rod and Book.
 - **Resource pack support (`Resources/`, loaded at runtime, never committed):**
@@ -20,6 +21,7 @@
   - Multi-hit skills show the individual hits, then build up to a big total.
 - **Skill window:** one tab per job, branches in two columns, and full tooltips (SP, cast, delay, duration, range, weapons, prerequisites, locked state).
 - **Badges** for Dark Knight and Shaman.
+- **Level-up and job-change notices** are now small glass chips above the character that fade in under 2 seconds, instead of a large centre-screen box.
 - **`Directive.md`:** a hand-off to-do list for AI agents.
 - **Magic and elements:**
   - The Pre-Renewal element table (10 × 10 × 4) now applies to every attack. Magnum Break is fire.

@@ -499,12 +499,11 @@
     "max_level": 10,
     "quest": false,
     "job": "dark_knight",
-    "branch": "Shared",
+    "branch": "Sword",
     "crit_permille_per_level": 10,
     "requires": {
       "SM_SWORD": 5,
-      "SM_TWOHAND": 5,
-      "DK_AXEMASTERY": 5
+      "SM_TWOHAND": 5
     },
     "desc": "Raises critical chance by 1% per level (normal attacks only; target LUK shield still applies)."
   },
@@ -535,7 +534,7 @@
     ],
     "after_cast_delay": 0,
     "requires": {
-      "SM_TWOHAND": 8
+      "SM_TWOHAND": 5
     },
     "desc": "Brace for 0.4 s per level. The first melee normal attack (attacker range 2 or less) during the window is blocked and answered with a guaranteed critical strike. Ranged attacks and skills are not countered."
   },
@@ -577,7 +576,7 @@
     ],
     "drain_permille": 6,
     "requires": {
-      "DK_CRITUP": 5
+      "DK_BLOODYCRASH": 3
     },
     "desc": "Inhale darkness: physical damage +5% + 3% per level for 60 s. Drains 1 HP + 0.6% Max HP every 2 s; ends by itself before HP falls below 10% (never kills)."
   },
@@ -589,7 +588,7 @@
     "max_level": 10,
     "quest": false,
     "job": "dark_knight",
-    "branch": "Dark",
+    "branch": "Sword",
     "target": "self",
     "sp_cost": [
       20,
@@ -619,7 +618,8 @@
     ],
     "drain_permille": 6,
     "requires": {
-      "DK_DARKBREATH": 3
+      "DK_DARKBREATH": 3,
+      "DK_CRITUP": 3
     },
     "desc": "Attack delay -3% per level for 60 s (ASPD cap 190 still applies). Drains 1 HP + 0.6% Max HP every 2 s; ends before HP falls below 10%."
   },
@@ -787,7 +787,7 @@
     "after_cast_delay": 1000,
     "fx": "burst",
     "requires": {
-      "DK_GUILLOTINE": 5
+      "DK_BLOODYCRASH": 5
     },
     "desc": "Shadow-element shockwave around you (5x5): ATK 100% + 30% per level, 4% per level chance to Blind (30 s)."
   },
@@ -885,7 +885,9 @@
     "after_cast_delay": 800,
     "fx": "wave",
     "requires": {
-      "DK_CHAOS": 5
+      "SM_SWORD": 5,
+      "SM_TWOHAND": 5,
+      "DK_BLOODYCRASH": 3
     },
     "desc": "Sword only. Hurls a Shadow blade up to 7 cells that pierces every enemy on its line: ATK 150% + 30% per level."
   },

@@ -366,47 +366,54 @@ func update_player(u: SimUnit, next_base: int, next_job: int, first := false) ->
 # --- SYSTEM notifications ----------------------------------------------------------
 
 ## Solo-Leveling-style system window plus a ring pulse at `world_pos`.
+## Small, unobtrusive notice for level ups and job changes: a single glass
+## chip that pops up above the character, drifts up a little and fades in
+## under two seconds. Never blocks the view or input.
+const NOTICE_SECONDS := 1.8
+
+
 func level_up(world_pos: Vector3, text: String, detail := "") -> void:
 	_ring_pulse(world_pos)
-	var panel := GlassPanel.new()
-	panel.chamfer = 14.0
-	panel.padding = Vector4(28, 12, 28, 14)
-	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_root.add_child(panel)
-	var col := VBoxContainer.new()
-	col.alignment = BoxContainer.ALIGNMENT_CENTER
-	col.add_theme_constant_override("separation", 2)
-	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	panel.add_child(col)
-	var tag := UiTheme.label("◆  SYSTEM", 11, UiTheme.ACCENT, 600, 4)
-	tag.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	col.add_child(tag)
-	var title := UiTheme.label(text, 30, UiTheme.TEXT, 300, 8, true)
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	col.add_child(title)
+	var chip := GlassPanel.new()
+	chip.chamfer = 6.0
+	chip.sweep = false
+	chip.padding = Vector4(10, 3, 10, 4)
+	chip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_root.add_child(chip)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	chip.add_child(row)
+	row.add_child(UiTheme.label("◆ " + text.to_upper(), 12, UiTheme.ACCENT.lightened(0.3), 700, 2))
 	if detail != "":
-		var d := UiTheme.label(detail, 12, UiTheme.TEXT_DIM, 400, 1)
-		d.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		col.add_child(d)
-	panel.set_glow(1.0)
+		row.add_child(UiTheme.label(detail, 11, UiTheme.TEXT, 400, 0))
+	chip.set_glow(0.8)
 	var t0 := Time.get_ticks_msec()
+	var ref: WeakRef = weakref(chip)
 	_effects.append(func() -> bool:
-		var age := (Time.get_ticks_msec() - t0) / 1000.0
-		if age > 3.2:
-			panel.queue_free()
+		var c: GlassPanel = ref.get_ref()
+		if c == null:
 			return false
-		panel.reset_size()
-		var vp := _root.get_viewport_rect().size
-		var slide := 14.0 * (1.0 - ease(clampf(age / 0.3, 0.0, 1.0), 0.4))
-		panel.position = Vector2((vp.x - panel.size.x) / 2.0, vp.y * 0.2 - slide)
-		panel.modulate.a = clampf(age / 0.25, 0.0, 1.0) * (1.0 if age < 2.6 else 1.0 - (age - 2.6) / 0.6)
-		panel.set_glow(maxf(0.0, 1.0 - age * 1.5))
+		var age := (Time.get_ticks_msec() - t0) / 1000.0
+		if age > NOTICE_SECONDS or camera == null:
+			c.queue_free()
+			return false
+		c.reset_size()
+		var anchor := world_pos + Vector3(0, 14, 0)
+		var at := camera.unproject_position(anchor) if not camera.is_position_behind(anchor) else _root.get_viewport_rect().size * Vector2(0.5, 0.3)
+		var rise := 18.0 * ease(clampf(age / NOTICE_SECONDS, 0.0, 1.0), 0.6)
+		var pop := lerpf(0.85, 1.0, clampf(age / 0.12, 0.0, 1.0))
+		c.pivot_offset = c.size / 2.0
+		c.scale = Vector2(pop, pop)
+		c.position = at - Vector2(c.size.x / 2.0, c.size.y + rise)
+		c.modulate.a = clampf(age / 0.12, 0.0, 1.0) * (1.0 if age < 1.2 else 1.0 - (age - 1.2) / (NOTICE_SECONDS - 1.2))
+		c.set_glow(maxf(0.0, 0.8 - age * 1.6))
 		return true)
 
 
 func _ring_pulse(world_pos: Vector3) -> void:
 	var ring := ColorRect.new()
-	ring.size = Vector2(260, 260)
+	ring.size = Vector2(170, 170)
 	ring.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var mat := ShaderMaterial.new()
 	mat.shader = _ring_shader

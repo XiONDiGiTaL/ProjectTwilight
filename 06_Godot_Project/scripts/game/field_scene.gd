@@ -373,9 +373,9 @@ func _consume_events() -> void:
 				var lv: UnitView = views[ev.id]
 				var lu: SimUnit = sim.units[ev.id]
 				if ev.kind == "base":
-					hud.level_up(lv.global_position, "LEVEL UP", "Base Level %d reached  ·  %d status points available" % [ev.level, lu.status_points])
+					hud.level_up(lv.global_position, "Level Up", "Lv %d  ·  +%d pts" % [ev.level, lu.status_points])
 				else:
-					hud.level_up(lv.global_position, "JOB LEVEL UP", "Job Level %d reached" % ev.level)
+					hud.level_up(lv.global_position, "Job Level Up", "Job Lv %d" % ev.level)
 				player_changed = true
 				save_now()
 			"revive":
@@ -436,7 +436,7 @@ func _consume_events() -> void:
 					jv.rebuild_player(_res)
 				if ev.id == player.id:
 					var jname := String(sim.job_db.get(ev.job, {}).get("name", ev.job))
-					hud.level_up(jv.global_position if jv else Vector3.ZERO, "JOB CHANGE", "You are now a %s" % jname)
+					hud.level_up(jv.global_position if jv else Vector3.ZERO, "Job Change", jname)
 					save_now()
 				player_changed = true
 			"cast_start":

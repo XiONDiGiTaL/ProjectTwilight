@@ -372,3 +372,22 @@ func test_save_roundtrip(_t) -> Variant:
 	var sim2 := FieldSimulation.new(_gat(), 45)
 	var q := sim2.add_player_from_save(r.character)
 	return true if q.job == "dark_knight" and int(q.skills.get("DK_AXEMASTERY", 0)) == 3 and q.cloth_color == 12 and q.skill_points == p.skill_points else "restored dark knight differs"
+
+
+## Sword and axe specialists reach their top skills without the other family.
+func test_branches_are_independent(_t) -> Variant:
+	var sim := FieldSimulation.new(_gat(), 46)
+	var sword := _dk(sim)
+	for step in [["SM_SWORD", 5], ["SM_TWOHAND", 5], ["DK_BLOODYCRASH", 3], ["DK_CRITUP", 3], ["DK_BLINDWAVE", 5], ["DK_DEATHBLADE", 1]]:
+		_learn(sim, sword, step[0], step[1])
+		if int(sword.skills.get(step[0], 0)) != step[1]:
+			return "sword path blocked at %s: %s" % [step[0], sim.skill_requirements_unmet(sword, step[0])]
+	for axe_skill in ["DK_AXEMASTERY", "DK_GUILLOTINE", "DK_HELLIMPACT"]:
+		if int(sword.skills.get(axe_skill, 0)) != 0:
+			return "sword build was forced into %s" % axe_skill
+	var axe := _dk(sim)
+	for step in [["SM_SWORD", 3], ["SM_TWOHAND", 3], ["DK_AXEMASTERY", 5], ["DK_BLOODYCRASH", 3], ["DK_GUILLOTINE", 5], ["DK_DARKWEAPON", 5], ["DK_HELLIMPACT", 1]]:
+		_learn(sim, axe, step[0], step[1])
+		if int(axe.skills.get(step[0], 0)) != step[1]:
+			return "axe path blocked at %s: %s" % [step[0], sim.skill_requirements_unmet(axe, step[0])]
+	return true if int(axe.skills.get("DK_BLINDWAVE", 0)) == 0 and int(axe.skills.get("DK_CRITUP", 0)) == 0 else "axe build touched sword skills"
