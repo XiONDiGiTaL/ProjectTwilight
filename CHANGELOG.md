@@ -3,6 +3,13 @@
 ## [Unreleased] - 2026-11-10
 
 ### Added
+- **Items and loot:** item database (`data/prerenewal/items.json`) and Pre-Renewal drop tables for Poring, Fabre and Lunatic. Drops land around the death cell, the killer gets 3 s of exclusive pickup, and ground items expire after 60 s.
+- **Inventory:** stacking, a 100-entry limit, and the Pre-Renewal weight limit (2000 + STR × 30). Pick up items by clicking them; use usable items to heal.
+- **Glass windows:** draggable, with remembered positions.
+  - Inventory (I / Alt+E): ITEM/EQUIP/ETC tabs, the client's own item icons, stack counts, rich tooltips, weight bar, Zeny; double-click to use.
+  - Status (S / Alt+A): stat raising with Pre-Renewal costs, plus derived ATK/MATK/HIT/FLEE/CRIT/ASPD.
+- **Feedback:** ground loot drawn with the client's item sprites, a drop hop and a glow ring; hover name tags; and a system message feed ("Obtained Jellopy ×1").
+- **Save/load:** versioned local saves (`user://saves/slot1.json`) with field validation and clamping, atomic writes, autosave every 30 s, on level-up and on exit, and F5 to save manually.
 - **Combat:** Pre-Renewal rules (hit/flee, critical, hard and soft DEF, ASPD) in `CombatRulesPreRenewal`; data-driven monsters (`data/prerenewal/monsters.json`) and EXP tables.
 - **FieldSimulation:** deterministic and authoritative. Passive monster AI that retaliates, attack timing, damage-share EXP, base/job level-ups and respawns, all emitted as an event stream for presentation.
 - **Twilight Glass UI:** frosted glass panels (backdrop blur, chamfered corners, hairline border, corner brackets, light sweep) and slanted glow bars whose HP colour shifts green, amber, red, with a lingering white damage chip.

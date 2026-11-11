@@ -26,6 +26,7 @@ func _run() -> void:
 	DirAccess.make_dir_recursive_absolute("user://captures")
 	root.size = Vector2i(1280, 720)
 	var scene: Node3D = load("res://scenes/game/field.tscn").instantiate()
+	scene.save_slot = ""
 	root.add_child(scene)
 	await process_frame
 	var walker: GridWalker = scene.walker

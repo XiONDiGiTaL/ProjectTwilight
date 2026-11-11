@@ -43,7 +43,9 @@ Project Twilight **contains no Gravity game data**. On first launch you point it
 | Combat (Pre-Renewal hit/flee/crit/DEF/ASPD), monsters, EXP and levels | ✅ Implemented and tested (first monsters) |
 | Twilight Glass HUD: status panel, target frame, HP bars, combat text | ✅ Implemented |
 | Original class insignia for all 46 classes | ✅ Generated (polish ongoing) |
-| Inventory, items, save/load | 📋 Next |
+| Loot, inventory, item use, stat allocation | ✅ Implemented and tested |
+| Local save/load (versioned, validated) | ✅ Implemented and tested |
+| Equipment, NPCs/shops, skills, character creation | 📋 Next |
 | First offline playable (character, map, monster, combat, save) | 📋 Planned |
 | Private co-op sessions | 📋 Planned |
 | eAthena / Hercules compatibility | 🔍 Under investigation, not claimed |
@@ -96,7 +98,7 @@ git clone https://github.com/XiONDiGiTaL/ProjectTwilight.git
    [resources]
    client_path="D:/Games/RagnarokOnline"
    ```
-3. Choose **Explore** to fight Porings, Lunatics and Fabres on prt_fild08 to walk around as a Novice, or open **Map Viewer** to fly around any classic map, or **Sprite Viewer** to browse animated sprites from your client.
+3. Choose **Explore** to fight Porings, Lunatics and Fabres on prt_fild08. Left-click to walk, attack or pick up loot; press **I** for the inventory, **S** for status and **F5** to save. Progress also saves automatically. to walk around as a Novice, or open **Map Viewer** to fly around any classic map, or **Sprite Viewer** to browse animated sprites from your client.
 
 ### Tests
 

@@ -1,27 +1,158 @@
 {
-  "_provenance": "Pre-Renewal values as documented by iRO Wiki (classic) and the rAthena pre-re mob database. Facts only; no emulator code. Confidence: High, pending cross-check against Hercules (see GAME_MECHANICS.md).",
+  "_provenance": "Pre-Renewal values as documented by iRO Wiki (classic) and the rAthena pre-re mob database. Facts only; no emulator code. Confidence: High, pending cross-check against Hercules (see GAME_MECHANICS.md). Drop rates are per 10,000 (Medium confidence; cards omitted until card items exist).",
   "1002": {
-    "name": "Poring", "sprite": "poring", "level": 1, "hp": 50, "sp": 0,
-    "base_exp": 2, "job_exp": 1, "atk": [7, 10], "def": 0, "mdef": 5,
-    "str": 1, "agi": 1, "vit": 1, "int": 0, "dex": 6, "luk": 30,
-    "range": 1, "element": "water", "element_level": 1, "race": "plant", "size": "medium",
-    "walk_speed": 400, "attack_delay": 1872, "attack_motion": 672, "damage_motion": 480,
-    "mode": "passive"
+    "name": "Poring",
+    "sprite": "poring",
+    "level": 1,
+    "hp": 50,
+    "sp": 0,
+    "base_exp": 2,
+    "job_exp": 1,
+    "atk": [
+      7,
+      10
+    ],
+    "def": 0,
+    "mdef": 5,
+    "str": 1,
+    "agi": 1,
+    "vit": 1,
+    "int": 0,
+    "dex": 6,
+    "luk": 30,
+    "range": 1,
+    "element": "water",
+    "element_level": 1,
+    "race": "plant",
+    "size": "medium",
+    "walk_speed": 400,
+    "attack_delay": 1872,
+    "attack_motion": 672,
+    "damage_motion": 480,
+    "mode": "passive",
+    "drops": [
+      [
+        909,
+        7000
+      ],
+      [
+        1201,
+        100
+      ],
+      [
+        938,
+        400
+      ],
+      [
+        512,
+        1000
+      ],
+      [
+        713,
+        1500
+      ],
+      [
+        512,
+        150
+      ],
+      [
+        619,
+        20
+      ]
+    ]
   },
   "1007": {
-    "name": "Fabre", "sprite": "fabre", "level": 2, "hp": 63, "sp": 0,
-    "base_exp": 3, "job_exp": 2, "atk": [8, 11], "def": 0, "mdef": 0,
-    "str": 1, "agi": 2, "vit": 4, "int": 0, "dex": 7, "luk": 5,
-    "range": 1, "element": "earth", "element_level": 1, "race": "insect", "size": "small",
-    "walk_speed": 400, "attack_delay": 1672, "attack_motion": 672, "damage_motion": 480,
-    "mode": "passive"
+    "name": "Fabre",
+    "sprite": "fabre",
+    "level": 2,
+    "hp": 63,
+    "sp": 0,
+    "base_exp": 3,
+    "job_exp": 2,
+    "atk": [
+      8,
+      11
+    ],
+    "def": 0,
+    "mdef": 0,
+    "str": 1,
+    "agi": 2,
+    "vit": 4,
+    "int": 0,
+    "dex": 7,
+    "luk": 5,
+    "range": 1,
+    "element": "earth",
+    "element_level": 1,
+    "race": "insect",
+    "size": "small",
+    "walk_speed": 400,
+    "attack_delay": 1672,
+    "attack_motion": 672,
+    "damage_motion": 480,
+    "mode": "passive",
+    "drops": [
+      [
+        914,
+        6500
+      ],
+      [
+        916,
+        500
+      ],
+      [
+        705,
+        80
+      ],
+      [
+        512,
+        500
+      ]
+    ]
   },
   "1063": {
-    "name": "Lunatic", "sprite": "lunatic", "level": 3, "hp": 60, "sp": 0,
-    "base_exp": 6, "job_exp": 2, "atk": [9, 12], "def": 0, "mdef": 20,
-    "str": 10, "agi": 3, "vit": 3, "int": 10, "dex": 8, "luk": 60,
-    "range": 1, "element": "neutral", "element_level": 3, "race": "brute", "size": "small",
-    "walk_speed": 200, "attack_delay": 1456, "attack_motion": 456, "damage_motion": 336,
-    "mode": "passive"
+    "name": "Lunatic",
+    "sprite": "lunatic",
+    "level": 3,
+    "hp": 60,
+    "sp": 0,
+    "base_exp": 6,
+    "job_exp": 2,
+    "atk": [
+      9,
+      12
+    ],
+    "def": 0,
+    "mdef": 20,
+    "str": 10,
+    "agi": 3,
+    "vit": 3,
+    "int": 10,
+    "dex": 8,
+    "luk": 60,
+    "range": 1,
+    "element": "neutral",
+    "element_level": 3,
+    "race": "brute",
+    "size": "small",
+    "walk_speed": 200,
+    "attack_delay": 1456,
+    "attack_motion": 456,
+    "damage_motion": 336,
+    "mode": "passive",
+    "drops": [
+      [
+        705,
+        6500
+      ],
+      [
+        916,
+        1000
+      ],
+      [
+        515,
+        1100
+      ]
+    ]
   }
 }

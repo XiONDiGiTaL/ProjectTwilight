@@ -38,6 +38,14 @@ var spawn_radius := 0
 var idle_timer := 0.0
 var damaged_by := {}           # attacker id -> total damage (for EXP credit)
 var data: Dictionary = {}      # raw database entry
+var inventory := Inventory.new()
+var zeny := 0
+var pickup_target := 0         # ground item id being walked to
+
+
+## Pre-Renewal weight limit: 2000 + STR * 30 (+ job bonus; Novice 0). High confidence.
+func max_weight() -> int:
+	return 2000 + int(stats.str) * 30
 
 
 func is_player() -> bool:

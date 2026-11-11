@@ -9,9 +9,16 @@ extends RefCounted
 ##   {type: "damage", src, dst, amount, crit, miss}
 ##   {type: "death", id, killer}    {type: "exp", id, base, job}
 ##   {type: "levelup", id, level, kind: "base"|"job"}  {type: "revive", id}
+##   {type: "drop", ground}  {type: "ground_gone", ground}
+##   {type: "pickup", id, ground, item, amount}  {type: "pickup_fail", id, reason}
+##   {type: "heal", id, amount}  {type: "inventory", id}  {type: "stats", id}
 
 const MONSTER_DB := "res://data/prerenewal/monsters.json"
 const EXP_DB := "res://data/prerenewal/exp_tables.json"
+const ITEM_DB := "res://data/prerenewal/items.json"
+const OWNER_PRIORITY_MS := 3000.0   # killer's exclusive pickup window (Medium confidence)
+const GROUND_ITEM_LIFETIME_MS := 60000.0
+const STAT_NAMES := ["str", "agi", "vit", "int", "dex", "luk"]
 const NOVICE_FIST_BTBA := 0.5     # seconds; Medium confidence
 const MONSTER_RESPAWN_MS := 5000.0
 const PLAYER_REVIVE_MS := 3000.0
@@ -26,6 +33,10 @@ var units: Dictionary = {}  # id -> SimUnit
 var events: Array = []
 var monster_db: Dictionary = {}
 var exp_tables: Dictionary = {}
+var item_db: Dictionary = {}
+## ground id -> {id, item, amount, cell: Vector2i, offset: Vector2, owner, age}
+var ground_items: Dictionary = {}
+var _next_ground := 1
 
 var _next_id := 1
 
@@ -36,6 +47,8 @@ func _init(p_gat: GatFile, seed_value: int = 1) -> void:
 	rng.seed = seed_value
 	monster_db = _load_json(MONSTER_DB)
 	exp_tables = _load_json(EXP_DB)
+	item_db = _load_json(ITEM_DB)
+	item_db.erase("_provenance")
 
 
 static func _load_json(path: String) -> Dictionary:
@@ -59,6 +72,23 @@ func add_player(name: String, cell: Vector2i, stats: Dictionary) -> SimUnit:
 	u.hp = u.max_hp
 	u.sp = u.max_sp
 	_register(u)
+	return u
+
+
+## Restores a player from a validated SaveGame character dictionary.
+func add_player_from_save(c: Dictionary) -> SimUnit:
+	var u := add_player(String(c.name), c.cell, c.stats)
+	u.job = String(c.job)
+	u.level = int(c.level)
+	u.job_level = int(c.job_level)
+	u.base_exp = int(c.base_exp)
+	u.job_exp = int(c.job_exp)
+	u.status_points = int(c.status_points)
+	u.zeny = int(c.zeny)
+	u.inventory = Inventory.from_array(c.inventory, item_db)
+	_recalc_player(u)
+	u.hp = clampi(int(c.hp), 1, u.max_hp)
+	u.sp = clampi(int(c.sp), 0, u.max_sp)
 	return u
 
 
@@ -114,6 +144,7 @@ func command_move(unit_id: int, cell: Vector2i) -> bool:
 	if u == null or u.dead:
 		return false
 	u.target_id = 0
+	u.pickup_target = 0
 	var path := pathfinder.find_path(u.walker.planning_origin(), cell)
 	if path.is_empty():
 		return false
@@ -127,6 +158,53 @@ func command_attack(unit_id: int, target_id: int) -> bool:
 	if u == null or t == null or u.dead or t.dead or u == t:
 		return false
 	u.target_id = target_id
+	u.pickup_target = 0
+	return true
+
+
+## Walk to a ground item and pick it up.
+func command_pickup(unit_id: int, ground_id: int) -> bool:
+	var u: SimUnit = units.get(unit_id)
+	if u == null or u.dead or not ground_items.has(ground_id):
+		return false
+	u.target_id = 0
+	u.pickup_target = ground_id
+	return true
+
+
+## Uses the inventory entry at `index` (usable items only).
+func command_use_item(unit_id: int, index: int) -> bool:
+	var u: SimUnit = units.get(unit_id)
+	if u == null or u.dead or index < 0 or index >= u.inventory.entries.size():
+		return false
+	var item_id := int(u.inventory.entries[index].id)
+	var def: Dictionary = item_db.get(str(item_id), {})
+	if def.get("type", "") != "usable":
+		return false
+	var heal_range: Array = def.get("heal_hp", [0, 0])
+	u.inventory.remove_at(index, 1)
+	var amount := rng.randi_range(int(heal_range[0]), int(heal_range[1]))
+	var before := u.hp
+	u.hp = mini(u.max_hp, u.hp + amount)
+	events.append({"type": "heal", "id": u.id, "amount": u.hp - before})
+	events.append({"type": "inventory", "id": u.id})
+	return true
+
+
+## Spends status points to raise a stat by one. Returns false if not allowed.
+func command_raise_stat(unit_id: int, stat: String) -> bool:
+	var u: SimUnit = units.get(unit_id)
+	if u == null or not u.is_player() or not STAT_NAMES.has(stat):
+		return false
+	var cost := StatRulesPreRenewal.raise_cost(int(u.stats[stat]))
+	if cost < 0 or cost > u.status_points:
+		return false
+	u.status_points -= cost
+	u.stats[stat] = int(u.stats[stat]) + 1
+	var hp_frac := float(u.hp) / maxi(u.max_hp, 1)
+	_recalc_player(u)
+	u.hp = clampi(roundi(u.max_hp * hp_frac), 1, u.max_hp)
+	events.append({"type": "stats", "id": u.id})
 	return true
 
 
@@ -142,11 +220,19 @@ func tick(ms: float) -> void:
 				_revive(u)
 			continue
 		u.attack_cooldown = maxf(0.0, u.attack_cooldown - ms)
-		if u.target_id != 0:
+		if u.pickup_target != 0:
+			_pursue_pickup(u)
+		elif u.target_id != 0:
 			_pursue(u)
 		elif not u.is_player():
 			_wander(u, ms)
 		u.walker.advance(ms)
+	for gid in ground_items.keys():
+		var g: Dictionary = ground_items[gid]
+		g.age += ms
+		if g.age >= GROUND_ITEM_LIFETIME_MS:
+			ground_items.erase(gid)
+			events.append({"type": "ground_gone", "ground": gid})
 
 
 ## Returns and clears pending events.
@@ -186,6 +272,67 @@ func _pursue(u: SimUnit) -> void:
 			u.walker.walk(path)
 
 
+func _pursue_pickup(u: SimUnit) -> void:
+	var g: Dictionary = ground_items.get(u.pickup_target, {})
+	if g.is_empty():
+		u.pickup_target = 0
+		return
+	var dist := _chebyshev(u.walker.cell, g.cell)
+	if dist <= 1 and not u.walker.is_moving():
+		var gid := u.pickup_target
+		u.pickup_target = 0
+		if g.owner != 0 and g.owner != u.id and g.age < OWNER_PRIORITY_MS:
+			events.append({"type": "pickup_fail", "id": u.id, "reason": "You cannot pick up this item yet."})
+			return
+		if not u.inventory.add(int(g.item), int(g.amount), item_db, u.max_weight()):
+			events.append({"type": "pickup_fail", "id": u.id, "reason": "You are carrying too much weight."})
+			return
+		ground_items.erase(gid)
+		events.append({"type": "pickup", "id": u.id, "ground": gid, "item": g.item, "amount": g.amount})
+		events.append({"type": "inventory", "id": u.id})
+		return
+	if not u.walker.is_moving():
+		var path := pathfinder.find_path(u.walker.planning_origin(), g.cell)
+		if path.is_empty():
+			u.pickup_target = 0
+		else:
+			u.walker.walk(path)
+
+
+const DROP_OFFSETS: Array[Vector2i] = [Vector2i(0, 0), Vector2i(1, 0), Vector2i(0, 1), Vector2i(-1, 0),
+	Vector2i(0, -1), Vector2i(1, 1), Vector2i(-1, -1)]
+
+
+func _drop_loot(t: SimUnit, owner_id: int) -> void:
+	var drops: Array = t.data.get("drops", [])
+	var placed := 0
+	for d in drops:
+		if rng.randi_range(0, 9999) >= int(d[1]):
+			continue
+		if not item_db.has(str(int(d[0]))):
+			continue
+		# Spread drops over the death cell and its neighbours, like the client.
+		var c: Vector2i = t.walker.cell + DROP_OFFSETS[placed % DROP_OFFSETS.size()]
+		if not pathfinder.is_walkable(c):
+			c = t.walker.cell
+		var gid := _next_ground
+		_next_ground += 1
+		ground_items[gid] = {"id": gid, "item": int(d[0]), "amount": 1, "cell": c,
+			"offset": Vector2(rng.randf_range(0.2, 0.8), rng.randf_range(0.2, 0.8)), "owner": owner_id, "age": 0.0}
+		events.append({"type": "drop", "ground": gid})
+		placed += 1
+
+
+## Places an item on the ground (debug, quests, player drops).
+func spawn_ground_item(item_id: int, amount: int, cell: Vector2i) -> int:
+	var gid := _next_ground
+	_next_ground += 1
+	ground_items[gid] = {"id": gid, "item": item_id, "amount": amount, "cell": cell,
+		"offset": Vector2(0.5, 0.5), "owner": 0, "age": 0.0}
+	events.append({"type": "drop", "ground": gid})
+	return gid
+
+
 func _attack(u: SimUnit, t: SimUnit) -> void:
 	u.attack_cooldown = u.attack_interval
 	events.append({"type": "attack", "id": u.id, "target": t.id})
@@ -219,6 +366,13 @@ func _kill(t: SimUnit, killer: SimUnit) -> void:
 		if other.target_id == t.id:
 			other.target_id = 0
 	if not t.is_player():
+		var top := 0
+		var top_dmg := -1
+		for pid in t.damaged_by:
+			if int(t.damaged_by[pid]) > top_dmg:
+				top_dmg = int(t.damaged_by[pid])
+				top = int(pid)
+		_drop_loot(t, top)
 		# Pre-Renewal: EXP split by damage share among damage dealers (Medium confidence).
 		var total := 0
 		for v in t.damaged_by.values():

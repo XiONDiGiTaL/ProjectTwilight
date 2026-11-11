@@ -19,6 +19,8 @@ func _ready() -> void:
 
 
 func get_value(section: String, key: String, default: Variant = null) -> Variant:
+	if not _cfg.has_section_key(section, key):
+		return default
 	return _cfg.get_value(section, key, default)
 
 

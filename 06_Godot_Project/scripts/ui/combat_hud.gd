@@ -40,6 +40,80 @@ func _ready() -> void:
 	_root.add_child(status_panel)
 	_ring_shader = Shader.new()
 	_ring_shader.code = RING_SHADER
+	_feed = VBoxContainer.new()
+	_feed.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_feed.alignment = BoxContainer.ALIGNMENT_END
+	_feed.add_theme_constant_override("separation", 4)
+	_root.add_child(_feed)
+	_feed.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	_feed.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	_feed.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	_feed.offset_left = -380
+	_feed.offset_right = -16
+	_feed.offset_top = -260
+	_feed.offset_bottom = -16
+	_hover_tag = GlassPanel.new()
+	_hover_tag.chamfer = 6.0
+	_hover_tag.sweep = false
+	_hover_tag.padding = Vector4(8, 3, 8, 4)
+	_hover_tag.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_hover_label = UiTheme.label("", 11, UiTheme.TEXT, 600, 2)
+	_hover_tag.add_child(_hover_label)
+	_root.add_child(_hover_tag)
+	_hover_tag.visible = false
+	inventory = InventoryWindow.new()
+	_root.add_child(inventory)
+	inventory.position = Vector2(860, 120)
+	status_window = StatusWindow.new()
+	_root.add_child(status_window)
+	status_window.position = Vector2(400, 160)
+
+
+# --- System feed and hover tag ---------------------------------------------------
+
+var inventory: InventoryWindow
+var status_window: StatusWindow
+var _feed: VBoxContainer
+var _hover_tag: GlassPanel
+var _hover_label: Label
+
+const FEED_SECONDS := 4.5
+const FEED_MAX := 6
+
+
+## Adds a message chip to the bottom-right system feed.
+func notify(text: String, color := UiTheme.TEXT) -> void:
+	var chip := GlassPanel.new()
+	chip.chamfer = 6.0
+	chip.sweep = false
+	chip.padding = Vector4(12, 4, 12, 5)
+	chip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	chip.size_flags_horizontal = Control.SIZE_SHRINK_END
+	chip.add_child(UiTheme.label(text, 12, color, 600, 1))
+	_feed.add_child(chip)
+	while _feed.get_child_count() > FEED_MAX:
+		_feed.get_child(0).queue_free()
+		_feed.remove_child(_feed.get_child(0))
+	var t0 := Time.get_ticks_msec()
+	_effects.append(func() -> bool:
+		if not is_instance_valid(chip):
+			return false
+		var age := (Time.get_ticks_msec() - t0) / 1000.0
+		chip.modulate.a = clampf(age / 0.2, 0.0, 1.0) * clampf((FEED_SECONDS - age) / 0.6, 0.0, 1.0)
+		if age > FEED_SECONDS:
+			chip.queue_free()
+			return false
+		return true)
+
+
+## Shows a small name tag at a screen position (ground item hover); "" hides it.
+func hover_tag(text: String, screen_pos: Vector2) -> void:
+	_hover_tag.visible = text != ""
+	if text == "":
+		return
+	_hover_label.text = text.to_upper()
+	_hover_tag.reset_size()
+	_hover_tag.position = screen_pos - Vector2(_hover_tag.size.x / 2.0, _hover_tag.size.y + 6.0)
 
 
 # --- World HP bars ------------------------------------------------------------

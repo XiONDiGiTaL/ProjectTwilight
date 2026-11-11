@@ -29,6 +29,12 @@ func _init() -> void:
 
 
 func _ready() -> void:
+	var sb := get_theme_stylebox("panel") as StyleBoxEmpty
+	if sb:
+		sb.content_margin_left = padding.x
+		sb.content_margin_top = padding.y
+		sb.content_margin_right = padding.z
+		sb.content_margin_bottom = padding.w
 	_mat.set_shader_parameter("chamfer", chamfer)
 	_mat.set_shader_parameter("sweep", 1.0 if sweep else 0.0)
 	resized.connect(_fit)

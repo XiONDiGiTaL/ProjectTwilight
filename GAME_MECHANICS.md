@@ -37,6 +37,22 @@ Implementation: `scripts/gameplay/combat/combat_rules_prerenewal.gd`, `scripts/g
 | Passive monsters | Retaliate against their attacker; give up beyond 14 cells | Medium |
 | Monster data | Poring, Fabre, Lunatic in `data/prerenewal/monsters.json` | High, pending Hercules cross-check |
 
+## Items and inventory
+
+Implementation: `scripts/gameplay/items/inventory.gd`, `field_simulation.gd`, `data/prerenewal/items.json`. Tests: `tests/unit/test_items.gd`.
+
+| Rule | Value | Confidence |
+|---|---|---|
+| Weight limit | 2000 + STR × 30 (+ job bonus; Novice 0) | High |
+| Inventory entries | 100 | Medium |
+| Stacking | Etc and usable items stack; equipment takes one entry per piece | High |
+| Loot priority | Top damage dealer gets an exclusive 3 s window | Medium |
+| Ground item lifetime | 60 s | Medium |
+| Drop placement | Death cell, then its neighbours | Medium |
+| Drop rates | Per 10,000; Poring/Fabre/Lunatic tables from Pre-Renewal sources | Medium (cards omitted) |
+| Red Potion / Apple / Carrot | Heal 45–65 / 16–18 / 18–24 HP | High |
+| Overweight penalties (50% no regen, 90% no attack) | Not yet implemented | — |
+
 ## Movement
 
 Implementation: `scripts/gameplay/world/grid_pathfinder.gd`, `grid_walker.gd`. Tests: `tests/unit/test_movement.gd`.
