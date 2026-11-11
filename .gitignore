@@ -1,0 +1,53 @@
+# Project Twilight uses an allow-list: everything is ignored unless explicitly
+# listed below. This keeps proprietary client files, the Eternal Love package,
+# extracted assets and local research output out of the public repository.
+/*
+
+!/.gitignore
+!/.gitattributes
+!/README.md
+!/LICENSE
+!/NOTICE
+!/LICENSES.md
+!/CHANGELOG.md
+!/ROADMAP.md
+!/ARCHITECTURE.md
+!/PROJECT_AUDIT.md
+!/RESEARCH_FINDINGS.md
+!/REVERSE_ENGINEERING_LOG.md
+!/GAME_MECHANICS.md
+!/ASSET_FORMATS.md
+!/ASSET_PROVENANCE.md
+!/VISUAL_REFERENCE_COMPARISON.md
+!/NETWORK_PROTOCOLS.md
+!/SERVER_COMPATIBILITY.md
+!/README_FIRST.md
+!/Inventory-ROClient.ps1
+!/Logo.png
+!/tools/
+!/06_Godot_Project/
+
+# Never commit game data even if it lands inside an allowed folder.
+*.grf
+*.gpf
+*.spr
+*.act
+*.gat
+*.gnd
+*.rsw
+*.rsm
+*.rsm2
+*.str
+*.pal
+*.apk
+*.xapk
+*.bik
+*.exe
+*.dll
+
+# Godot generated
+/06_Godot_Project/.godot/
+/06_Godot_Project/export/
+*.import.tmp
+/06_Godot_Project/twilight.local.cfg
+__pycache__/

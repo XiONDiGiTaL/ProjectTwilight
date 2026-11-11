@@ -1,0 +1,29 @@
+; Engine configuration file.
+
+config_version=5
+
+[application]
+
+config/name="Project Twilight"
+config/description="A native PC reimplementation of classic Pre-Renewal Ragnarok Online."
+config/version="0.1.0"
+run/main_scene="res://scenes/main_menu.tscn"
+config/features=PackedStringArray("4.8", "Forward Plus")
+config/icon="res://assets/branding/logo.png"
+boot_splash/bg_color=Color(0.05, 0.05, 0.09, 1)
+
+[autoload]
+
+Settings="*res://scripts/core/settings.gd"
+RoResources="*res://scripts/resources/ro_resources.gd"
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+
+[rendering]
+
+textures/canvas_textures/default_texture_filter=0
