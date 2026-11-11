@@ -1,28 +1,30 @@
 class_name PlayerStatusPanel
-extends PanelContainer
-## Compact player status window, top-left like the classic client.
+extends GlassPanel
+## Player status window, top-left like the classic client, in the glass style.
 ##
-## * Sleek spear-tipped HP/SP bars with round badges, thin EXP bars.
-## * Fades and dims when the cursor is elsewhere; snaps back to full
-##   visibility on hover and briefly whenever HP/SP changes.
-## * Collapsible to HP/SP only (chevron in the header); remembered in settings.
+## * Class insignia beside name and class title.
+## * Slanted HP / SP bars (HP shifts green -> amber -> red) and thin EXP lines.
+## * Fades and dims when the cursor is elsewhere; returns to full visibility on
+##   hover and briefly whenever HP/SP changes.
+## * Collapsible to HP/SP only (chevron); remembered in user settings.
 
-const IDLE_ALPHA := 0.45
-const IDLE_DIM := 0.8
+const IDLE_ALPHA := 0.42
+const IDLE_DIM := 0.82
 const WAKE_ON_CHANGE_SEC := 2.5
-const FADE_SPEED := 6.0
+const FADE_IN_SPEED := 7.0
+const FADE_OUT_SPEED := 2.0
+const BAR_WIDTH := 220.0
 
-var _font: SystemFont
 var _title: Label
+var _subtitle: Label
 var _insignia: ClassInsignia
-var _levels: Label
 var _toggle: Button
-var _expanded_rows: Array[Control] = []
-var _value_labels: Array[Control] = []
-var _hp: OrnateBar
-var _sp: OrnateBar
-var _base: OrnateBar
-var _job: OrnateBar
+var _divider: ColorRect
+var _expanded_only: Array[Control] = []
+var _hp: GlassBar
+var _sp: GlassBar
+var _base: GlassBar
+var _job: GlassBar
 var _hp_text: Label
 var _sp_text: Label
 var _base_text: Label
@@ -35,67 +37,97 @@ var _last_sp := -1
 
 
 func _ready() -> void:
-	_font = SystemFont.new()
-	_font.font_names = PackedStringArray(["Segoe UI", "Bahnschrift", "Arial"])
-	_font.font_weight = 600
+	super._ready()
 	mouse_filter = Control.MOUSE_FILTER_STOP
-	add_theme_stylebox_override("panel", _glass())
 	set_anchors_preset(Control.PRESET_TOP_LEFT)
-	offset_left = 12
-	offset_top = 12
+	offset_left = 14
+	offset_top = 14
 	var col := VBoxContainer.new()
-	col.add_theme_constant_override("separation", 2)
+	col.add_theme_constant_override("separation", 4)
 	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(col)
 
 	var header := HBoxContainer.new()
-	header.add_theme_constant_override("separation", 8)
+	header.add_theme_constant_override("separation", 10)
 	header.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	col.add_child(header)
 	_insignia = ClassInsignia.new()
-	_insignia.custom_minimum_size = Vector2(38, 38)
+	_insignia.custom_minimum_size = Vector2(36, 36)
 	header.add_child(_insignia)
 	var names := VBoxContainer.new()
-	names.add_theme_constant_override("separation", -2)
+	names.add_theme_constant_override("separation", -1)
 	names.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	names.alignment = BoxContainer.ALIGNMENT_CENTER
 	names.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	header.add_child(names)
-	_title = _label("", 15, Color(1.0, 0.93, 0.78))
+	_title = UiTheme.label("", 17, UiTheme.TEXT, 600, 1)
 	names.add_child(_title)
-	_levels = _label("", 12, Color(0.78, 0.74, 0.66))
-	names.add_child(_levels)
+	_subtitle = UiTheme.label("", 11, UiTheme.TEXT_DIM, 400, 2)
+	names.add_child(_subtitle)
 	_toggle = Button.new()
 	_toggle.flat = true
 	_toggle.focus_mode = Control.FOCUS_NONE
 	_toggle.tooltip_text = "Collapse / expand"
-	_toggle.add_theme_color_override("font_color", Color(0.9, 0.8, 0.55))
-	_toggle.add_theme_color_override("font_hover_color", Color(1, 0.95, 0.75))
-	_toggle.custom_minimum_size = Vector2(24, 20)
+	_toggle.add_theme_font_override("font", UiTheme.font(600))
+	_toggle.add_theme_font_size_override("font_size", 13)
+	_toggle.add_theme_color_override("font_color", UiTheme.ACCENT)
+	_toggle.add_theme_color_override("font_hover_color", Color.WHITE)
 	_toggle.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	_toggle.pressed.connect(func(): set_collapsed(not _collapsed))
 	header.add_child(_toggle)
 
-	var hp_row := _bar_row(col, "HP", Color(0.75, 0.12, 0.1), OrnateBar.Style.HP, Vector2(230, 22))
-	_hp = hp_row[0]; _hp_text = hp_row[1]
-	var sp_row := _bar_row(col, "SP", Color(0.15, 0.35, 0.85), OrnateBar.Style.SP, Vector2(230, 20))
-	_sp = sp_row[0]; _sp_text = sp_row[1]
-	var be := _exp_row(col, "Base", OrnateBar.Style.BASE_EXP)
+	_divider = ColorRect.new()
+	_divider.custom_minimum_size = Vector2(0, 1)
+	_divider.color = Color(UiTheme.ACCENT, 0.22)
+	_divider.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	col.add_child(_divider)
+	_expanded_only.append(_divider)
+
+	var hp := _row(col, "HP", GlassBar.Style.HP, 15.0, 13, false)
+	_hp = hp[0]; _hp_text = hp[1]
+	var sp := _row(col, "SP", GlassBar.Style.SP, 13.0, 13, false)
+	_sp = sp[0]; _sp_text = sp[1]
+	var be := _row(col, "BASE", GlassBar.Style.BASE_EXP, 8.0, 11, true)
 	_base = be[0]; _base_text = be[1]
-	var je := _exp_row(col, "Job", OrnateBar.Style.JOB_EXP)
+	var je := _row(col, "JOB", GlassBar.Style.JOB_EXP, 8.0, 11, true)
 	_job = je[0]; _job_text = je[1]
 
 	var settings := get_node_or_null("/root/Settings")
 	set_collapsed(bool(settings.get_value("ui", "status_collapsed", false)) if settings else false, false)
 
 
+func _row(parent: Control, caption: String, style: GlassBar.Style, height: float, text_size: int, exp_row: bool) -> Array:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	parent.add_child(row)
+	var cap := UiTheme.label(caption, 10, Color(UiTheme.ACCENT, 0.85), 600, 2)
+	cap.custom_minimum_size = Vector2(36, 0)
+	cap.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	row.add_child(cap)
+	var bar := GlassBar.new()
+	bar.style = style
+	bar.ticks = 0.0 if exp_row else 10.0
+	bar.glow_px = 2.0 if exp_row else 3.0
+	bar.custom_minimum_size = Vector2(BAR_WIDTH, height)
+	bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(bar)
+	var txt := UiTheme.label("", text_size, UiTheme.TEXT if not exp_row else UiTheme.TEXT_DIM, 600 if not exp_row else 400)
+	txt.custom_minimum_size = Vector2(70, 0)
+	txt.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	txt.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	row.add_child(txt)
+	if exp_row:
+		_expanded_only.append(row)
+	return [bar, txt]
+
+
 func set_collapsed(value: bool, save := true) -> void:
 	_collapsed = value
 	_toggle.text = "▸" if _collapsed else "▾"
-	for r in _expanded_rows:
+	for r in _expanded_only:
 		r.visible = not _collapsed
-	for l in _value_labels:
-		l.visible = not _collapsed
-	_levels.visible = not _collapsed
+	_subtitle.visible = not _collapsed
 	reset_size()
 	_wake = WAKE_ON_CHANGE_SEC
 	var settings := get_node_or_null("/root/Settings")
@@ -112,7 +144,7 @@ func update_unit(u: SimUnit, next_base: int, next_job: int, first := false) -> v
 	if _insignia.class_id != u.job:
 		_insignia.set_class(u.job)
 	var job_name := String(ClassInsignia.classes().get(u.job, {}).get("name", u.job.capitalize()))
-	_levels.text = "%s  ·  Base %d  ·  Job %d" % [job_name, u.level, u.job_level]
+	_subtitle.text = "%s   ·   LV %d   ·   JOB %d" % [job_name.to_upper(), u.level, u.job_level]
 	if first:
 		_hp.snap(u.hp, u.max_hp)
 		_sp.snap(u.sp, u.max_sp)
@@ -133,7 +165,7 @@ func update_unit(u: SimUnit, next_base: int, next_job: int, first := false) -> v
 	_job_text.text = ("%.1f%%" % (100.0 * u.job_exp / next_job)) if next_job > 0 else "MAX"
 
 
-func _set_exp(bar: OrnateBar, value: int, maximum: int) -> void:
+func _set_exp(bar: GlassBar, value: int, maximum: int) -> void:
 	# EXP only grows; a lower fraction means the level rolled over.
 	if float(value) / maximum < bar.fraction():
 		bar.snap(value, maximum)
@@ -145,97 +177,9 @@ func _process(delta: float) -> void:
 	var hovered := get_global_rect().grow(6).has_point(get_global_mouse_position())
 	_wake = maxf(0.0, _wake - delta)
 	var target := 1.0 if hovered or _wake > 0.0 else 0.0
-	_alpha = move_toward(_alpha, target, delta * FADE_SPEED * (1.0 if target > _alpha else 0.35))
+	var speed := FADE_IN_SPEED if target > _alpha else FADE_OUT_SPEED
+	_alpha = move_toward(_alpha, target, delta * speed)
 	var a := lerpf(IDLE_ALPHA, 1.0, _alpha)
 	var dim := lerpf(IDLE_DIM, 1.0, _alpha)
 	modulate = Color(dim, dim, dim, a)
-
-
-func _bar_row(parent: Control, badge: String, badge_color: Color, style: OrnateBar.Style, bar_size: Vector2) -> Array:
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 6)
-	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	parent.add_child(row)
-	row.add_child(_badge(badge, badge_color))
-	var bar := OrnateBar.new()
-	bar.style = style
-	bar.sleek = true
-	bar.show_diamond = false
-	bar.custom_minimum_size = bar_size
-	bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	row.add_child(bar)
-	var txt := _label("", 12, Color(0.95, 0.95, 0.95))
-	txt.custom_minimum_size = Vector2(74, 0)
-	txt.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	row.add_child(txt)
-	_value_labels.append(txt)
-	return [bar, txt]
-
-
-func _exp_row(parent: Control, caption: String, style: OrnateBar.Style) -> Array:
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 6)
-	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	parent.add_child(row)
-	var cap := _label(caption, 11, Color(0.8, 0.75, 0.62))
-	cap.custom_minimum_size = Vector2(30, 0)
-	cap.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	cap.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	row.add_child(cap)
-	var bar := OrnateBar.new()
-	bar.style = style
-	bar.sleek = true
-	bar.show_diamond = false
-	bar.custom_minimum_size = Vector2(230, 13)
-	bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	row.add_child(bar)
-	var txt := _label("", 11, Color(0.9, 0.88, 0.8))
-	txt.custom_minimum_size = Vector2(74, 0)
-	txt.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	row.add_child(txt)
-	_expanded_rows.append(row)
-	return [bar, txt]
-
-
-func _badge(text: String, color: Color) -> Label:
-	var l := _label(text, 10, Color(1, 1, 1))
-	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	l.custom_minimum_size = Vector2(26, 26)
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = color.darkened(0.35)
-	sb.border_color = Color(0.85, 0.7, 0.4)
-	sb.set_border_width_all(1)
-	sb.set_corner_radius_all(13)
-	l.add_theme_stylebox_override("normal", sb)
-	l.label_settings.outline_size = 3
-	return l
-
-
-func _glass() -> StyleBoxFlat:
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(0.035, 0.04, 0.065, 0.74)
-	sb.border_color = Color(0.78, 0.62, 0.32, 0.55)
-	sb.set_border_width_all(1)
-	sb.set_corner_radius_all(10)
-	sb.shadow_color = Color(0, 0, 0, 0.45)
-	sb.shadow_size = 10
-	sb.content_margin_left = 10
-	sb.content_margin_right = 8
-	sb.content_margin_top = 6
-	sb.content_margin_bottom = 8
-	return sb
-
-
-func _label(text: String, size: int, color: Color) -> Label:
-	var l := Label.new()
-	l.text = text
-	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var s := LabelSettings.new()
-	s.font = _font
-	s.font_size = size
-	s.font_color = color
-	s.outline_size = 4
-	s.outline_color = Color(0.02, 0.02, 0.03, 0.9)
-	l.label_settings = s
-	return l
+	set_glow(0.35 * _alpha if hovered else 0.0)

@@ -25,8 +25,8 @@ The engine never runs Gravity code; only *content* comes from the client. Two co
 - **Local importer** (near term): convert the player's own client once into Godot-native resources under `user://`, so the GRF is no longer read at runtime. Nothing is redistributed.
 - **Original replacement assets** (long term): independently created sprites, maps, models and music in the classic style. This is required for any publicly distributable standalone build. The resource layer already treats assets as replaceable.
 
-## Phase 4: First playable (offline) 📋
-Main menu → character creation → one classic map → movement → one monster → basic combat → EXP → inventory → save/load.
+## Phase 4: First playable (offline) 🔧
+✅ map · ✅ movement · ✅ monsters (Poring/Fabre/Lunatic) · ✅ combat · ✅ EXP and levels · ✅ combat HUD · 📋 character creation · 📋 inventory and drops · 📋 save/load · 📋 stat allocation window
 
 ## Phases 5–8 📋
 Core gameplay → private co-op (ENet, invitation codes ✅ already) → server integration and MMO → modernisation.

@@ -40,6 +40,10 @@ Project Twilight **contains no Gravity game data**. On first launch you point it
 | Map decoding (GAT/GND/RSW) and ground rendering | ✅ Implemented and tested |
 | Map models (RSM/RSM2: buildings, trees, props) | ✅ Implemented and tested (static) |
 | Character sprites (body + head, hair dyes) and click-to-walk movement | ✅ Implemented and tested |
+| Combat (Pre-Renewal hit/flee/crit/DEF/ASPD), monsters, EXP and levels | ✅ Implemented and tested (first monsters) |
+| Twilight Glass HUD: status panel, target frame, HP bars, combat text | ✅ Implemented |
+| Original class insignia for all 46 classes | ✅ Generated (polish ongoing) |
+| Inventory, items, save/load | 📋 Next |
 | First offline playable (character, map, monster, combat, save) | 📋 Planned |
 | Private co-op sessions | 📋 Planned |
 | eAthena / Hercules compatibility | 🔍 Under investigation, not claimed |
@@ -62,6 +66,15 @@ The Pre-Renewal target covers these classes:
 
 Expanded classes (Super Novice, Taekwon, Star Gladiator, Soul Linker) are tracked separately. Renewal third jobs and Renewal mechanics are out of scope for the classic ruleset.
 
+## Interface
+
+Project Twilight's HUD uses its own **Twilight Glass** design language, a sleek holographic "system window" style:
+- frosted panels with chamfered corners and hairline borders
+- slanted glowing resource bars
+- condensed, letter-spaced typography
+
+Classic information stays where veterans expect it: the status window is top-left. It fades when you aren't using it, wakes up when your HP or SP changes, and can be collapsed.
+
 ## Visual direction
 
 The classic isometric camera, sprite characters and original map layouts stay. Lighting, effects, animation smoothness and UI are modernised on top of them, and each enhancement can be switched off independently of gameplay. Ragnarok M: Eternal Love is studied as a visual *reference* only. Its 3D Unity assets are not compatible with, or used in, this project.
@@ -83,7 +96,7 @@ git clone https://github.com/XiONDiGiTaL/ProjectTwilight.git
    [resources]
    client_path="D:/Games/RagnarokOnline"
    ```
-3. Choose **Explore Prontera** to walk around as a Novice, or open **Map Viewer** to fly around any classic map, or **Sprite Viewer** to browse animated sprites from your client.
+3. Choose **Explore** to fight Porings, Lunatics and Fabres on prt_fild08 to walk around as a Novice, or open **Map Viewer** to fly around any classic map, or **Sprite Viewer** to browse animated sprites from your client.
 
 ### Tests
 

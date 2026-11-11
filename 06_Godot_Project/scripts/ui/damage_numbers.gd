@@ -16,19 +16,11 @@ const LIFETIME := 1.15
 
 var camera: Camera3D
 var _items: Array = []  # {node: Control, anchor: Vector3, age, kind, drift: Vector2, scale_peak}
-var _number_font: SystemFont
-var _text_font: SystemFont
 
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	set_anchors_preset(Control.PRESET_FULL_RECT)
-	_number_font = SystemFont.new()
-	_number_font.font_names = PackedStringArray(["Impact", "Arial Black", "Segoe UI Black"])
-	_number_font.font_weight = 900
-	_text_font = SystemFont.new()
-	_text_font.font_names = PackedStringArray(["Georgia", "Palatino Linotype", "Times New Roman"])
-	_text_font.font_weight = 700
 
 
 ## Like spawn(), with a fixed screen-space offset from the anchor (EXP lines).
@@ -43,23 +35,23 @@ func spawn(world_pos: Vector3, text: String, kind: Kind) -> void:
 	box.alignment = BoxContainer.ALIGNMENT_CENTER
 	box.add_theme_constant_override("separation", -6)
 	if kind == Kind.CRIT:
-		box.add_child(_label("CRITICAL", _text_font, 15, Color(1.0, 0.95, 0.7), Color(0.45, 0.1, 0.0), 5))
+		box.add_child(_label("CRITICAL", UiTheme.font(600, 4), 12, UiTheme.CRIT, 4))
 	var l: Label
 	match kind:
 		Kind.CRIT:
-			l = _label(text, _number_font, 46, Color(1.0, 0.78, 0.15), Color(0.35, 0.05, 0.0), 10)
+			l = _label(text, UiTheme.font(700, 1, -0.18), 42, Color(1.0, 0.95, 0.75), 10, UiTheme.CRIT)
 		Kind.TAKEN:
-			l = _label(text, _number_font, 30, Color(1.0, 0.25, 0.2), Color(0.18, 0.0, 0.0), 8)
+			l = _label(text, UiTheme.font(700, 1), 28, UiTheme.DAMAGE_TAKEN, 8)
 		Kind.MISS:
-			l = _label(text, _text_font, 24, Color(0.7, 0.85, 1.0), Color(0.05, 0.1, 0.25), 7)
+			l = _label(text, UiTheme.font(600, 4), 18, UiTheme.TEXT_DIM, 5)
 		Kind.EXP_BASE:
-			l = _label(text, _text_font, 17, Color(1.0, 0.86, 0.4), Color(0.2, 0.12, 0.0), 6)
+			l = _label(text, UiTheme.font(600, 2), 14, UiTheme.EXP_BASE, 5)
 		Kind.EXP_JOB:
-			l = _label(text, _text_font, 17, Color(0.6, 1.0, 0.6), Color(0.0, 0.15, 0.05), 6)
+			l = _label(text, UiTheme.font(600, 2), 14, UiTheme.EXP_JOB, 5)
 		Kind.HEAL:
-			l = _label(text, _number_font, 28, Color(0.5, 1.0, 0.5), Color(0.0, 0.2, 0.05), 8)
+			l = _label(text, UiTheme.font(700, 1), 26, UiTheme.HP_HIGH, 8)
 		_:
-			l = _label(text, _number_font, 32, Color(1.0, 1.0, 1.0), Color(0.12, 0.08, 0.1), 8)
+			l = _label(text, UiTheme.font(700, 1), 30, UiTheme.TEXT, 8, UiTheme.ACCENT)
 	box.add_child(l)
 	add_child(box)
 	var drift := Vector2(randf_range(-28.0, 28.0), 0.0)
@@ -68,7 +60,7 @@ func spawn(world_pos: Vector3, text: String, kind: Kind) -> void:
 	_items.append({"node": box, "anchor": world_pos, "age": 0.0, "kind": kind, "drift": drift, "offset": Vector2.ZERO})
 
 
-func _label(text: String, font: Font, size: int, color: Color, outline: Color, outline_px: int) -> Label:
+func _label(text: String, font: Font, size: int, color: Color, glow_px: int, glow := Color(0, 0, 0, 0)) -> Label:
 	var l := Label.new()
 	l.text = text
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -77,11 +69,12 @@ func _label(text: String, font: Font, size: int, color: Color, outline: Color, o
 	s.font = font
 	s.font_size = size
 	s.font_color = color
-	s.outline_size = outline_px
-	s.outline_color = outline
-	s.shadow_size = 4
-	s.shadow_color = Color(0, 0, 0, 0.55)
-	s.shadow_offset = Vector2(2, 3)
+	var g := glow if glow.a > 0.0 else color
+	s.outline_size = glow_px
+	s.outline_color = Color(g.r * 0.35, g.g * 0.35, g.b * 0.45, 0.75)
+	s.shadow_size = glow_px + 6
+	s.shadow_color = Color(g.r, g.g, g.b, 0.28)
+	s.shadow_offset = Vector2.ZERO
 	l.label_settings = s
 	return l
 
@@ -101,7 +94,7 @@ func _process(delta: float) -> void:
 			continue
 		var base := camera.unproject_position(it.anchor)
 		# Pop: overshoot to 1.35x (1.6x for crits) then settle to 1.0.
-		var peak := 1.6 if it.kind == Kind.CRIT else 1.35
+		var peak := 1.45 if it.kind == Kind.CRIT else 1.2
 		var pop := 1.0
 		if t < 0.08:
 			pop = lerpf(0.3, peak, t / 0.08)

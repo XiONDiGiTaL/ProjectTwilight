@@ -47,7 +47,7 @@ func _ready() -> void:
 	_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	col.add_child(_status)
 
-	_add_button(col, "Explore Prontera (offline prototype)", func(): get_tree().change_scene_to_file(FIELD_SCENE))
+	_add_button(col, "Explore (offline prototype)", func(): get_tree().change_scene_to_file(FIELD_SCENE))
 	_add_button(col, "Private Co-op (planned)", Callable(), true)
 	_add_button(col, "Map Viewer", func(): get_tree().change_scene_to_file(MAP_VIEWER))
 	_add_button(col, "Sprite Viewer", func(): get_tree().change_scene_to_file(SPRITE_VIEWER))

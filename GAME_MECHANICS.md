@@ -16,6 +16,27 @@ Implementation: `06_Godot_Project/scripts/gameplay/progression/stat_rules_preren
 | Status ATK (melee) | STR + floor(STR/10)² + floor(DEX/5) + floor(LUK/5) | High | iRO Wiki classic. Ranged weapons swap STR and DEX. |
 | MATK range | INT + floor(INT/7)² … INT + floor(INT/5)² | High | iRO Wiki classic |
 
+## Combat
+
+Implementation: `scripts/gameplay/combat/combat_rules_prerenewal.gd`, `scripts/gameplay/world/field_simulation.gd`. Tests: `tests/unit/test_combat.gd`.
+
+| Rule | Formula | Confidence |
+|---|---|---|
+| Hit chance | 80 + HIT − FLEE, clamped to 5–95% | High |
+| Critical chance | 1 + LUK × 0.3 % minus target LUK × 0.2 % (players only) | High |
+| Critical damage | Maximum ATK; ignores FLEE and DEF; no × 1.4 multiplier (that is Renewal) | High |
+| Hard DEF | Percentage reduction (`damage × (100 − DEF) / 100`) | High |
+| Monster soft DEF | VIT + rnd(0, max(0, floor(VIT/20)² − 1)) | High |
+| Player soft DEF | floor(VIT × 0.5) + rnd(floor(VIT × 0.3), max(floor(VIT × 0.3), floor(VIT²/150) − 1)) | Medium-high |
+| Minimum damage | 1 | High |
+| ASPD | 200 − (WD − (floor(WD × AGI / 25) + floor(WD × DEX / 100)) / 10), with WD = 50 × BTBA | High (formula) |
+| Attack interval | (200 − ASPD) × 20 ms | High |
+| Novice fist BTBA | 0.5 s | Medium |
+| Novice max HP | (35 + 5 × level) × (1 + VIT/100) | Medium (other jobs need HP factors) |
+| EXP distribution | Split by share of damage dealt | Medium |
+| Passive monsters | Retaliate against their attacker; give up beyond 14 cells | Medium |
+| Monster data | Poring, Fabre, Lunatic in `data/prerenewal/monsters.json` | High, pending Hercules cross-check |
+
 ## Movement
 
 Implementation: `scripts/gameplay/world/grid_pathfinder.gd`, `grid_walker.gd`. Tests: `tests/unit/test_movement.gd`.

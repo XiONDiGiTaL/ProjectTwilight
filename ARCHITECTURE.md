@@ -15,9 +15,11 @@ scripts/
   core/            Settings (autoload)
   resources/       RoResources VFS (autoload), grf/, formats/ (spr, act, gat, gnd, rsw, textures), text/ (cp949)
   rendering/       ActSprite (SPR/ACT composer), RoCamera, map/ (RoMap, ground mesh builder, ground shader)
-  gameplay/        progression/ (stat rules); combat/, items/, world/ next
+  gameplay/        progression/ (stat rules), combat/ (Pre-Renewal rules), world/ (pathfinder, walker, FieldSimulation, SimUnit)
   networking/      InvitationCode; transport/session/sync next
-  ui/              main menu
+  ui/              Twilight Glass design system (UiTheme, GlassPanel, GlassBar), CombatHud, PlayerStatusPanel, DamageNumbers, ClassInsignia, main menu
+  game/            field scene, unit views (presentation of the simulation)
+tools/insignia/    class insignia generator
   tools/           developer tools (sprite viewer)
 scenes/            main_menu.tscn, tools/
 resources/         original data only (e.g. encoding table)

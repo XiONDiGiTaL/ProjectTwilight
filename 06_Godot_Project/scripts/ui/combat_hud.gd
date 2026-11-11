@@ -1,79 +1,86 @@
 class_name CombatHud
 extends CanvasLayer
-## Enhanced combat UI: world HP bars, target frame, player panel, floating
-## combat text and the level-up flourish. Presentation only; it is driven by
+## Combat UI in the "Twilight Glass" style: world HP bars (shown once a player
+## engages a monster, kept until it dies), target frame, player status panel,
+## floating combat text and SYSTEM notifications. Presentation only; driven by
 ## FieldSimulation events and unit state.
 
-const WORLD_BAR_SIZE := Vector2(104, 14)
+const WORLD_BAR_SIZE := Vector2(92, 10)
 const BAR_FADE_AFTER_DEATH := 0.9
 
 var camera: Camera3D
 var numbers: DamageNumbers
-
-var _world_bars: Dictionary = {}   # unit id -> {bar: OrnateBar, anchor: Callable, dying: float}
-var _target_panel: Control
-var _target_bar: OrnateBar
-var _target_name: Label
-var _target_hp: Label
-var _target_id := 0
-var _target_clear_in := 0.0
-
 var status_panel: PlayerStatusPanel
 
-var _ui_font: SystemFont
-var _burst_shader: Shader
+var _root: Control
+var _world_bars: Dictionary = {}   # unit id -> {node, bar, anchor: Callable, dying, fade_in}
+var _target_panel: GlassPanel
+var _target_bar: GlassBar
+var _target_name: Label
+var _target_level: Label
+var _target_hp: Label
+var _target_pct: Label
+var _target_id := 0
+var _target_clear_in := 0.0
+var _effects: Array = []   # Callables returning false when finished
+var _ring_shader: Shader
 
 
 func _ready() -> void:
 	layer = 5
-	_ui_font = SystemFont.new()
-	_ui_font.font_names = PackedStringArray(["Georgia", "Palatino Linotype", "Times New Roman"])
-	_ui_font.font_weight = 700
-	var root := Control.new()
-	root.set_anchors_preset(Control.PRESET_FULL_RECT)
-	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	root.name = "Root"
-	add_child(root)
+	_root = Control.new()
+	_root.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_root.name = "Root"
+	add_child(_root)
 	numbers = DamageNumbers.new()
-	root.add_child(numbers)
-	_build_target_frame(root)
+	_root.add_child(numbers)
+	_build_target_frame()
 	status_panel = PlayerStatusPanel.new()
-	root.add_child(status_panel)
-	_burst_shader = Shader.new()
-	_burst_shader.code = BURST_SHADER
+	_root.add_child(status_panel)
+	_ring_shader = Shader.new()
+	_ring_shader.code = RING_SHADER
 
 
 # --- World HP bars ------------------------------------------------------------
 
 ## Shows (or keeps) the HP bar for a unit. `anchor` returns the world position
 ## above the unit's head. The bar stays until the unit dies.
-func engage(unit_id: int, hp: int, max_hp: int, anchor: Callable) -> void:
+func engage(unit_id: int, hp: int, max_hp: int, anchor: Callable, name := "") -> void:
 	if _world_bars.has(unit_id):
 		return
-	var bar := OrnateBar.new()
-	bar.size = WORLD_BAR_SIZE
-	bar.sleek = true
-	bar.show_diamond = false
-	$Root.add_child(bar)
-	$Root.move_child(bar, 0)  # behind numbers and panels
+	var box := VBoxContainer.new()
+	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	box.add_theme_constant_override("separation", 0)
+	if name != "":
+		var l := UiTheme.label(name.to_upper(), 10, UiTheme.TEXT, 600, 2)
+		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		box.add_child(l)
+	var bar := GlassBar.new()
+	bar.ticks = 5.0
+	bar.glow_px = 2.0
+	bar.custom_minimum_size = WORLD_BAR_SIZE
+	box.add_child(bar)
+	_root.add_child(box)
+	_root.move_child(box, 0)  # behind numbers and panels
 	bar.snap(hp, max_hp)
-	bar.modulate.a = 0.0
-	_world_bars[unit_id] = {"bar": bar, "anchor": anchor, "dying": -1.0, "fade_in": 0.0}
+	box.modulate.a = 0.0
+	_world_bars[unit_id] = {"node": box, "bar": bar, "anchor": anchor, "dying": -1.0, "fade_in": 0.0}
 
 
 func update_hp(unit_id: int, hp: int, max_hp: int) -> void:
 	if _world_bars.has(unit_id):
-		(_world_bars[unit_id].bar as OrnateBar).set_value(hp, max_hp)
+		(_world_bars[unit_id].bar as GlassBar).set_value(hp, max_hp)
 	if unit_id == _target_id:
 		_target_bar.set_value(hp, max_hp)
-		_target_hp.text = "%d / %d" % [hp, max_hp]
+		_set_target_text(hp, max_hp)
 
 
 ## Unit died: drain the bar to empty, then fade it out.
 func unit_died(unit_id: int) -> void:
 	if _world_bars.has(unit_id):
 		var e: Dictionary = _world_bars[unit_id]
-		(e.bar as OrnateBar).set_value(0, (e.bar as OrnateBar).max_value)
+		(e.bar as GlassBar).set_value(0, (e.bar as GlassBar).max_value)
 		e.dying = BAR_FADE_AFTER_DEATH
 	if unit_id == _target_id:
 		_target_clear_in = 1.4
@@ -83,6 +90,10 @@ func has_world_bar(unit_id: int) -> bool:
 	return _world_bars.has(unit_id)
 
 
+func target_id() -> int:
+	return _target_id
+
+
 # --- Target frame ---------------------------------------------------------------
 
 func set_target(unit_id: int, name: String, level: int, hp: int, max_hp: int) -> void:
@@ -90,9 +101,15 @@ func set_target(unit_id: int, name: String, level: int, hp: int, max_hp: int) ->
 		_target_bar.snap(hp, max_hp)
 	_target_id = unit_id
 	_target_clear_in = 0.0
-	_target_name.text = "%s   Lv.%d" % [name.to_upper(), level]
-	_target_hp.text = "%d / %d" % [hp, max_hp]
+	_target_name.text = name.to_upper()
+	_target_level.text = "LV %d" % level
+	_set_target_text(hp, max_hp)
 	_target_panel.visible = true
+
+
+func _set_target_text(hp: int, max_hp: int) -> void:
+	_target_hp.text = "%d / %d" % [hp, max_hp]
+	_target_pct.text = "%d%%" % roundi(100.0 * hp / maxi(max_hp, 1))
 
 
 func clear_target() -> void:
@@ -100,26 +117,40 @@ func clear_target() -> void:
 	_target_panel.visible = false
 
 
-func _build_target_frame(root: Control) -> void:
-	_target_panel = VBoxContainer.new()
+func _build_target_frame() -> void:
+	_target_panel = GlassPanel.new()
+	_target_panel.chamfer = 10.0
 	_target_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_target_panel.add_theme_constant_override("separation", 1)
-	root.add_child(_target_panel)
+	_root.add_child(_target_panel)
 	_target_panel.set_anchors_preset(Control.PRESET_CENTER_TOP)
 	_target_panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	_target_panel.offset_left = -210
-	_target_panel.offset_right = 210
-	_target_panel.offset_top = 10
-	_target_name = _label("", 17, Color(1.0, 0.92, 0.75))
-	_target_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_target_panel.add_child(_target_name)
-	_target_bar = OrnateBar.new()
-	_target_bar.sleek = true
-	_target_bar.custom_minimum_size = Vector2(420, 26)
-	_target_panel.add_child(_target_bar)
-	_target_hp = _label("", 15, Color(1, 1, 1))
-	_target_hp.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_target_panel.add_child(_target_hp)
+	_target_panel.offset_left = -200
+	_target_panel.offset_right = 200
+	_target_panel.offset_top = 14
+	var col := VBoxContainer.new()
+	col.add_theme_constant_override("separation", 5)
+	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_target_panel.add_child(col)
+	var top := HBoxContainer.new()
+	top.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	col.add_child(top)
+	_target_name = UiTheme.label("", 15, UiTheme.TEXT, 600, 3)
+	_target_name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	top.add_child(_target_name)
+	_target_level = UiTheme.label("", 11, UiTheme.ACCENT, 600, 2)
+	_target_level.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	top.add_child(_target_level)
+	_target_bar = GlassBar.new()
+	_target_bar.custom_minimum_size = Vector2(372, 14)
+	col.add_child(_target_bar)
+	var bottom := HBoxContainer.new()
+	bottom.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	col.add_child(bottom)
+	_target_hp = UiTheme.label("", 11, UiTheme.TEXT_DIM, 400, 1)
+	_target_hp.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	bottom.add_child(_target_hp)
+	_target_pct = UiTheme.label("", 11, UiTheme.TEXT, 600, 1)
+	bottom.add_child(_target_pct)
 	_target_panel.visible = false
 
 
@@ -129,42 +160,64 @@ func update_player(u: SimUnit, next_base: int, next_job: int, first := false) ->
 	status_panel.update_unit(u, next_base, next_job, first)
 
 
-# --- Level up ---------------------------------------------------------------------
+# --- SYSTEM notifications ----------------------------------------------------------
 
-func level_up(world_pos: Vector3, text: String) -> void:
-	var burst := ColorRect.new()
-	burst.size = Vector2(320, 320)
-	burst.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var mat := ShaderMaterial.new()
-	mat.shader = _burst_shader
-	burst.material = mat
-	$Root.add_child(burst)
-	var title := _label(text, 34, Color(1.0, 0.86, 0.35))
-	title.label_settings.outline_size = 10
-	title.label_settings.outline_color = Color(0.35, 0.12, 0.0)
+## Solo-Leveling-style system window plus a ring pulse at `world_pos`.
+func level_up(world_pos: Vector3, text: String, detail := "") -> void:
+	_ring_pulse(world_pos)
+	var panel := GlassPanel.new()
+	panel.chamfer = 14.0
+	panel.padding = Vector4(28, 12, 28, 14)
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_root.add_child(panel)
+	var col := VBoxContainer.new()
+	col.alignment = BoxContainer.ALIGNMENT_CENTER
+	col.add_theme_constant_override("separation", 2)
+	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.add_child(col)
+	var tag := UiTheme.label("◆  SYSTEM", 11, UiTheme.ACCENT, 600, 4)
+	tag.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	col.add_child(tag)
+	var title := UiTheme.label(text, 30, UiTheme.TEXT, 300, 8, true)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	$Root.add_child(title)
+	col.add_child(title)
+	if detail != "":
+		var d := UiTheme.label(detail, 12, UiTheme.TEXT_DIM, 400, 1)
+		d.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		col.add_child(d)
+	panel.set_glow(1.0)
 	var t0 := Time.get_ticks_msec()
-	var updater := func() -> bool:
+	_effects.append(func() -> bool:
 		var age := (Time.get_ticks_msec() - t0) / 1000.0
-		if age > 2.2 or camera == null:
-			burst.queue_free()
-			title.queue_free()
+		if age > 3.2:
+			panel.queue_free()
 			return false
-		var sp := camera.unproject_position(world_pos)
-		burst.position = sp - burst.size / 2.0
+		panel.reset_size()
+		var vp := _root.get_viewport_rect().size
+		var slide := 14.0 * (1.0 - ease(clampf(age / 0.3, 0.0, 1.0), 0.4))
+		panel.position = Vector2((vp.x - panel.size.x) / 2.0, vp.y * 0.2 - slide)
+		panel.modulate.a = clampf(age / 0.25, 0.0, 1.0) * (1.0 if age < 2.6 else 1.0 - (age - 2.6) / 0.6)
+		panel.set_glow(maxf(0.0, 1.0 - age * 1.5))
+		return true)
+
+
+func _ring_pulse(world_pos: Vector3) -> void:
+	var ring := ColorRect.new()
+	ring.size = Vector2(260, 260)
+	ring.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var mat := ShaderMaterial.new()
+	mat.shader = _ring_shader
+	ring.material = mat
+	_root.add_child(ring)
+	var t0 := Time.get_ticks_msec()
+	_effects.append(func() -> bool:
+		var age := (Time.get_ticks_msec() - t0) / 1000.0
+		if age > 1.0 or camera == null:
+			ring.queue_free()
+			return false
+		ring.position = camera.unproject_position(world_pos) - ring.size / 2.0
 		mat.set_shader_parameter("age", age)
-		title.reset_size()
-		var s := 1.0 + 0.6 * maxf(0.0, 0.25 - age) * 4.0
-		title.pivot_offset = title.size / 2.0
-		title.scale = Vector2(s, s)
-		title.position = sp - title.size / 2.0 - Vector2(0, 90 + age * 18.0)
-		title.modulate.a = 1.0 if age < 1.6 else 1.0 - (age - 1.6) / 0.6
-		return true
-	_effects.append(updater)
-
-
-var _effects: Array = []
+		return true)
 
 
 func _process(delta: float) -> void:
@@ -179,55 +232,39 @@ func _process(delta: float) -> void:
 		return
 	for id in _world_bars.keys():
 		var e: Dictionary = _world_bars[id]
-		var bar: OrnateBar = e.bar
+		var node: Control = e.node
 		if e.dying >= 0.0:
 			e.dying -= delta
-			bar.modulate.a = clampf(e.dying / 0.4, 0.0, 1.0)
+			node.modulate.a = clampf(e.dying / 0.4, 0.0, 1.0)
 			if e.dying <= 0.0:
-				bar.queue_free()
+				node.queue_free()
 				_world_bars.erase(id)
 				continue
 		else:
 			e.fade_in = minf(1.0, e.fade_in + delta * 6.0)
-			bar.modulate.a = e.fade_in
+			node.modulate.a = e.fade_in
 		var anchor: Vector3 = (e.anchor as Callable).call()
 		if camera.is_position_behind(anchor):
-			bar.visible = false
+			node.visible = false
 			continue
-		bar.visible = true
-		bar.position = camera.unproject_position(anchor) - Vector2(bar.size.x / 2.0, bar.size.y)
+		node.visible = true
+		node.reset_size()
+		node.position = camera.unproject_position(anchor) - Vector2(node.size.x / 2.0, node.size.y)
 
 
-func _label(text: String, size: int, color: Color) -> Label:
-	var l := Label.new()
-	l.text = text
-	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var s := LabelSettings.new()
-	s.font = _ui_font
-	s.font_size = size
-	s.font_color = color
-	s.outline_size = 5
-	s.outline_color = Color(0.05, 0.03, 0.02)
-	s.shadow_size = 3
-	s.shadow_color = Color(0, 0, 0, 0.5)
-	s.shadow_offset = Vector2(1, 2)
-	l.label_settings = s
-	return l
-
-
-const BURST_SHADER := """
+const RING_SHADER := """
 shader_type canvas_item;
 uniform float age = 0.0;
 void fragment() {
 	vec2 p = UV * 2.0 - 1.0;
+	p.y *= 2.2;                       // flattened: reads as a ring on the ground
 	float r = length(p);
-	float a = atan(p.y, p.x);
-	float grow = clamp(age / 0.35, 0.0, 1.0);
-	float fade = 1.0 - clamp((age - 0.6) / 1.4, 0.0, 1.0);
-	float rays = pow(0.5 + 0.5 * sin(a * 12.0 + age * 2.5), 6.0) * smoothstep(1.0 * grow, 0.1, r);
-	float ring = smoothstep(0.08, 0.0, abs(r - grow * 0.85)) * (1.0 - grow * 0.6);
-	float glow = smoothstep(0.7, 0.0, r) * 0.45;
-	vec3 col = mix(vec3(1.0, 0.75, 0.25), vec3(1.0, 0.97, 0.8), rays);
-	COLOR = vec4(col, (rays * 0.7 + ring + glow) * fade);
+	float t = clamp(age / 0.9, 0.0, 1.0);
+	float radius = mix(0.15, 0.95, 1.0 - pow(1.0 - t, 3.0));
+	float ring = exp(-pow((r - radius) * 26.0, 2.0));
+	float inner = exp(-pow((r - radius * 0.7) * 40.0, 2.0)) * 0.5;
+	float fade = 1.0 - t;
+	vec3 col = mix(vec3(0.42, 0.86, 1.0), vec3(0.9, 0.97, 1.0), ring);
+	COLOR = vec4(col, (ring + inner) * fade);
 }
 """

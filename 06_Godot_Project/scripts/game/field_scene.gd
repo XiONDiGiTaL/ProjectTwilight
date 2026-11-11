@@ -152,13 +152,16 @@ func _consume_events() -> void:
 				player_changed = player_changed or ev.id == player.id
 			"exp":
 				var pv: UnitView = views[ev.id]
-				hud.numbers.spawn_offset(pv.global_position, Vector2(110, -40), "+%d Base EXP" % ev.base, DamageNumbers.Kind.EXP_BASE)
-				hud.numbers.spawn_offset(pv.global_position, Vector2(110, -18), "+%d Job EXP" % ev.job, DamageNumbers.Kind.EXP_JOB)
+				hud.numbers.spawn_offset(pv.global_position, Vector2(110, -40), "+%d BASE EXP" % ev.base, DamageNumbers.Kind.EXP_BASE)
+				hud.numbers.spawn_offset(pv.global_position, Vector2(110, -18), "+%d JOB EXP" % ev.job, DamageNumbers.Kind.EXP_JOB)
 				player_changed = true
 			"levelup":
 				var lv: UnitView = views[ev.id]
-				var text := "BASE LEVEL UP!" if ev.kind == "base" else "JOB LEVEL UP!"
-				hud.level_up(lv.global_position + Vector3(0, 6, 0), text)
+				var lu: SimUnit = sim.units[ev.id]
+				if ev.kind == "base":
+					hud.level_up(lv.global_position, "LEVEL UP", "Base Level %d reached  ·  %d status points available" % [ev.level, lu.status_points])
+				else:
+					hud.level_up(lv.global_position, "JOB LEVEL UP", "Job Level %d reached" % ev.level)
 				player_changed = true
 			"revive":
 				player_changed = player_changed or ev.id == player.id
@@ -185,8 +188,8 @@ func _on_damage(ev: Dictionary) -> void:
 		dv.sprite.play_once("hurt", 280.0)
 	# Monster HP bars appear once a player attacks them and stay until death.
 	if not dst.is_player() and src.is_player():
-		hud.engage(dst.id, dst.hp + (ev.amount if not ev.miss else 0), dst.max_hp, dv.head_position)
-		if ev.src == player.id and hud._target_id != dst.id:
+		hud.engage(dst.id, dst.hp + (ev.amount if not ev.miss else 0), dst.max_hp, dv.head_position, dst.name)
+		if ev.src == player.id and hud.target_id() != dst.id:
 			hud.set_target(dst.id, dst.name, dst.level, dst.hp + (ev.amount if not ev.miss else 0), dst.max_hp)
 	hud.update_hp(dst.id, dst.hp, dst.max_hp)
 
