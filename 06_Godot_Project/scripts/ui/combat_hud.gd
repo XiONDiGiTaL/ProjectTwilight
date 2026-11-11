@@ -120,13 +120,15 @@ func notify(text: String, color := UiTheme.TEXT) -> void:
 		_feed.get_child(0).queue_free()
 		_feed.remove_child(_feed.get_child(0))
 	var t0 := Time.get_ticks_msec()
+	var ref: WeakRef = weakref(chip)   # trimmed chips are freed while their effect is queued
 	_effects.append(func() -> bool:
-		if not is_instance_valid(chip):
+		var c: Control = ref.get_ref()
+		if c == null:
 			return false
 		var age := (Time.get_ticks_msec() - t0) / 1000.0
-		chip.modulate.a = clampf(age / 0.2, 0.0, 1.0) * clampf((FEED_SECONDS - age) / 0.6, 0.0, 1.0)
+		c.modulate.a = clampf(age / 0.2, 0.0, 1.0) * clampf((FEED_SECONDS - age) / 0.6, 0.0, 1.0)
 		if age > FEED_SECONDS:
-			chip.queue_free()
+			c.queue_free()
 			return false
 		return true)
 

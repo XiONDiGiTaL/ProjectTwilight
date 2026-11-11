@@ -64,7 +64,7 @@ Full brief: Swordman → **Dark Knight**, female Acolyte → **Shaman**, with fu
    - `wrath`: MATK%.
    - `rain_dance` / `se_wind`: element bonus on own magic.
    - `auto_counter`: stance.
-3. [ ] **Second job change**
+3. [x] **Second job change**
    - `command_job_change` for tier 2: parent job, job level ≥ 40, sex rule.
    - `available_skills` includes the parent job's skills.
    - The Job Guide dialogue in `field_scene.gd` offers the second jobs. Knight, Crusader, Priest and Monk are listed as "not yet available".
@@ -72,7 +72,7 @@ Full brief: Swordman → **Dark Knight**, female Acolyte → **Shaman**, with fu
    - fields: weapon requirement, `hits`, `splash` / `area`, `pierce`, `element` / weapon element, lifesteal, `inflict` status;
    - Hell Impact goes through the cast system (`cast_time` + `physical`).
    - Auto Counter hooks into monster melee attacks.
-5. [ ] **Support and magic extensions**:
+5. [x] **Support and magic extensions**:
    - target types `ally` / `dead_ally` / `self`; heal, SP, buff and resurrect effects;
    - Wrath MATK and element bonuses applied in `_release_spell`;
    - status inflict on spells;
@@ -81,7 +81,7 @@ Full brief: Swordman → **Dark Knight**, female Acolyte → **Shaman**, with fu
    - `SM_TWOHAND` and `DK_AXEMASTERY` go through the existing `mastery_weapons` path;
    - `DK_CRITUP` adds a `crit_bonus` to the combat profile;
    - two-handed weapons block the shield slot.
-7. [ ] **Sprites**:
+7. [x] **Sprites**:
    - **Dark Knight:** body `운영자` from the pack overlay, with a sword weapon layer; fallback Knight `기사`.
    - **Shaman:** build a synthetic `SprFile` / `ActFile` from `Resources/Shaman.jpg`.
      - Frame rects and the action mapping go in `data/sprites/shaman_sheet.json`; key out the grey background.
@@ -98,28 +98,39 @@ Full brief: Swordman → **Dark Knight**, female Acolyte → **Shaman**, with fu
 
      - Fallback: Priest `프리스트`.
      - Head anchor near the top of the hood; calibrate visually.
-8. [ ] **Palettes**:
+8. [x] **Palettes**:
    - body palette support in `CharacterSprite`: cloth dye `data/palette/몸/<job>_<sex>_<n>.pal`, 700 per job;
    - hair colours up to 131: `머리<style>_<sex>_<n>.pal`;
    - creation UI steppers; saved as `cloth_color`.
-9. [ ] **Skill window**: group by `branch`; show SP, cast time, delay, duration, weapon restriction and type; block invalid allocation (the simulation already validates).
-10. [ ] **Damage numbers** in the new style:
+9. [x] **Skill window**: group by `branch`; show SP, cast time, delay, duration, weapon restriction and type; block invalid allocation (the simulation already validates).
+10. [x] **Damage numbers** in the new style:
     - blue gradient fill with a white outline in the battle font;
     - big hits and multi-hit totals in vibrant glowing blue;
     - small hits in a softer tone with a white outline.
-11. [ ] **Badges**: add `dark_knight` and `shaman` glyphs to `tools/insignia/emblem_painter.gd`, then rerun `generate_badges.gd` (non-headless).
-12. [ ] **Tests**: add `tests/unit/test_dark_knight.gd` and `tests/unit/test_shaman.gd`, covering every item in the brief's test list. Multiplayer is tested as two players in one authoritative simulation.
-13. [ ] **Visual captures**: add `tests/capture_classes.gd` and check the results.
-14. [ ] **Docs**:
+11. [x] **Badges**: add `dark_knight` and `shaman` glyphs to `tools/insignia/emblem_painter.gd`, then rerun `generate_badges.gd` (non-headless).
+12. [x] **Tests**: add `tests/unit/test_dark_knight.gd` and `tests/unit/test_shaman.gd`, covering every item in the brief's test list. Multiplayer is tested as two players in one authoritative simulation.
+13. [x] **Visual captures**: add `tests/capture_classes.gd` and check the results.
+14. [x] **Docs**:
     - write `docs/design/CLASS_DARK_KNIGHT_SHAMAN.md`, with a status per skill: implemented, partial, placeholder or planned;
     - update CHANGELOG, GAME_MECHANICS, ASSET_PROVENANCE (pack assets are not redistributed) and ROADMAP.
-15. [ ] Commit and push.
+15. [x] Commit and push.
 
 ### Known gaps to state honestly
 
 - **Networking:** there is no network transport yet. The co-op and dedicated-server paths do not exist in code. `FieldSimulation` commands are the authority layer and validate everything server-side. Report multiplayer as "authority logic ready, transport not implemented".
 - **Persistence of buffs:** buffs and statuses are not saved; they end on logout, which is the classic behaviour.
 - **Weapon layers:** the Dark Knight pack only ships a sword weapon layer, so axes have no weapon sprite.
+
+### Follow-ups from this task (open)
+
+- [ ] **Design approval:** the sword skills (Blind Wave, Death Blade) require the axe chain, as written in the brief. Confirm or relax.
+- [ ] **Spiritual Prayer vs the offline auto-revive (3 s):** add a "return to save point" choice so resurrection matters.
+- [ ] Replace the provisional `job_second` EXP table with the cross-checked Pre-Renewal table.
+- [ ] Custom icons for the DK_* / SH_* skills.
+- [ ] Per-skill animations (the brief's animation list).
+- [ ] A weapon layer for Dark Knight axes.
+- [ ] Knight, Crusader, Priest and Monk.
+- [ ] A network transport for co-op and dedicated servers. The authority logic is ready in `FieldSimulation`.
 
 ## Backlog after this task
 

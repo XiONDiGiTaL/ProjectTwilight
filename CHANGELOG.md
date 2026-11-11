@@ -3,6 +3,24 @@
 ## [Unreleased] - 2026-11-11
 
 ### Added
+- **Second jobs: Dark Knight (from Swordman) and Shaman (from Acolyte, female only).**
+  - Both have full skill trees (13 + 15 skills, plus Two-Handed Sword Mastery for Swordman), adapted from Ragnarok Online DS concepts. See `docs/design/CLASS_DARK_KNIGHT_SHAMAN.md`.
+  - The Job Guide offers second jobs at first-job Job Level 40.
+  - Weapons and masteries are per class; two-handed weapons block shields.
+- **Status effects and buffs:** Stun, Sleep, Stone, Silence, Blind and Confusion, with stat resistance, plus timed buffs, HP-drain buffs with a safety floor, and weapon element enchantments.
+- **New weapons** at a Prontera Weapon Dealer: Katana, Claymore, Axe, Battle Axe, Club, Rod and Book.
+- **Resource pack support (`Resources/`, loaded at runtime, never committed):**
+  - Pack GRFs (CorrectedSprites, 2025 Palettes) override the client.
+  - Loose sprite overlays, e.g. the Dark Knight body.
+  - Sprite-sheet bodies, e.g. the Shaman, sliced and keyed at runtime.
+  - The GRADIUS battle font.
+- **Cloth dyes and extra hair colours** from palette packs, with steppers in character creation. Saves are now v5, adding aura, cloth dye and second jobs.
+- **Damage numbers restyled:** battle font, blue gradient fill, white outline and soft glow.
+  - Big hits and crits glow vibrant blue with a sheen.
+  - Multi-hit skills show the individual hits, then build up to a big total.
+- **Skill window:** one tab per job, branches in two columns, and full tooltips (SP, cast, delay, duration, range, weapons, prerequisites, locked state).
+- **Badges** for Dark Knight and Shaman.
+- **`Directive.md`:** a hand-off to-do list for AI agents.
 - **Magic and elements:**
   - The Pre-Renewal element table (10 × 10 × 4) now applies to every attack. Magnum Break is fire.
   - MATK, MDEF and DEX-scaled cast times are in.

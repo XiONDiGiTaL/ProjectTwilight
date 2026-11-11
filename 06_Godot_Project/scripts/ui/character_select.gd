@@ -25,8 +25,12 @@ var _hair_style := 2
 var _hair_color := 0
 var _sex_buttons: Array[Button] = []
 var _style_label: Label
-var _color_row: HBoxContainer
 var _aura_row: HFlowContainer
+var _hair_label: Label
+var _cloth_label: Label
+var _cloth := 0
+const MAX_HAIR_PALETTES := 132
+const MAX_CLOTH_PALETTES := 700
 var _aura := "class"
 var _hexagon: StatHexagon
 var _error: Label
@@ -132,7 +136,8 @@ func _show_details(entry: Dictionary) -> void:
 		c.queue_free()
 	var ch: Dictionary = entry.character
 	_preview.walking = false
-	_preview.set_look(bool(ch.male), int(ch.hair_style), int(ch.hair_color))
+	var cj := String(ch.get("job", "novice"))
+	_preview.set_look(bool(ch.male), int(ch.hair_style), int(ch.hair_color), String(PlayerSprites.jobs().get(cj, {}).get("sprite", "초보자")), int(ch.get("cloth_color", 0)), cj)
 	var header := HBoxContainer.new()
 	header.add_theme_constant_override("separation", 12)
 	_detail_box.add_child(header)
@@ -242,18 +247,13 @@ func _build_create_form() -> void:
 	nxt.pressed.connect(_step_style.bind(1))
 	style_row.add_child(nxt)
 
-	_create_box.add_child(UiTheme.label("HAIR COLOUR", 11, UiTheme.ACCENT, 600, 3))
-	_color_row = HBoxContainer.new()
-	_color_row.add_theme_constant_override("separation", 6)
-	_create_box.add_child(_color_row)
-	for c in CharacterRules.HAIR_COLORS:
-		var b := Button.new()
-		b.text = str(c)
-		b.toggle_mode = true
-		b.custom_minimum_size = Vector2(34, 30)
-		UiTheme.style_button(b, false, false, 12)
-		b.pressed.connect(func(): _hair_color = c; _refresh_look())
-		_color_row.add_child(b)
+	# Hair colour and cloth dye steppers: palettes come from the client and
+	# the resource pack (2025 Palettes: up to 132 hair / 700 cloth palettes).
+	var dye_row := HBoxContainer.new()
+	dye_row.add_theme_constant_override("separation", 18)
+	_create_box.add_child(dye_row)
+	_hair_label = _stepper(dye_row, "HAIR COLOUR", _step_hair)
+	_cloth_label = _stepper(dye_row, "CLOTH DYE", _step_cloth)
 
 	_create_box.add_child(UiTheme.label("AURA", 11, UiTheme.ACCENT, 600, 3))
 	_aura_row = HFlowContainer.new()
@@ -312,6 +312,52 @@ func _start_create() -> void:
 	_name_edit.grab_focus.call_deferred()
 
 
+func _stepper(parent: Control, caption: String, step: Callable) -> Label:
+	var col := VBoxContainer.new()
+	parent.add_child(col)
+	col.add_child(UiTheme.label(caption, 11, UiTheme.ACCENT, 600, 3))
+	var row := HBoxContainer.new()
+	col.add_child(row)
+	var prev := Button.new()
+	prev.text = "◀"
+	UiTheme.style_button(prev, false, false, 12)
+	prev.pressed.connect(step.bind(-1))
+	row.add_child(prev)
+	var l := UiTheme.label("", 14, UiTheme.TEXT, 600)
+	l.custom_minimum_size = Vector2(78, 0)
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	row.add_child(l)
+	var nxt := Button.new()
+	nxt.text = "▶"
+	UiTheme.style_button(nxt, false, false, 12)
+	nxt.pressed.connect(step.bind(1))
+	row.add_child(nxt)
+	return l
+
+
+## Steps to the next hair palette that exists for the current style (0 = default).
+func _step_hair(step: int) -> void:
+	var res := get_node_or_null("/root/RoResources")
+	var sex := "남" if _male else "여"
+	for i in MAX_HAIR_PALETTES:
+		_hair_color = wrapi(_hair_color + step, 0, MAX_HAIR_PALETTES)
+		if _hair_color == 0 or res == null or res.exists("data/palette/머리/머리%d_%s_%d.pal" % [_hair_style, sex, _hair_color]):
+			break
+	_refresh_look()
+
+
+## Steps to the next cloth dye palette for the Novice body (0 = default).
+func _step_cloth(step: int) -> void:
+	var res := get_node_or_null("/root/RoResources")
+	var sex := "남" if _male else "여"
+	for i in MAX_CLOTH_PALETTES:
+		_cloth = wrapi(_cloth + step, 0, MAX_CLOTH_PALETTES)
+		if _cloth == 0 or res == null or res.exists("data/palette/몸/초보자_%s_%d.pal" % [sex, _cloth]):
+			break
+	_refresh_look()
+
+
 func _step_style(step: int) -> void:
 	for i in CharacterRules.HAIR_STYLES:
 		_hair_style = wrapi(_hair_style + step, 1, CharacterRules.HAIR_STYLES + 1)
@@ -326,11 +372,11 @@ func _refresh_look() -> void:
 	_sex_buttons[0].button_pressed = _male
 	_sex_buttons[1].button_pressed = not _male
 	_style_label.text = str(_hair_style)
-	for i in _color_row.get_child_count():
-		(_color_row.get_child(i) as Button).button_pressed = i == _hair_color
+	_hair_label.text = str(_hair_color) if _hair_color > 0 else "DEFAULT"
+	_cloth_label.text = str(_cloth) if _cloth > 0 else "DEFAULT"
 	for i in _aura_row.get_child_count():
 		(_aura_row.get_child(i) as Button).button_pressed = PlayerAura.ORDER[i] == _aura
-	_preview.set_look(_male, _hair_style, _hair_color)
+	_preview.set_look(_male, _hair_style, _hair_color, "초보자", _cloth)
 
 
 func _create() -> void:
@@ -353,6 +399,7 @@ func _create() -> void:
 	var ch := CharacterRules.new_character(name, _male, _hair_style, _hair_color, _hexagon.stats)
 	ch.cell = [ch.cell.x, ch.cell.y]
 	ch.aura = _aura
+	ch.cloth_color = _cloth
 	var data := {"format": SaveGame.FORMAT, "version": SaveGame.VERSION,
 		"saved_at": int(Time.get_unix_time_from_system()), "character": ch}
 	var werr := SaveGame.write(slot, data)

@@ -119,7 +119,7 @@ static func validate(parsed: Variant, item_db: Dictionary, classes: Dictionary) 
 	out.sp = maxi(0, int(c.get("sp", 0)))
 	out.male = bool(c.get("male", true))
 	out.hair_style = clampi(int(c.get("hair_style", 2)), 1, 99)
-	out.hair_color = clampi(int(c.get("hair_color", 0)), 0, 99)
+	out.hair_color = clampi(int(c.get("hair_color", 0)), 0, 131)
 	out.cloth_color = clampi(int(c.get("cloth_color", 0)), 0, 699)
 	var aura := String(c.get("aura", "class"))
 	out.aura = aura if PlayerAura.is_valid(aura) else "class"

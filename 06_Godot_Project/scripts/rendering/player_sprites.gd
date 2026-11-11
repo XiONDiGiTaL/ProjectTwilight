@@ -143,14 +143,48 @@ static func build_from_sheet(img: Image, map: Dictionary) -> Array:
 	return [spr, act]
 
 
+## Removes the sheet background by flood fill from the frame border, so
+## light interior colours (white robes) close to the grey backdrop survive.
+## Edge pixels next to the removed area are faded (JPEG fringe).
 static func _key_out(sub: Image, bg: Color, tol: float) -> void:
-	for y in sub.get_height():
-		for x in sub.get_width():
-			var c := sub.get_pixel(x, y)
-			var d := maxf(absf(c.r - bg.r), maxf(absf(c.g - bg.g), absf(c.b - bg.b)))
-			if d < tol:
+	var w := sub.get_width()
+	var h := sub.get_height()
+	var removed := PackedByteArray()
+	removed.resize(w * h)
+	var stack: Array[Vector2i] = []
+	for x in w:
+		stack.append(Vector2i(x, 0))
+		stack.append(Vector2i(x, h - 1))
+	for y in h:
+		stack.append(Vector2i(0, y))
+		stack.append(Vector2i(w - 1, y))
+	while not stack.is_empty():
+		var p: Vector2i = stack.pop_back()
+		if p.x < 0 or p.y < 0 or p.x >= w or p.y >= h or removed[p.y * w + p.x] != 0:
+			continue
+		var c := sub.get_pixelv(p)
+		if _dist(c, bg) >= tol:
+			continue
+		removed[p.y * w + p.x] = 1
+		stack.append(p + Vector2i.RIGHT)
+		stack.append(p + Vector2i.LEFT)
+		stack.append(p + Vector2i.DOWN)
+		stack.append(p + Vector2i.UP)
+	for y in h:
+		for x in w:
+			if removed[y * w + x] != 0:
 				sub.set_pixel(x, y, Color(0, 0, 0, 0))
-			elif d < tol * 1.6:
-				# JPEG fringe: fade it and pull the grey out of the edge.
-				var k := (d - tol) / (tol * 0.6)
-				sub.set_pixel(x, y, Color(c.r, c.g, c.b, k))
+			else:
+				var edge := false
+				for d: Vector2i in [Vector2i.RIGHT, Vector2i.LEFT, Vector2i.DOWN, Vector2i.UP]:
+					var q: Vector2i = Vector2i(x, y) + d
+					if q.x >= 0 and q.y >= 0 and q.x < w and q.y < h and removed[q.y * w + q.x] != 0:
+						edge = true
+				if edge:
+					var c := sub.get_pixel(x, y)
+					var k := clampf((_dist(c, bg) - tol) / (tol * 1.2), 0.25, 1.0)
+					sub.set_pixel(x, y, Color(c.r, c.g, c.b, k))
+
+
+static func _dist(c: Color, bg: Color) -> float:
+	return maxf(absf(c.r - bg.r), maxf(absf(c.g - bg.g), absf(c.b - bg.b)))

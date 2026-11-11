@@ -25,6 +25,7 @@ func _init() -> void:
 
 var _tabs: HBoxContainer
 var _tab_job := ""
+var _tab_for_job := ""
 
 
 func _ready() -> void:
@@ -65,8 +66,9 @@ func refresh() -> void:
 		var j := String(skill_db[code].get("job", "novice"))
 		if not jobs.has(j):
 			jobs.append(j)
-	if not jobs.has(_tab_job):
-		_tab_job = jobs[-1] if not jobs.is_empty() else ""
+	if not jobs.has(_tab_job) or _unit.job != _tab_for_job:
+		_tab_job = jobs[-1] if not jobs.is_empty() else ""   # open on the current job's tree
+		_tab_for_job = _unit.job
 	for j in jobs:
 		var tb := Button.new()
 		tb.text = String(ClassInsignia.classes().get(j, {}).get("name", j.capitalize())).to_upper()
