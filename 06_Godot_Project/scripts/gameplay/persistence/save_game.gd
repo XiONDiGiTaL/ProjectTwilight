@@ -13,7 +13,7 @@ extends RefCounted
 ## half-written save.
 
 const FORMAT := "project-twilight-save"
-const VERSION := 5  # v2 equipment, v3 appearance, v4 skills + hotkeys, v5 aura + cloth dye + second jobs; older files still load
+const VERSION := 6  # v2 equipment, v3 appearance, v4 skills + hotkeys, v5 aura + cloth dye + second jobs, v6 Kafra storage; older files still load
 ## Save folder; tests point this at a temporary folder.
 static var save_dir := "user://saves/"
 const STAT_NAMES := ["str", "agi", "vit", "int", "dex", "luk"]
@@ -60,6 +60,7 @@ static func capture(u: SimUnit, map_name: String) -> Dictionary:
 			"stats": u.stats.duplicate(), "status_points": u.status_points,
 			"hp": u.hp, "sp": u.sp, "zeny": u.zeny,
 			"inventory": u.inventory.to_array(),
+			"storage": u.storage.to_array(),
 			"equipment": u.equipment.duplicate(),
 			"male": u.male, "hair_style": u.hair_style, "hair_color": u.hair_color, "aura": u.aura, "cloth_color": u.cloth_color, "script_vars": _vars_out(u.script_vars), "options": u.options.duplicate(), "save_map": u.save_map, "save_cell": [u.save_cell.x, u.save_cell.y],
 			"skills": u.skills.duplicate(), "skill_points": u.skill_points, "hotkeys": u.hotkeys.duplicate(true),
@@ -169,6 +170,11 @@ static func validate(parsed: Variant, item_db: Dictionary, classes: Dictionary) 
 	out.zeny = clampi(int(c.get("zeny", 0)), 0, 1000000000)
 	var inv: Variant = c.get("inventory", [])
 	out.inventory = Inventory.from_array(inv if inv is Array else [], item_db).to_array()
+	var stored: Variant = c.get("storage", [])
+	var stored_inv := Inventory.from_array(stored if stored is Array else [], item_db)
+	while stored_inv.entries.size() > SimUnit.STORAGE_SLOTS:
+		stored_inv.entries.remove_at(stored_inv.entries.size() - 1)
+	out.storage = stored_inv.to_array()
 	var eq := {}
 	var raw_eq: Variant = c.get("equipment", {})
 	if raw_eq is Dictionary:

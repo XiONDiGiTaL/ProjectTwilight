@@ -108,6 +108,9 @@ func _ready() -> void:
 	hud.shop.buy_requested.connect(func(item, n): sim.command_buy(player.id, item, n))
 	hud.shop.sell_requested.connect(func(i, n): sim.command_sell(player.id, i, n))
 	hud.shop.shop_closed.connect(func(): sim.close_shop(player.id))
+	hud.storage.deposit_requested.connect(func(i, n): sim.command_storage_deposit(player.id, i, n))
+	hud.storage.withdraw_requested.connect(func(i, n): sim.command_storage_withdraw(player.id, i, n))
+	hud.storage.storage_closed.connect(func(): sim.close_storage(player.id))
 	hud.skill_window.available = sim.available_skills
 	hud.skill_window.requirements = sim.skill_requirements_unmet
 	hud.skill_window.bind_unit(player, sim.skill_db)
@@ -382,6 +385,9 @@ func _process(delta: float) -> void:
 	if hud.shop.visible and sim._open_shop_of(player).is_empty():
 		hud.shop.toggle(false)
 		hud.notify("You walked away from the shop.", UiTheme.TEXT_DIM)
+	if hud.storage.visible and sim._open_storage_of(player).is_empty():
+		hud.storage.toggle(false)
+		hud.notify("You walked away from the Kafra.", UiTheme.TEXT_DIM)
 	_autosave_in -= delta
 	if _autosave_in <= 0.0:
 		_autosave_in = AUTOSAVE_SEC
@@ -489,6 +495,9 @@ func _consume_events() -> void:
 						_run_npc_script(npc)
 					elif String(npc.get("kind", "shop")) == "job_guide":
 						_job_dialog_start(npc)
+					elif String(npc.get("kind", "shop")) == "kafra":
+						if sim.command_open_storage(player.id, npc.id):
+							hud.storage.open(npc.name, player, sim.item_db)
 					else:
 						var shop_def: Dictionary = sim.shop_db.get(npc.shop, {})
 						hud.shop.open(npc.name, npc.greeting, shop_def.get("items", []), player, sim.item_db)
@@ -571,6 +580,11 @@ func _consume_events() -> void:
 				var sv: UnitView = views.get(ev.id)
 				if sv:
 					hud.skill_flash(map.cell_to_world(ev.cell.x, ev.cell.y), String(ev.skill))
+			"storage":
+				if ev.id == player.id:
+					hud.notify(ev.text, UiTheme.TEXT if ev.ok else UiTheme.HP_MID)
+					hud.storage.refresh()
+					inventory_changed = true
 			"trade":
 				if ev.id == player.id:
 					hud.notify(ev.text, UiTheme.TEXT if ev.ok else UiTheme.HP_MID)

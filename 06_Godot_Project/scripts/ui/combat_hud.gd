@@ -80,6 +80,9 @@ func _ready() -> void:
 	shop = ShopWindow.new()
 	_root.add_child(shop)
 	shop.position = Vector2(380, 140)
+	storage = StorageWindow.new()
+	_root.add_child(storage)
+	storage.position = Vector2(420, 130)
 	skill_window = SkillWindow.new()
 	_root.add_child(skill_window)
 	skill_window.position = Vector2(120, 200)
@@ -97,6 +100,7 @@ var inventory: InventoryWindow
 var status_window: StatusWindow
 var equipment_window: EquipmentWindow
 var shop: ShopWindow
+var storage: StorageWindow
 var skill_window: SkillWindow
 var hotkeys: HotkeyBar
 var dialog: NpcDialog

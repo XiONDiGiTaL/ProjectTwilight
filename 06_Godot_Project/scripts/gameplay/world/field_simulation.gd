@@ -43,6 +43,8 @@ const JOB_CHANGE_BASIC_SKILL := 9
 const WARP_RADIUS := 1
 const NPC_TALK_RANGE := 2
 const NPC_TRADE_RANGE := 6
+## Kafra storage has no weight limit: items are counted in slots only.
+const STORAGE_MAX_WEIGHT := 1 << 30
 const NOVICE_FIST_BTBA := 0.5     # seconds; Medium confidence
 const MONSTER_RESPAWN_MS := 5000.0
 const PLAYER_REVIVE_MS := 3000.0
@@ -222,6 +224,8 @@ func add_player_from_save(c: Dictionary) -> SimUnit:
 	u.status_points = int(c.status_points)
 	u.zeny = int(c.zeny)
 	u.inventory = Inventory.from_array(c.inventory, item_db)
+	u.storage = Inventory.from_array(c.get("storage", []), item_db)
+	u.storage.max_entries = SimUnit.STORAGE_SLOTS
 	var saved_skills: Dictionary = c.get("skills", {})
 	if not saved_skills.is_empty():
 		u.skills = {}
@@ -453,6 +457,74 @@ func command_sell(unit_id: int, index: int, amount: int) -> bool:
 	u.zeny += gain
 	events.append({"type": "inventory", "id": u.id})
 	return _trade(u, true, "Sold  %s  ×%d   +%d z" % [def.name, amount, gain])
+
+
+# --- Kafra storage -----------------------------------------------------------
+
+## Marks a Kafra's storage as open for a player. Range-checked.
+func command_open_storage(unit_id: int, npc_id: int) -> bool:
+	var u: SimUnit = units.get(unit_id)
+	if u == null or u.dead or not npcs.has(npc_id):
+		return false
+	var npc: Dictionary = npcs[npc_id]
+	if String(npc.get("kind", "")) != "kafra":
+		return false
+	if _chebyshev(u.walker.cell, npc.cell) > NPC_TRADE_RANGE:
+		return _storage(u, false, "You are too far from the Kafra.")
+	u.open_storage = npc_id
+	u.open_shop = 0
+	return true
+
+
+func close_storage(unit_id: int) -> void:
+	var u: SimUnit = units.get(unit_id)
+	if u:
+		u.open_storage = 0
+
+
+func _open_storage_of(u: SimUnit) -> Dictionary:
+	if u == null or u.dead or u.open_storage == 0 or not npcs.has(u.open_storage):
+		return {}
+	var npc: Dictionary = npcs[u.open_storage]
+	if _chebyshev(u.walker.cell, npc.cell) > NPC_TRADE_RANGE:
+		return {}
+	return npc
+
+
+## Moves inventory entry `index` into the open Kafra storage.
+func command_storage_deposit(unit_id: int, index: int, amount: int) -> bool:
+	var u: SimUnit = units.get(unit_id)
+	if _open_storage_of(u).is_empty() or index < 0 or index >= u.inventory.entries.size() or amount <= 0:
+		return false
+	var e: Dictionary = u.inventory.entries[index]
+	if int(e.amount) < amount:
+		return _storage(u, false, "You do not have that many.")
+	if not u.storage.add(int(e.id), amount, item_db, STORAGE_MAX_WEIGHT):
+		return _storage(u, false, "Kafra storage is full.")
+	u.inventory.remove_at(index, amount)
+	events.append({"type": "inventory", "id": u.id})
+	return _storage(u, true, "Stored  %s  ×%d" % [String(item_db.get(str(int(e.id)), {}).get("name", "item")), amount])
+
+
+## Moves stored entry `index` back into the inventory (weight and slots apply).
+func command_storage_withdraw(unit_id: int, index: int, amount: int) -> bool:
+	var u: SimUnit = units.get(unit_id)
+	if _open_storage_of(u).is_empty() or index < 0 or index >= u.storage.entries.size() or amount <= 0:
+		return false
+	var e: Dictionary = u.storage.entries[index]
+	if int(e.amount) < amount:
+		return _storage(u, false, "There are not that many in storage.")
+	if not u.inventory.add(int(e.id), amount, item_db, u.max_weight() - u.equipment_weight(item_db)):
+		return _storage(u, false, "You cannot carry that much.")
+	u.storage.remove_at(index, amount)
+	events.append({"type": "inventory", "id": u.id})
+	return _storage(u, true, "Withdrew  %s  ×%d" % [String(item_db.get(str(int(e.id)), {}).get("name", "item")), amount])
+
+
+func _storage(u: SimUnit, ok: bool, text: String) -> bool:
+	if u:
+		events.append({"type": "storage", "id": u.id, "ok": ok, "text": text})
+	return ok
 
 
 func close_shop(unit_id: int) -> void:
@@ -1124,6 +1196,16 @@ func script_del_item(u: SimUnit, item_id: int, amount: int) -> bool:
 			left -= u.inventory.remove_at(i, left)
 	events.append({"type": "inventory", "id": u.id})
 	return true
+
+
+## Adds a Kafra storage NPC to this map (maps.json "kafra" entries and tests).
+func add_kafra_npc(cell: Vector2i, display := "Kafra") -> int:
+	var nid := _next_npc
+	_next_npc += 1
+	npcs[nid] = {"id": nid, "name": display, "sprite": "4_f_kafra1", "kind": "kafra",
+		"cell": cell, "direction": 0, "shop": "", "greeting": "Welcome to the Kafra Corporation!"}
+	events.append({"type": "npc_spawn", "npc": nid})
+	return nid
 
 
 ## Adds a script NPC to this map (spawned by the field from RaWorld).

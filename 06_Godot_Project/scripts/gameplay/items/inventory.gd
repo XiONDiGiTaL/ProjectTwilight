@@ -6,6 +6,8 @@ extends RefCounted
 
 const MAX_ENTRIES := 100   # classic inventory limit (Medium confidence)
 const MAX_STACK := 30000
+## Per-bag slot limit; Kafra storage raises it (see SimUnit.STORAGE_SLOTS).
+var max_entries := MAX_ENTRIES
 
 var entries: Array = []
 
@@ -42,11 +44,11 @@ func add(item_id: int, amount: int, db: Dictionary, max_weight: int) -> bool:
 			if int(e.id) == item_id and int(e.amount) + amount <= MAX_STACK:
 				e.amount = int(e.amount) + amount
 				return true
-		if entries.size() >= MAX_ENTRIES:
+		if entries.size() >= max_entries:
 			return false
 		entries.append({"id": item_id, "amount": amount})
 		return true
-	if entries.size() + amount > MAX_ENTRIES:
+	if entries.size() + amount > max_entries:
 		return false
 	for i in amount:
 		entries.append({"id": item_id, "amount": 1})

@@ -184,6 +184,21 @@ Owner brief: the game should run from the essential `.grf` data in a folder, wit
 - [ ] Read more rAthena conf groups (party, guild, PvP) once the corresponding systems exist.
 - [ ] `@item`, `@jobchange` and other GM commands behind a permission flag for the MMO mode.
 
+## Task: Kafra storage (owner brief, 2026-11-11) — done
+
+- [x] `SimUnit.storage` (300 slots, no weight) plus `open_storage`; `Inventory.max_entries` makes the slot limit per bag.
+- [x] `command_open_storage` / `command_storage_deposit` / `command_storage_withdraw`: open-storage, range, count, slot and carried-weight validation; `storage` events carry the result text.
+- [x] `StorageWindow`: CARRIED / STORAGE tabs, quantity selector, capacity line, item rows with icons. Walking away or closing clears the server-side open storage.
+- [x] Kafra NPC in Prontera at (150, 191) from `maps.json`; sprite `4_f_kafra1` exists in the client (verified).
+- [x] Save v6 adds `storage`; v5 saves load with an empty bag. Restored storage keeps its 300 slots.
+- [x] Tests: `test_storage.gd` (8). Suite: 153 passed, 0 failed. `tests/capture_storage.gd` renders both tabs.
+
+### Follow-ups (open)
+
+- [ ] Kafra storage fee and the rAthena `storage` script command (so rAthena's own Kafra NPCs open ours).
+- [ ] Guild storage and a storage search / sort.
+- [ ] `@storage` for VIP-style remote access behind a rule flag.
+
 ## Where the three play modes stand (2026-11-11)
 
 | Mode | State |

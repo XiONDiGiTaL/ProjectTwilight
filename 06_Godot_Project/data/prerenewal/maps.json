@@ -34,6 +34,17 @@
         "direction": 0,
         "kind": "job_guide",
         "greeting": "Novices of Midgard! When your basic training is complete, I can send you to any guild."
+      },
+      {
+        "name": "Kafra",
+        "sprite": "4_f_kafra1",
+        "cell": [
+          150,
+          191
+        ],
+        "direction": 0,
+        "kind": "kafra",
+        "greeting": "Welcome to the Kafra Corporation! I can look after items you do not need to carry."
       }
     ]
   },

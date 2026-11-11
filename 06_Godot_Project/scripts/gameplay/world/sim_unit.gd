@@ -42,6 +42,11 @@ var idle_timer := 0.0
 var damaged_by := {}           # attacker id -> total damage (for EXP credit)
 var data: Dictionary = {}      # raw database entry
 var inventory := Inventory.new()
+## Kafra storage: persistent, carries no weight, saved with the character.
+const STORAGE_SLOTS := 300   # classic Kafra storage (Medium confidence)
+var storage := Inventory.new()
+## NPC id whose Kafra storage is open (server-side check for storage moves).
+var open_storage := 0
 var zeny := 0
 var pickup_target := 0         # ground item id being walked to
 var talk_target := 0           # NPC id being walked to
@@ -99,6 +104,10 @@ var options: Dictionary = {}
 var is_bot := false
 var bot_role := ""       # melee | caster | support
 var bot_think := 0.0     # ms until the next decision
+
+
+func _init() -> void:
+	storage.max_entries = STORAGE_SLOTS
 
 
 func has_status(s: String) -> bool:
