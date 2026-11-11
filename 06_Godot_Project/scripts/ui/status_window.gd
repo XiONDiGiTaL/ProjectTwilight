@@ -38,6 +38,14 @@ func _ready() -> void:
 		value.custom_minimum_size = Vector2(34, 0)
 		value.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		row.add_child(value)
+		# PSO2-style stat bar (value against the 99 cap).
+		var sbar := GlassBar.new()
+		sbar.style = GlassBar.Style.BASE_EXP
+		sbar.ticks = 0.0
+		sbar.glow_px = 1.5
+		sbar.custom_minimum_size = Vector2(86, 7)
+		sbar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(sbar)
 		var b := Button.new()
 		b.text = "+"
 		b.focus_mode = Control.FOCUS_NONE
@@ -63,7 +71,7 @@ func _ready() -> void:
 		var cost := UiTheme.label("", 10, UiTheme.TEXT_DIM, 400, 1)
 		cost.custom_minimum_size = Vector2(46, 0)
 		row.add_child(cost)
-		_rows[s] = {"value": value, "cost": cost, "button": b}
+		_rows[s] = {"value": value, "cost": cost, "button": b, "bar": sbar}
 	_points = UiTheme.label("", 12, UiTheme.CRIT, 600, 2)
 	left.add_child(_points)
 	var right := GridContainer.new()
@@ -94,6 +102,7 @@ func refresh() -> void:
 		var cost := StatRulesPreRenewal.raise_cost(v)
 		var r: Dictionary = _rows[s]
 		(r.value as Label).text = str(v)
+		(r.bar as GlassBar).set_value(v, 99)
 		(r.cost as Label).text = ("cost %d" % cost) if cost > 0 else "max"
 		(r.button as Button).disabled = cost < 0 or cost > _unit.status_points
 	_points.text = "STATUS POINTS   %d" % _unit.status_points

@@ -3,17 +3,18 @@ extends RefCounted
 ## "Twilight Glass" design system: colours, fonts and label factories shared
 ## by every HUD element, so the interface stays consistent.
 
-# Palette
-const TEXT := Color(0.93, 0.97, 1.0)
-const TEXT_DIM := Color(0.62, 0.72, 0.82)
-const ACCENT := Color(0.42, 0.86, 1.0)        # cyan system accent
+# Palette — anime-MMO "system window" look (SAO plates, PSO2 blue windows).
+const TEXT := Color(0.95, 0.98, 1.0)
+const TEXT_DIM := Color(0.66, 0.78, 0.9)
+const ACCENT := Color(0.36, 0.78, 1.0)        # PSO2-style system blue
 const ACCENT_2 := Color(0.62, 0.52, 1.0)      # violet secondary
-const GLASS := Color(0.035, 0.06, 0.1, 0.58)
-const BORDER := Color(0.55, 0.88, 1.0, 0.55)
-const HP_HIGH := Color(0.32, 0.95, 0.66)
-const HP_MID := Color(1.0, 0.78, 0.3)
-const HP_LOW := Color(1.0, 0.3, 0.38)
-const SP := Color(0.38, 0.62, 1.0)
+const GLASS := Color(0.05, 0.14, 0.27, 0.62)  # translucent navy body
+const HEADER := Color(0.2, 0.55, 0.95)        # title band gradient start
+const BORDER := Color(0.62, 0.88, 1.0, 0.6)
+const HP_HIGH := Color(0.62, 0.88, 0.2)       # SAO lime green
+const HP_MID := Color(1.0, 0.82, 0.2)
+const HP_LOW := Color(1.0, 0.28, 0.3)
+const SP := Color(0.3, 0.62, 1.0)
 const EXP_BASE := Color(0.45, 0.88, 1.0)
 const EXP_JOB := Color(0.72, 0.56, 1.0)
 const DAMAGE_TAKEN := Color(1.0, 0.36, 0.42)

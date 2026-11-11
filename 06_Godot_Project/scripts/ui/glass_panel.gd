@@ -50,6 +50,11 @@ func _fit() -> void:
 	_mat.set_shader_parameter("size", size)
 
 
+## Height in pixels of the gradient title band (0 = none). Used by windows.
+func set_header(height: float) -> void:
+	_mat.set_shader_parameter("header_h", height)
+
+
 ## Briefly brightens the border (alerts, focus).
 func set_glow(v: float) -> void:
 	_mat.set_shader_parameter("glow", clampf(v, 0.0, 1.0))

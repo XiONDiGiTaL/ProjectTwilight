@@ -26,24 +26,29 @@ func _ready() -> void:
 	_title_bar.mouse_default_cursor_shape = Control.CURSOR_MOVE
 	_title_bar.gui_input.connect(_on_title_input)
 	col.add_child(_title_bar)
-	var t := UiTheme.label(title, 13, UiTheme.TEXT, 600, 4)
+	var t := UiTheme.label("◆  " + title, 13, UiTheme.TEXT, 600, 3)
 	t.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	t.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_title_bar.add_child(t)
 	var close := Button.new()
 	close.text = "✕"
-	close.flat = true
 	close.focus_mode = Control.FOCUS_NONE
-	close.add_theme_font_override("font", UiTheme.font(400))
-	close.add_theme_font_size_override("font_size", 13)
-	close.add_theme_color_override("font_color", UiTheme.TEXT_DIM)
-	close.add_theme_color_override("font_hover_color", UiTheme.HP_LOW)
+	close.custom_minimum_size = Vector2(24, 22)
+	close.add_theme_font_override("font", UiTheme.font(600))
+	close.add_theme_font_size_override("font_size", 11)
+	close.add_theme_color_override("font_color", UiTheme.TEXT)
+	close.add_theme_color_override("font_hover_color", Color.WHITE)
+	for state in ["normal", "hover", "pressed"]:
+		var sb := StyleBoxFlat.new()
+		sb.bg_color = Color(0.8, 0.2, 0.25, 0.85) if state != "normal" else Color(1, 1, 1, 0.08)
+		sb.border_color = Color(1, 1, 1, 0.55)
+		sb.set_border_width_all(1)
+		sb.set_corner_radius_all(2)
+		close.add_theme_stylebox_override(state, sb)
 	close.pressed.connect(func(): toggle(false))
 	_title_bar.add_child(close)
-	var line := ColorRect.new()
-	line.custom_minimum_size = Vector2(0, 1)
-	line.color = Color(UiTheme.ACCENT, 0.22)
-	line.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	col.add_child(line)
+	# Gradient title band sized to the title row (drawn by the glass shader).
+	_title_bar.resized.connect(func(): set_header(_title_bar.position.y + _title_bar.size.y + 5.0))
 	body = VBoxContainer.new()
 	body.add_theme_constant_override("separation", 8)
 	body.mouse_filter = Control.MOUSE_FILTER_IGNORE

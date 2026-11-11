@@ -9,6 +9,7 @@ extends Control
 
 const CLASSES_PATH := "res://data/prerenewal/classes.json"
 const EMBLEM_ROOT := "res://assets/ui/class_emblems/"
+const BADGE_ROOT := "res://assets/ui/class_badges/"
 const SHADER := preload("res://scripts/ui/class_insignia.gdshader")
 
 ## Rank materials: body dark/light, rim dark/light, wood grain.
@@ -35,6 +36,11 @@ static func classes() -> Dictionary:
 			_classes = parsed
 			_classes.erase("_doc")
 	return _classes
+
+
+## SAO-style square badge (preferred in the UI); falls back to the shield emblem.
+static func badge_path(id: String) -> String:
+	return BADGE_ROOT + id + ".png"
 
 
 static func emblem_path(id: String) -> String:
@@ -70,7 +76,7 @@ func set_class(id: String) -> void:
 		return
 	var c: Dictionary = classes().get(id, {})
 	tooltip_text = String(c.get("name", id))
-	var path := emblem_path(id)
+	var path := badge_path(id) if ResourceLoader.exists(badge_path(id)) or FileAccess.file_exists(badge_path(id)) else emblem_path(id)
 	var tex: Texture2D = null
 	if path != "" and ResourceLoader.exists(path):
 		tex = load(path)

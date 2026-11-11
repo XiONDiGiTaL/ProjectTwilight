@@ -3,6 +3,12 @@
 ## [Unreleased] - 2026-11-10
 
 ### Added
+- **UI revision toward an anime-MMO system-window style** (SAO / PSO2 / Solo Leveling inspired, original design):
+  - Translucent blue glass windows with a gradient title band, bright underline, ◆ title, inset frame and boxed close button.
+  - SAO-style lime HP bars with a light stripe and silver rim.
+  - The player panel rebuilt as an SAO party plate: badge, name, slanted Lv chip, HP bar with a thinner SP bar beneath, and a numbers plate.
+  - PSO2-style stat bars in the status window.
+- **SAO-style square class badges** for all 46 classes (`tools/insignia/generate_badges.gd`): class-family colour tiles with white glyphs, plus tier frames (white / double silver / icy blue / gold with a star). They're used everywhere the class icon appears; the heraldic shields remain available.
 - **Job change** to all six first jobs (Swordman, Mage, Archer, Acolyte, Merchant, Thief) through the **Job Guide** in Prontera, with a glass NPC dialogue (requirements, choice, confirmation). Requires Novice job level 10 and Basic Skill 9.
   - The body sprite, insignia and status panel update.
   - A SYSTEM "JOB CHANGE" notice is shown and the game saves.

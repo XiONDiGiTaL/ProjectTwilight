@@ -41,15 +41,15 @@ void fragment() {
 	if (track <= 0.8) {
 		float m = 1.0 - smoothstep(-0.6, 0.6, track);
 		float y = clamp(p.y / max(h, 1.0), 0.0, 1.0);
-		vec3 t = mix(vec3(0.02, 0.04, 0.07), vec3(0.06, 0.09, 0.14), 1.0 - y);
-		vec4 c = vec4(t, 0.78);
+		vec3 t = mix(vec3(0.05, 0.08, 0.13), vec3(0.16, 0.2, 0.26), 1.0 - y);
+		vec4 c = vec4(t, 0.7);
 		if (d_chip <= 0.0) {
 			c = vec4(chip_color.rgb, chip_color.a);
 		}
 		if (d_fill <= 0.0) {
 			vec3 f = fill_color.rgb;
-			f = mix(f * 0.7, f * 1.15, 1.0 - y);                       // vertical shading
-			f += vec3(1.0) * 0.35 * smoothstep(0.45, 0.0, y);           // glossy top
+			f = mix(f * 0.62, f * 1.1, 1.0 - y);                       // vertical shading
+			f = mix(f, mix(f, vec3(1.0), 0.55), exp(-pow((y - 0.28) * 6.0, 2.0)));  // SAO light stripe
 			f += vec3(1.0) * 0.5 * exp(-(fill_x - (p.x - (h - p.y) * slant)) * 0.6);  // hot edge
 			if (pulse > 0.0) f *= 0.8 + 0.3 * (0.5 + 0.5 * sin(TIME * 8.0));
 			c = vec4(f, 1.0);
@@ -62,7 +62,7 @@ void fragment() {
 		}
 		// Hairline track border.
 		float edge = 1.0 - smoothstep(0.0, 1.0, abs(track + 0.5));
-		c.rgb = mix(c.rgb, vec3(0.7, 0.92, 1.0), edge * 0.35);
+		c.rgb = mix(c.rgb, vec3(0.85, 0.93, 1.0), edge * 0.6);
 		col = mix(col, c, m);
 	}
 	COLOR = col;

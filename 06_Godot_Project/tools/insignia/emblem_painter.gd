@@ -28,6 +28,8 @@ const FLAME_PINK := Color(0.95, 0.35, 0.7)
 const AURA := Color(1.0, 0.8, 0.3)
 
 var class_id := "novice"
+## Badge mode: Novice-family classes get a simple glyph instead of a blank shield.
+var badge_mode := false
 
 
 func _draw() -> void:
@@ -40,10 +42,31 @@ func _draw() -> void:
 # --- Class emblems -------------------------------------------------------------
 
 func _e_novice() -> void:
-	pass  # blank shield; the renderer adds the central rivet
+	if badge_mode:
+		_novice_glyph(false)
+	# Shield mode: blank shield; the renderer adds the central rivet.
 
 func _e_high_novice() -> void:
-	pass
+	if badge_mode:
+		_novice_glyph(true)
+
+
+## Sprouting seedling: the Novice's beginning.
+func _novice_glyph(high: bool) -> void:
+	_capsule(Vector2(0, 0.75), Vector2(0, -0.1), 0.07)
+	for sx in [-1.0, 1.0]:
+		var leaf := PackedVector2Array()
+		for i in 21:
+			var t := i / 20.0
+			var a := t * PI
+			leaf.append(Vector2(sx * (0.05 + t * 0.62), -0.1 - sin(a) * 0.26 - t * 0.18))
+		for i in range(20, -1, -1):
+			var t := i / 20.0
+			var a := t * PI
+			leaf.append(Vector2(sx * (0.05 + t * 0.62), -0.1 + sin(a) * 0.08 - t * 0.18))
+		_poly(leaf)
+	if high:
+		_star(Vector2(0, -0.78), 0.26, 0.11, 4, WHITE)
 
 func _e_swordman() -> void:
 	_sword(Vector2(0, 0), -0.75, 2.2)

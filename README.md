@@ -76,7 +76,7 @@ Expanded classes (Super Novice, Taekwon, Star Gladiator, Soul Linker) are tracke
 
 ## Interface
 
-Project Twilight's HUD uses its own **Twilight Glass** design language, a sleek holographic "system window" style:
+Project Twilight's HUD uses its own **Twilight Glass** design language, a sleek anime-MMO "system window" style in the spirit of SAO and PSO2:
 - frosted panels with chamfered corners and hairline borders
 - slanted glowing resource bars
 - condensed, letter-spaced typography
