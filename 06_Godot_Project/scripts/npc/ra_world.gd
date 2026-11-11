@@ -15,8 +15,10 @@ const GLOBALS_PATH := "user://npc_globals.json"
 
 var npcs: Dictionary = {}        # full name -> def (see RaScriptFile) + "vars", "funcs", "labels"
 var functions: Dictionary = {}   # global function name -> AST
-var warps: Array = []
+var warps: Array = []           # in load order; see warps_on()
+var _warp_by_name: Dictionary = {}   # later definitions (pre-re overrides) replace earlier ones
 var shops: Array = []
+var monsters: Array = []
 var errors: Array = []
 var loaded_files: Array = []
 var globals: Dictionary = {}     # "$name" -> {idx: value}
@@ -32,6 +34,11 @@ func load_all(res: Node = null, list_path := LOAD_LIST) -> void:
 		var line := raw.strip_edges()
 		if line == "" or line.begins_with("//") or line.begins_with("#"):
 			continue
+		# "conf:pack:rathena/npc/scripts_warps.conf": rAthena include list
+		# ("npc: npc/warps/..." lines, paths relative to the rAthena root).
+		if line.begins_with("conf:"):
+			_load_conf(res, line.substr(5).strip_edges())
+			continue
 		# "a || b": the first alternative that exists (rAthena file, else ours).
 		for alt in line.split("||"):
 			var entry := String(alt).strip_edges()
@@ -42,6 +49,24 @@ func load_all(res: Node = null, list_path := LOAD_LIST) -> void:
 				load_text(FileAccess.get_file_as_string(path), entry)
 				break
 	_resolve_duplicates()
+
+
+func _load_conf(res: Node, entry: String) -> void:
+	if not entry.begins_with("pack:") or res == null or not res.has_method("pack_file"):
+		return
+	var rel := entry.substr(5)
+	var root := rel.substr(0, rel.find("/npc/") + 1) if rel.find("/npc/") >= 0 else ""
+	var path: String = res.pack_file(rel)
+	if path == "":
+		return
+	for raw in FileAccess.get_file_as_string(path).split("\n"):
+		var l := raw.strip_edges()
+		if not l.begins_with("npc:"):
+			continue
+		var target := l.substr(4).strip_edges()
+		var full: String = res.pack_file(root + target)
+		if full != "":
+			load_text(FileAccess.get_file_as_string(full), "pack:" + root + target)
 
 
 func load_text(text: String, source: String) -> void:
@@ -57,8 +82,14 @@ func load_text(text: String, source: String) -> void:
 		if def.body != null:
 			_collect_funcs(def.body, def.funcs)
 		npcs[def.name] = def
-	warps.append_array(f.warps)
+	for w in f.warps:
+		var key := String(w.name)
+		if _warp_by_name.has(key):
+			warps.erase(_warp_by_name[key])
+		_warp_by_name[key] = w
+		warps.append(w)
 	shops.append_array(f.shops)
+	monsters.append_array(f.monsters)
 
 
 ## Duplicates share the source script's body and local functions.
@@ -103,6 +134,16 @@ func npcs_on(map_name: String) -> Array:
 		if String(d.map) == map_name and d.body != null:
 			out.append(d)
 	return out
+
+
+## rAthena monster spawns on a map: {cell, area, mob_id, amount}.
+func monsters_on(map_name: String) -> Array:
+	return monsters.filter(func(m): return String(m.map) == map_name)
+
+
+## rAthena warp portals on a map: {cell, span, to_map, to_cell, name}.
+func warps_on(map_name: String) -> Array:
+	return warps.filter(func(w): return String(w.map) == map_name)
 
 
 ## Index of a top-level label in an NPC body, or -1.

@@ -1,0 +1,38 @@
+//===== Project Twilight NPC script =========================
+//= Novice Training Grounds: train or skip to Prontera.
+//= New characters start in new_1-1. On first arrival this guide asks
+//= whether to do the classic training (rAthena's pre-re novice.txt,
+//= when present in the resource pack) or go straight to Prontera, the
+//= hub. The guide stays in each training room so it can be skipped at
+//= any point. Original script (Apache-2.0), rAthena script format.
+//============================================================
+
+-	script	Training Choice#tw	-1,{
+	mes "[Training Guide]";
+	mes "Welcome to Midgard, ^0055FF" + strcharinfo(0) + "^000000!";
+	mes "These are the Novice Training Grounds, where new adventurers learn to move, fight, use items and skills.";
+	next;
+	TW_TRAIN_ASKED = 1;
+	mes "[Training Guide]";
+	mes "Would you like to take the training, or go straight to Prontera, the capital and heart of the kingdom?";
+	if (select("Take the training:Skip to Prontera") == 1) {
+		mes "[Training Guide]";
+		mes "Splendid! Speak with Shion just ahead of you to begin.";
+		mes "If you change your mind, I will be nearby in every training room.";
+		close;
+	}
+	next;
+	mes "[Training Guide]";
+	mes "Very well. Prontera is the hub of the realm: healers, warpers, job masters and shops all wait for you there.";
+	mes "Good luck, adventurer!";
+	close2;
+	TW_TRAINING_SKIPPED = 1;
+	savepoint "prontera", 156, 191;
+	warp "prontera", 156, 191;
+	end;
+}
+
+new_1-1,57,111,4	duplicate(Training Choice#tw)	Training Guide#tw1	4_F_KAFRA1
+new_1-2,104,12,4	duplicate(Training Choice#tw)	Training Guide#tw2	4_F_KAFRA1
+new_1-3,99,32,4	duplicate(Training Choice#tw)	Training Guide#tw3	4_F_KAFRA1
+new_1-4,104,31,4	duplicate(Training Choice#tw)	Training Guide#tw4	4_F_KAFRA1

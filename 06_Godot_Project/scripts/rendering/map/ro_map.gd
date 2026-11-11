@@ -27,6 +27,7 @@ func load_map(name: String) -> bool:
 	map_name = name
 	if res == null:
 		res = (Engine.get_main_loop() as SceneTree).root.get_node("RoResources")
+	name = MapAliases.client_map(res, name)   # e.g. new_1-1 -> new_zone01 on modern clients
 	rsw = RswFile.decode(res.read("data\\%s.rsw" % name))
 	var gnd_name := rsw.gnd_file if rsw and rsw.gnd_file != "" else name + ".gnd"
 	var gat_name := rsw.gat_file if rsw and rsw.gat_file != "" else name + ".gat"

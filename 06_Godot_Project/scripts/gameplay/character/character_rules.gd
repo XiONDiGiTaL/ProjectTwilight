@@ -16,8 +16,8 @@ const NAME_MAX := 23
 const MAX_SLOTS := 6
 const HAIR_COLORS := 9          # classic palettes 0..8 (resource packs add up to 131)
 const HAIR_STYLES := 23         # offered styles 1..23 (filtered by what the client has)
-const START_MAP := "prt_fild08"
-const START_CELL := Vector2i(170, 200)
+const START_MAP := "new_1-1"        # Novice Training Grounds (skippable: see data/npc/twilight/training.txt)
+const START_CELL := Vector2i(53, 111)
 
 
 ## Builds the six stats from the first stat of each pair (STR, AGI, VIT).

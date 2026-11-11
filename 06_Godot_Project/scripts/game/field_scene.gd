@@ -78,8 +78,9 @@ func _ready() -> void:
 		if c.x <= 0 or c.y <= 0 or c.x >= map.gat.width or c.y >= map.gat.height:
 			c = Vector2i(map.gat.width / 2, map.gat.height / 2)
 		player.walker = GridWalker.new(sim.pathfinder.nearest_walkable(c, 60))
-	sim.setup_map(map_name)
+	sim.setup_map(map_name, ensure_npc_world(_res).warps_on(map_name), ensure_npc_world(_res).monsters_on(map_name))
 	_spawn_script_npcs()
+	_maybe_offer_training.call_deferred()
 	for w in sim.warps:
 		var wv := WarpPortalView.new()
 		add_child(wv)
@@ -386,6 +387,10 @@ func _consume_events() -> void:
 				player_changed = true
 				save_now()
 			"revive":
+				if ev.id == player.id and ev.has("to_map"):
+					player.dead = false
+					hud.notify("You return to your save point.", UiTheme.TEXT)
+					_take_warp(String(ev.to_map), ev.to_cell)
 				player_changed = player_changed or ev.id == player.id
 			"drop":
 				_create_item_view(ev.ground)
@@ -426,7 +431,7 @@ func _consume_events() -> void:
 				player_changed = player_changed or ev.id == player.id
 			"warp":
 				if ev.id == player.id:
-					_travel(String(ev.to_map), ev.to_cell)
+					_take_warp(String(ev.to_map), ev.to_cell)
 			"npc_spawn":
 				_create_npc_view(ev.npc)
 			"npc_open":
@@ -715,6 +720,16 @@ static func ensure_npc_world(res: Node) -> RaWorld:
 	return npc_world
 
 
+## First arrival in the Training Grounds: ask whether to train or skip to Prontera.
+func _maybe_offer_training() -> void:
+	if not map_name.begins_with("new_") or int(player.script_vars.get("TW_TRAIN_ASKED", {}).get(0, 0)) != 0:
+		return
+	await get_tree().create_timer(0.8).timeout
+	var def := ensure_npc_world(_res).find_npc("Training Choice#tw")
+	if not def.is_empty() and not _npc_running:
+		_run_npc_script({"script": "Training Choice#tw"})
+
+
 func _spawn_script_npcs() -> void:
 	var world := ensure_npc_world(_res)
 	for def in world.npcs_on(map_name):
@@ -760,14 +775,14 @@ func _run_npc_script(npc: Dictionary) -> void:
 func script_warp(to_map: String, x: int, y: int) -> void:
 	var m := to_map
 	if m == "SavePoint" or m == "Save":
-		m = "prontera"
-		x = 156
-		y = 191
+		m = player.save_map
+		x = player.save_cell.x
+		y = player.save_cell.y
 	if m == "Random":
 		m = map_name
 		x = 0
 		y = 0
-	if not _res.exists("data/%s.gat" % m):
+	if not MapAliases.exists(_res, m):
 		hud.notify("%s is not in your client's data." % m, UiTheme.HP_MID)
 		return
 	if m == map_name:
@@ -777,6 +792,20 @@ func script_warp(to_map: String, x: int, y: int) -> void:
 		player.walker = GridWalker.new(sim.pathfinder.nearest_walkable(c, 20))
 		return
 	_travel(m, Vector2i(x, y))
+
+
+## A warp portal was stepped on: same-map portals teleport, others load the
+## destination map (only if the client has it).
+func _take_warp(to_map: String, to_cell: Vector2i) -> void:
+	if to_map == map_name:
+		player.walker = GridWalker.new(sim.pathfinder.nearest_walkable(to_cell, 10))
+		player.warping = false
+		return
+	if not MapAliases.exists(_res, to_map):
+		hud.notify("%s is not in your client's data." % to_map, UiTheme.HP_MID)
+		player.warping = false
+		return
+	_travel(to_map, to_cell)
 
 
 func script_effect(kind: String) -> void:

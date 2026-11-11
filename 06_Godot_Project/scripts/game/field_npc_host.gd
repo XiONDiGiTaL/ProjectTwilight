@@ -30,7 +30,7 @@ func next() -> void:
 func select(speaker: String, options: Array) -> int:
 	_dialog().show_page(speaker, "\n".join(_page), options, true)
 	var i: int = await _dialog().chosen
-	_page.clear()
+	# Like the client, the text stays after a menu choice until the next "next".
 	if i < 0:
 		aborted = true
 		_dialog().close()

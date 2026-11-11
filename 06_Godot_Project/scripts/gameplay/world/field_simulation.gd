@@ -126,26 +126,50 @@ func add_player(name: String, cell: Vector2i, stats: Dictionary) -> SimUnit:
 
 
 ## Populates the world for a map from maps.json: monsters, NPCs, warps, respawn point.
-func setup_map(name: String) -> void:
+## `extra_warps`: rAthena warp portals for this map ({cell, span, to_map,
+## to_cell, name}); when given they replace the maps.json warps.
+func setup_map(name: String, extra_warps: Array = [], extra_spawns: Array = []) -> void:
 	map_name = name
 	map_info = map_db.get(name, {})
 	var rp: Array = map_info.get("respawn", [])
 	if rp.size() == 2:
 		respawn_cell = pathfinder.nearest_walkable(Vector2i(int(rp[0]), int(rp[1])), 20)
 	warps.clear()
-	for w in map_info.get("warps", []):
-		warps.append({"cell": Vector2i(int(w.cell[0]), int(w.cell[1])), "to_map": String(w.to_map),
-			"to_cell": Vector2i(int(w.to_cell[0]), int(w.to_cell[1])), "label": String(w.get("label", ""))})
+	if not extra_warps.is_empty():
+		for w in extra_warps:
+			var to_map := String(w.to_map)
+			warps.append({"cell": w.cell, "span": w.get("span", Vector2i.ONE), "to_map": to_map, "to_cell": w.to_cell,
+				"label": String(map_db.get(to_map, {}).get("name", to_map))})
+	else:
+		for w in map_info.get("warps", []):
+			warps.append({"cell": Vector2i(int(w.cell[0]), int(w.cell[1])), "to_map": String(w.to_map),
+				"to_cell": Vector2i(int(w.to_cell[0]), int(w.to_cell[1])), "label": String(w.get("label", "")),
+				"span": Vector2i(WARP_RADIUS, WARP_RADIUS)})
 	var spawns: Dictionary = map_info.get("spawns", {})
 	for mob in spawns:
 		spawn_random(String(mob), int(spawns[mob]))
+	# rAthena spawn lines, for maps maps.json does not populate. Only monsters
+	# in monsters.json can appear; others are skipped until their data exists.
+	if spawns.is_empty():
+		for sp in extra_spawns:
+			var id := str(int(sp.mob_id))
+			if not monster_db.has(id):
+				continue
+			for i in mini(int(sp.amount), 60):
+				var a: Vector2i = sp.area
+				if Vector2i(sp.cell) == Vector2i.ZERO:
+					spawn_random(id, 1)
+				else:
+					add_monster(id, sp.cell, maxi(a.x, a.y))
 	spawn_npcs(name)
 
 
-## Warp at (or adjacent to) a cell, or {}.
+## Warp whose touch area contains `cell` (rAthena span: x +/- sx, y +/- sy), or {}.
 func warp_at(cell: Vector2i) -> Dictionary:
 	for w in warps:
-		if _chebyshev(cell, w.cell) <= WARP_RADIUS:
+		var sp: Vector2i = w.get("span", Vector2i(WARP_RADIUS, WARP_RADIUS))
+		var c: Vector2i = w.cell
+		if absi(cell.x - c.x) <= maxi(sp.x, 0) and absi(cell.y - c.y) <= maxi(sp.y, 0):
 			return w
 	return {}
 
@@ -182,6 +206,8 @@ func add_player_from_save(c: Dictionary) -> SimUnit:
 	u.aura = String(c.get("aura", "class"))
 	u.cloth_color = int(c.get("cloth_color", 0))
 	u.script_vars = c.get("script_vars", {})
+	u.save_map = String(c.get("save_map", SimUnit.HUB_MAP))
+	u.save_cell = Vector2i(int(c.get("save_cell", [SimUnit.HUB_CELL.x, SimUnit.HUB_CELL.y])[0]), int(c.get("save_cell", [SimUnit.HUB_CELL.x, SimUnit.HUB_CELL.y])[1]))
 	u.options = c.get("options", {})
 	u.level = int(c.level)
 	u.job_level = int(c.job_level)
@@ -1500,8 +1526,13 @@ func _revive(u: SimUnit) -> void:
 	u.sitting = false
 	u.trickdead = false
 	u.hp = u.max_hp
+	if u.is_player() and u.save_map != "" and u.save_map != map_name:
+		# Fallen players return to their save point (Prontera, the hub, by default).
+		events.append({"type": "revive", "id": u.id, "to_map": u.save_map, "to_cell": u.save_cell})
+		return
 	if u.is_player():
-		u.walker = GridWalker.new(respawn_cell if respawn_cell.x >= 0 else u.spawn_cell)
+		var home := u.save_cell if u.save_map == map_name else (respawn_cell if respawn_cell.x >= 0 else u.spawn_cell)
+		u.walker = GridWalker.new(pathfinder.nearest_walkable(home, 20))
 	else:
 		var c := _random_cell_near(Vector2i(gat.width / 2, gat.height / 2), maxi(gat.width, gat.height)) \
 			if u.spawn_radius == 0 else _random_cell_near(u.spawn_cell, u.spawn_radius)

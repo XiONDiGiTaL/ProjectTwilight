@@ -720,6 +720,29 @@ func _builtin(name: String, a: Array) -> Variant:
 		"warp":
 			host.warp(_str(a[0]), _num(a[1]) if a.size() > 1 else 0, _num(a[2]) if a.size() > 2 else 0)
 			return 0
+		"savepoint", "save":
+			player.save_map = _str(a[0])
+			player.save_cell = Vector2i(_num(a[1]) if a.size() > 1 else 0, _num(a[2]) if a.size() > 2 else 0)
+			return 0
+		"getexp":
+			sim._gain_exp(player, maxi(0, _num(a[0])), maxi(0, _num(a[1])) if a.size() > 1 else 0)
+			return 0
+		"strnpcinfo":
+			var full := String(npc.get("name", ""))
+			match _num(a[0]):
+				0: return full
+				1: return RaScriptFile.display_name(full)
+				2: return full.get_slice("#", 1).get_slice("::", 0) if full.contains("#") else ""
+				3: return full.get_slice("::", 1) if full.contains("::") else ""
+				4: return String(npc.get("map", sim.map_name))
+			return ""
+		"isequipped":
+			for item in a:
+				if not player.equipment.values().has(_num(item)):
+					return 0
+			return 1
+		"disable_items", "enable_items", "showevent", "viewpoint", "questinfo", "cloakonnpc", "cloakoffnpc":
+			return 0
 		"getlook":
 			match _num(a[0]):
 				1: return player.hair_style

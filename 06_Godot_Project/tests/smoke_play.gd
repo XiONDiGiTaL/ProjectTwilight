@@ -49,24 +49,47 @@ func _run() -> void:
 		quit(1)
 		return
 	var p: SimUnit = field.player
-	print("SMOKE: in field ", field.map_name, " at ", p.walker.cell, " job ", p.job)
-	field.sim.command_move(p.id, p.walker.cell + Vector2i(3, 2))
-	await _frames(90)
+	print("SMOKE: start map ", field.map_name, " at ", p.walker.cell)
+	await _shot("smoke_2_training")
+	# Training choice: Next, then "Skip to Prontera" (option 2).
+	for answer in [0, 1, 0, 0]:   # Next, "Skip to Prontera", Next, Close
+		for i in 120:
+			if field.hud.dialog.visible:
+				break
+			await process_frame
+		await _frames(12)
+		field.hud.dialog.chosen.emit(answer)
+		await _frames(12)
+	await _frames(150)
+	field = current_scene
+	p = field.player
+	print("SMOKE: after skip map=", field.map_name, " cell=", p.walker.cell, " save=", p.save_map)
+	await _shot("smoke_3_prontera")
+	# Walk onto the portal that leads to prt_fild08 (rAthena warps).
+	var gate: Dictionary = {}
+	for w in field.sim.warps:
+		if String(w.to_map) == "prt_fild08":
+			gate = w
+	print("SMOKE: prontera portals=", field.sim.warps.size(), " gate=", gate.get("cell"))
+	if not gate.is_empty():
+		p.walker = GridWalker.new(gate.cell)
+		await _frames(150)
+		field = current_scene
+		p = field.player
+	print("SMOKE: after portal map=", field.map_name, " cell=", p.walker.cell, " monsters=", field.sim.units.size() - 1)
 	for id in field.sim.units:
 		var u: SimUnit = field.sim.units[id]
 		if not u.is_player():
 			field.sim.command_attack(p.id, u.id)
 			break
 	await _frames(240)
-	await _shot("smoke_2_field")
-	print("SMOKE: hp ", p.hp, "/", p.max_hp, " exp ", p.base_exp, " cell ", p.walker.cell)
+	await _shot("smoke_4_field")
+	print("SMOKE: hp ", p.hp, "/", p.max_hp, " exp ", p.base_exp)
 	field.save_now()
-	print("SMOKE: saved ok=", SaveGame.exists("slot1"))
-	# Fast travel through the script warp path to a town without maps.json data.
 	field.script_warp("geffen", 119, 59)
 	await _frames(120)
 	var g: Node = current_scene
 	print("SMOKE: after warp map=", g.get("map_name"), " cell=", (g.player as SimUnit).walker.cell if g and g.get("player") else "?")
-	await _shot("smoke_3_geffen")
+	await _shot("smoke_5_geffen")
 	SaveGame.save_dir = "user://saves/"
 	quit(0)

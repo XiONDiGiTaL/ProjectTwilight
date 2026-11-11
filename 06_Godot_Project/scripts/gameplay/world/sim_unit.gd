@@ -87,6 +87,11 @@ var def_bonus := 0              # hard DEF/MDEF from Spiritual Protection
 var cloth_color := 0            # body palette (0 = default)
 ## NPC script variables (rAthena permanent character variables; saved).
 var script_vars: Dictionary = {}
+## Save point (respawn after death, "SavePoint" warps). Prontera is the hub.
+const HUB_MAP := "prontera"
+const HUB_CELL := Vector2i(156, 191)
+var save_map := HUB_MAP
+var save_cell := HUB_CELL
 ## Rental options set by NPC scripts: falcon / cart / peco (saved; cosmetic for now).
 var options: Dictionary = {}
 

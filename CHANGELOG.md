@@ -3,6 +3,14 @@
 ## [Unreleased] - 2026-11-11
 
 ### Added
+- **World travel:**
+  - Every map gets its warp portals from rAthena's warp lists (2,999 portals, with Pre-Renewal overrides), using rAthena's touch areas. Same-map portals teleport.
+  - Monster spawns come from rAthena's Pre-Renewal lists, for the monsters this build has data for.
+- **Training grounds and hub:**
+  - New characters start in the Novice Training Grounds (new_1-1). A Training Guide offers the classic training (rAthena's pre-re novice script) or a skip straight to the centre of Prontera.
+  - Prontera is the hub: the default save point, and where fallen players return.
+  - Modern clients ship the training maps as new_zone01-04; a map alias loads them under their classic names.
+- **New script commands:** `savepoint`, `getexp`, `strnpcinfo`, `isequipped`.
 - **NPC scripting:** an original interpreter for the rAthena script language (`scripts/npc/`). It covers dialogs, menus, labels, functions, arrays, persistent variables and character commands; see `docs/NPC_SCRIPTS.md`.
   - rAthena's healer, warper, job master, platinum skills, stylist, rental and reset NPCs load from `Resources/rathena` when present. They are GPL and never committed.
   - Project Twilight's own versions are the fallback: a free healer in 18 towns, a warper with fast travel to towns, fields and dungeons, and the Prontera south-gate services (Job Master with Dark Knight and Shaman, Platinum Skills, Stylist, Rental, Reset).

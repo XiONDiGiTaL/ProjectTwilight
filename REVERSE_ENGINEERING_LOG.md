@@ -14,3 +14,12 @@
 | 12 | 2026-11-11 | RSM baking | Visual comparison | roBrowser-style node chain and centring for 1.x; no centring for 2.x | Prontera, Izlude and field captures look correct; RSM2 rocks stand upright | High (1.x) / Medium (2.x) | 2.x keyframe semantics for animated models |
 | 9 | 2026-11-10 | ground shading | Visual comparison | Smoothed vertex normals plus lightmap (shadow × colour + RGB) reproduces the classic look | Captures of prontera, prt_fild08 and izlude | High | Exact light-direction sign convention |
 | 6 | 2026-11-10 | Eternal Love XAPK | Python zipfile (static) | Unity IL2CPP, SLua (encrypted), armeabi-v7a only; assets are Unity AssetBundles | Native library names, asset paths | Confirmed | Bundle encryption status; a Unity reader is needed |
+
+## 2026-11-11 — Training Grounds map names in modern kRO
+
+- **Finding:** the 2025 kRO client has no `new_1-1` … `new_5-4` files. It ships `new_zone01` … `new_zone04` (200×200).
+- **Test:** I probed every NPC, spawn and portal coordinate that rAthena's `pre-re/jobs/novice/novice.txt` and `warps/other/jobquests.txt` use on `new_1-1` … `new_1-4` against the GAT files of `new_zone01` … `new_zone04`.
+  - All spawn and portal cells were walkable.
+  - Two non-walkable hits were an NPC standing spot and a room centre, and NPCs can stand on blocked cells.
+- **Conclusion:** the zone maps are the classic training rooms under new names.
+- **Implementation:** `MapAliases` loads `new_<copy>-<room>` from `new_zone0<room>` when the original is missing. Scripts, warps and saves keep the classic names.

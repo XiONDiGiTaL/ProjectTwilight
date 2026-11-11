@@ -13,6 +13,7 @@ var npcs: Array = []         # {name, display, map, x, y, dir, sprite, body, dup
 var functions: Dictionary = {}  # name -> body AST
 var warps: Array = []        # {map, cell, span, to_map, to_cell, name}
 var shops: Array = []        # {name, display, map, x, y, dir, sprite, items: [[id, price]]}
+var monsters: Array = []     # {map, cell, area: Vector2i, mob_id, amount}
 var errors: Array = []
 var skipped := 0
 
@@ -79,6 +80,14 @@ func _parse(text: String, source: String) -> void:
 				if a.size() >= 5:
 					warps.append({"map": pw.map, "cell": Vector2i(pw.x, pw.y), "span": Vector2i(int(a[0]), int(a[1])),
 						"to_map": String(a[2]).strip_edges(), "to_cell": Vector2i(int(a[3]), int(a[4])), "name": String(cols[2])})
+		elif (kind == "monster" or kind == "boss_monster") and cols.size() >= 4:
+			# <map>,<x>,<y>[,<xs>,<ys>]	monster	<name>	<mob id>,<amount>[,<delay1>,<delay2>,<event>]
+			var mp := String(cols[0]).strip_edges().split(",")
+			var mv := String(cols[3]).split(",")
+			if mp.size() >= 3 and mv.size() >= 2 and String(mv[0]).strip_edges().is_valid_int():
+				monsters.append({"map": String(mp[0]), "cell": Vector2i(int(mp[1]), int(mp[2])),
+					"area": Vector2i(int(mp[3]) if mp.size() > 3 else 0, int(mp[4]) if mp.size() > 4 else 0),
+					"mob_id": int(mv[0]), "amount": int(mv[1])})
 		elif kind == "shop" and cols.size() >= 4:
 			var ps := _pos(String(cols[0]))
 			var parts := String(cols[3]).split(",")

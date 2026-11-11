@@ -104,7 +104,7 @@ git clone https://github.com/XiONDiGiTaL/ProjectTwilight.git
    [resources]
    client_path="D:/Games/RagnarokOnline"
    ```
-3. Choose **PLAY**, create a character, and you start on prt_fild08 south of Prontera. On Windows you can also double-click `Play-ProjectTwilight.bat` (set the `GODOT` environment variable to your Godot executable if `godot` is not on your PATH).
+3. Choose **PLAY** and create a character. You start in the Novice Training Grounds, where the Training Guide offers the classic training or a skip straight to Prontera, the hub. On Windows you can also double-click `Play-ProjectTwilight.bat` (set the `GODOT` environment variable to your Godot executable if `godot` is not on your PATH).
 
 **Controls**
 
@@ -122,7 +122,7 @@ git clone https://github.com/XiONDiGiTaL/ProjectTwilight.git
 
 **Where to go**
 
-- Walk north through the gate into Prontera.
+- Portals connect every map (rAthena warp lists); Prontera's south gate leads to Prontera Field.
 - **Job Guide / Job Master:** first and second jobs, including Dark Knight and Shaman.
 - **Healer:** free full heal.
 - **Warper:** fast travel to any town, field or dungeon in your client.

@@ -15,3 +15,11 @@ pack:rathena/npc/custom/stylist.txt
 pack:rathena/npc/custom/breeder.txt
 pack:rathena/npc/custom/resetnpc.txt
 res://data/npc/twilight/prontera_services.txt
+
+// Warp portals for every map (rAthena include lists; Pre-Renewal overrides last).
+conf:pack:rathena/npc/scripts_warps.conf
+conf:pack:rathena/npc/pre-re/scripts_warps.conf
+// Novice Training Grounds (new_1-1 ... new_5-4) and the start / skip choice.
+pack:rathena/npc/pre-re/jobs/novice/novice.txt
+res://data/npc/twilight/training.txt
+conf:pack:rathena/npc/pre-re/scripts_monsters.conf

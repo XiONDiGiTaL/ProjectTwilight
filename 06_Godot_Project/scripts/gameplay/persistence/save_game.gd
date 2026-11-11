@@ -61,7 +61,7 @@ static func capture(u: SimUnit, map_name: String) -> Dictionary:
 			"hp": u.hp, "sp": u.sp, "zeny": u.zeny,
 			"inventory": u.inventory.to_array(),
 			"equipment": u.equipment.duplicate(),
-			"male": u.male, "hair_style": u.hair_style, "hair_color": u.hair_color, "aura": u.aura, "cloth_color": u.cloth_color, "script_vars": _vars_out(u.script_vars), "options": u.options.duplicate(),
+			"male": u.male, "hair_style": u.hair_style, "hair_color": u.hair_color, "aura": u.aura, "cloth_color": u.cloth_color, "script_vars": _vars_out(u.script_vars), "options": u.options.duplicate(), "save_map": u.save_map, "save_cell": [u.save_cell.x, u.save_cell.y],
 			"skills": u.skills.duplicate(), "skill_points": u.skill_points, "hotkeys": u.hotkeys.duplicate(true),
 			"map": map_name, "cell": [u.walker.cell.x, u.walker.cell.y],
 		},
@@ -160,6 +160,10 @@ static func validate(parsed: Variant, item_db: Dictionary, classes: Dictionary) 
 			if raw_opts.has(k):
 				opts[k] = bool(raw_opts[k])
 	out.options = opts
+	var sm := String(c.get("save_map", SimUnit.HUB_MAP))
+	out.save_map = sm if sm.is_valid_filename() and sm.length() <= 32 and sm != "" else SimUnit.HUB_MAP
+	var sc: Variant = c.get("save_cell", [SimUnit.HUB_CELL.x, SimUnit.HUB_CELL.y])
+	out.save_cell = [clampi(int(sc[0]), 0, 1024), clampi(int(sc[1]), 0, 1024)] if sc is Array and sc.size() == 2 else [SimUnit.HUB_CELL.x, SimUnit.HUB_CELL.y]
 	var aura := String(c.get("aura", "class"))
 	out.aura = aura if PlayerAura.is_valid(aura) else "class"
 	out.zeny = clampi(int(c.get("zeny", 0)), 0, 1000000000)
