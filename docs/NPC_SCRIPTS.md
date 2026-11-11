@@ -36,6 +36,7 @@ git -C Resources/rathena sparse-checkout set npc
 | Rental (falcon, cart, Peco) | `npc/custom/breeder.txt` | Prontera south gate |
 | Skill and stat reset | `npc/custom/resetnpc.txt` | Prontera south gate |
 | Kafra save / storage / teleport | `npc/kafras/kafras.txt` (with `functions_kafras.txt`) | `maps.json` Kafra in Prontera |
+| Guild storage | — | `twilight/guild_keeper.txt` (Prontera, `guildopenstorage`) |
 
 **Sprites:** NPC sprite ids (`909`) and names (`4_F_KAFRA1`) are resolved through the player's own client tables, `npcidentity.lub` and `jobname.lub`. They are read by `Lua51Chunk`, a small Lua 5.1 bytecode table reader. Invisible ids (`-1`, `111`, `139`) are not drawn.
 

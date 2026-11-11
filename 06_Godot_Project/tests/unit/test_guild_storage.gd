@@ -124,6 +124,31 @@ func test_guild_membership_persists_with_the_character(_t) -> Variant:
 	return true if legacy.ok and String(legacy.character.guild_id) == "" else "older saves should load guildless"
 
 
+func test_guild_keeper_npc(_t) -> Variant:
+	_clean()
+	var world := RaWorld.new()
+	world.load_all(null)
+	if not world.errors.is_empty():
+		return "script errors: %s" % [world.errors.slice(0, 3)]
+	var def := world.find_npc("Guild Keeper#tw")
+	if def.is_empty():
+		return "Guild Keeper#tw is not loaded"
+	var sim := _field()
+	var p := sim.add_player("Leader", Vector2i(50, 50), FLAT)
+	sim.command_create_guild(p.id, "Twilight Guard")
+	p.walker = GridWalker.new(Vector2i(int(def.x), int(def.y)))
+	sim.add_script_npc(def, "4_f_kafra1")
+	var host := RaHost.new()
+	host.answers = [1]   # Open the guild storage
+	var vm := RaInterpreter.new(world, host, sim, p, def)
+	await vm.run()
+	if vm.error != "":
+		return vm.error
+	if host.guild_storages != [true]:
+		return "the keeper did not open storage: %s / %s" % [host.transcript, vm.unsupported]
+	return true if not sim._open_guild_storage_of(p).is_empty() else "guild storage not open in the simulation"
+
+
 func test_guildopenstorage_script_command(_t) -> Variant:
 	_clean()
 	var sim := _field()

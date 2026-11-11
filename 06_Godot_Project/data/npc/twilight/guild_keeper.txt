@@ -1,0 +1,27 @@
+// Project Twilight - Guild Keeper (original, Apache-2.0)
+// Shared guild storage access in Prontera, next to the Kafra.
+
+prontera,156,195,0	script	Guild Keeper#tw	4_F_KAFRA1,{
+	mes "[Guild Keeper]";
+	mes "The Kafra Corporation also keeps the shared storage of your guild.";
+	next;
+	if (getguildname(0) == "") {
+		mes "[Guild Keeper]";
+		mes "You are not in a guild yet. Found one with @guild create <name>.";
+		close;
+	}
+	mes "[Guild Keeper]";
+	mes "Guild " + getguildname(0) + ".";
+	mes "Shall I open its storage for you?";
+	next;
+	if (select("Open the guild storage:Cancel") == 2) {
+		close;
+	}
+	close2;
+	if (guildopenstorage()) {
+		mes "[Guild Keeper]";
+		mes "Another member is using the guild storage right now. Please come back later.";
+		close;
+	}
+	end;
+}

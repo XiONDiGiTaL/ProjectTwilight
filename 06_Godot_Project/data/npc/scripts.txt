@@ -19,6 +19,8 @@ pack:rathena/npc/custom/resetnpc.txt
 pack:rathena/npc/kafras/functions_kafras.txt
 pack:rathena/npc/kafras/kafras.txt
 res://data/npc/twilight/prontera_services.txt
+// Guild Keeper in Prontera: opens the shared guild storage with guildopenstorage.
+res://data/npc/twilight/guild_keeper.txt
 
 // Warp portals for every map (rAthena include lists; Pre-Renewal overrides last).
 conf:pack:rathena/npc/scripts_warps.conf
