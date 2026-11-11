@@ -51,6 +51,19 @@ func setup(p_body_spr: SprFile, p_body_act: ActFile, p_head_spr: SprFile = null,
 	_refresh()
 
 
+var weapon_spr: SprFile
+var weapon_act: ActFile
+
+
+## Sets (or clears, with nulls) the weapon layer drawn with the body.
+func set_weapon(p_spr: SprFile, p_act: ActFile) -> void:
+	weapon_spr = p_spr
+	weapon_act = p_act
+	_cache.clear()
+	_shown_key = ""
+	_refresh()
+
+
 ## Action-name -> action group. Players and monsters number their groups differently.
 const PLAYER_ACTIONS := {"idle": 0, "walk": 1, "sit": 2, "attack": 5, "hurt": 6, "dead": 8}
 const MONSTER_ACTIONS := {"idle": 0, "walk": 1, "attack": 2, "hurt": 3, "dead": 4}
@@ -178,6 +191,17 @@ func _compose(act_idx: int, f: int) -> Dictionary:
 			if not body_frame.anchors.is_empty() and not head_frame.anchors.is_empty():
 				shift = body_frame.anchors[0] - head_frame.anchors[0]
 			_collect(parts, head_spr, head_frame, shift, hair_palette)
+	if weapon_spr and weapon_act and act_idx < weapon_act.actions.size():
+		var wframes: Array = weapon_act.actions[act_idx].frames
+		if not wframes.is_empty():
+			var wparts: Array = []
+			_collect(wparts, weapon_spr, wframes[f % wframes.size()], Vector2i.ZERO, PackedByteArray())
+			# Weapon goes behind the body when the character faces away (N, NE, NW).
+			var dir := act_idx % 8
+			if dir >= 3 and dir <= 5:
+				parts = wparts + parts
+			else:
+				parts.append_array(wparts)
 	if parts.is_empty():
 		return {"texture": null, "origin": Vector2i.ZERO}
 	var lo := Vector2i(1 << 20, 1 << 20)

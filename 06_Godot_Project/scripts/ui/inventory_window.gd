@@ -5,6 +5,7 @@ extends GlassWindow
 ## weight bar and Zeny. Double-click a usable item to use it.
 
 signal use_requested(index: int)
+signal equip_requested(index: int)
 
 const COLUMNS := 7
 const ROWS := 4
@@ -133,7 +134,8 @@ func _slot(index: int, e: Dictionary, def: Dictionary) -> Control:
 		slot.icon = ItemIcons.icon(def)
 		slot.amount = int(e.amount)
 		slot.def = def
-		slot.activated.connect(func(i): use_requested.emit(i))
+		var equippable := String(def.get("equip", "")) != ""
+		slot.activated.connect(func(i): equip_requested.emit(i) if equippable else use_requested.emit(i))
 	return slot
 
 
@@ -209,4 +211,8 @@ class ItemSlot extends Control:
 		col.add_child(d)
 		if def.get("type", "") == "usable":
 			col.add_child(UiTheme.label("Double-click to use", 10, Color(UiTheme.ACCENT, 0.8), 400, 1))
+		elif String(def.get("equip", "")) != "":
+			col.add_child(UiTheme.label("Double-click to equip", 10, Color(UiTheme.ACCENT, 0.8), 400, 1))
+		if def.has("def"):
+			col.add_child(UiTheme.label("DEF %d" % def.def, 12, UiTheme.TEXT))
 		return p

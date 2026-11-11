@@ -1,0 +1,25 @@
+{
+  "_doc": "NPC shops. Classic pricing: NPCs sell at the item price and buy at half price (Discount/Overcharge skills not yet applied).",
+  "prt_fild08_merchant": {
+    "npc_name": "Field Merchant",
+    "sprite": "1_m_merchant",
+    "map": "prt_fild08",
+    "cell": [
+      174,
+      203
+    ],
+    "direction": 0,
+    "greeting": "Long road ahead? Potions, blades and a shirt for your back - all honest prices.",
+    "items": [
+      501,
+      512,
+      515,
+      1201,
+      1207,
+      2301,
+      2401,
+      2101,
+      2501
+    ]
+  }
+}

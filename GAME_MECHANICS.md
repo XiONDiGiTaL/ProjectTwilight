@@ -53,6 +53,19 @@ Implementation: `scripts/gameplay/items/inventory.gd`, `field_simulation.gd`, `d
 | Red Potion / Apple / Carrot | Heal 45–65 / 16–18 / 18–24 HP | High |
 | Overweight penalties (50% no regen, 90% no attack) | Not yet implemented | — |
 
+## Equipment and trading
+
+| Rule | Value | Confidence |
+|---|---|---|
+| Player ATK | StatusATK + WeaponATK × size modifier | High (model) |
+| Weapon ATK range | [min(WATK, floor(DEX × (0.8 + 0.2 × weapon level))), WATK] | Medium |
+| Size modifiers | e.g. dagger 100/75/50 against small/medium/large; fists 100 for all sizes | High |
+| Critical with a weapon | StatusATK + max WATK × size modifier, ignoring DEF | Medium-high |
+| Armor | Equipment DEF is summed into hard DEF (percentage reduction) | High |
+| Novice BTBA | Fist 0.5 s, dagger 0.65 s | Medium |
+| NPC prices | Buy at the item price; sell at floor(price / 2) | High (without Discount/Overcharge) |
+| Interaction range | Talk within 2 cells; trades rejected beyond 6 cells | Medium |
+
 ## Movement
 
 Implementation: `scripts/gameplay/world/grid_pathfinder.gd`, `grid_walker.gd`. Tests: `tests/unit/test_movement.gd`.

@@ -12,6 +12,8 @@ extends RefCounted
 ##   {type: "drop", ground}  {type: "ground_gone", ground}
 ##   {type: "pickup", id, ground, item, amount}  {type: "pickup_fail", id, reason}
 ##   {type: "heal", id, amount}  {type: "inventory", id}  {type: "stats", id}
+##   {type: "equipment", id}  {type: "npc_spawn", npc}  {type: "npc_open", id, npc}
+##   {type: "trade", id, ok, text}
 
 const MONSTER_DB := "res://data/prerenewal/monsters.json"
 const EXP_DB := "res://data/prerenewal/exp_tables.json"
@@ -19,6 +21,12 @@ const ITEM_DB := "res://data/prerenewal/items.json"
 const OWNER_PRIORITY_MS := 3000.0   # killer's exclusive pickup window (Medium confidence)
 const GROUND_ITEM_LIFETIME_MS := 60000.0
 const STAT_NAMES := ["str", "agi", "vit", "int", "dex", "luk"]
+const SHOP_DB := "res://data/prerenewal/shops.json"
+const EQUIP_SLOTS := ["head_top", "head_mid", "head_low", "weapon", "shield", "body", "garment", "shoes", "acc1", "acc2"]
+## Novice base weapon delay (BTBA, seconds) per weapon type. Medium confidence.
+const NOVICE_BTBA := {"fist": 0.5, "dagger": 0.65}
+const NPC_TALK_RANGE := 2
+const NPC_TRADE_RANGE := 6
 const NOVICE_FIST_BTBA := 0.5     # seconds; Medium confidence
 const MONSTER_RESPAWN_MS := 5000.0
 const PLAYER_REVIVE_MS := 3000.0
@@ -37,6 +45,10 @@ var item_db: Dictionary = {}
 ## ground id -> {id, item, amount, cell: Vector2i, offset: Vector2, owner, age}
 var ground_items: Dictionary = {}
 var _next_ground := 1
+var shop_db: Dictionary = {}
+## npc id -> {id, name, sprite, cell: Vector2i, direction, shop, greeting}
+var npcs: Dictionary = {}
+var _next_npc := 1
 
 var _next_id := 1
 
@@ -49,6 +61,13 @@ func _init(p_gat: GatFile, seed_value: int = 1) -> void:
 	exp_tables = _load_json(EXP_DB)
 	item_db = _load_json(ITEM_DB)
 	item_db.erase("_provenance")
+	shop_db = _load_json(SHOP_DB)
+	shop_db.erase("_doc")
+	for sid in shop_db:  # JSON numbers are floats; catalogues use int item ids
+		var ids: Array[int] = []
+		for v in shop_db[sid].get("items", []):
+			ids.append(int(v))
+		shop_db[sid].items = ids
 
 
 static func _load_json(path: String) -> Dictionary:
@@ -75,6 +94,20 @@ func add_player(name: String, cell: Vector2i, stats: Dictionary) -> SimUnit:
 	return u
 
 
+## Spawns the shop NPCs defined for `map_name` in shops.json.
+func spawn_npcs(map_name: String) -> void:
+	for shop_id in shop_db:
+		var s: Dictionary = shop_db[shop_id]
+		if String(s.get("map", "")) != map_name:
+			continue
+		var nid := _next_npc
+		_next_npc += 1
+		npcs[nid] = {"id": nid, "name": s.npc_name, "sprite": s.sprite,
+			"cell": Vector2i(int(s.cell[0]), int(s.cell[1])), "direction": int(s.get("direction", 0)),
+			"shop": shop_id, "greeting": String(s.get("greeting", ""))}
+		events.append({"type": "npc_spawn", "npc": nid})
+
+
 ## Restores a player from a validated SaveGame character dictionary.
 func add_player_from_save(c: Dictionary) -> SimUnit:
 	var u := add_player(String(c.name), c.cell, c.stats)
@@ -86,6 +119,11 @@ func add_player_from_save(c: Dictionary) -> SimUnit:
 	u.status_points = int(c.status_points)
 	u.zeny = int(c.zeny)
 	u.inventory = Inventory.from_array(c.inventory, item_db)
+	var eq: Dictionary = c.get("equipment", {})
+	for slot in eq:
+		var def: Dictionary = item_db.get(str(eq[slot]), {})
+		if EQUIP_SLOTS.has(slot) and _slot_fits(def, String(slot)):
+			u.equipment[slot] = int(eq[slot])
 	_recalc_player(u)
 	u.hp = clampi(int(c.hp), 1, u.max_hp)
 	u.sp = clampi(int(c.sp), 0, u.max_sp)
@@ -111,6 +149,7 @@ func add_monster(mob_id: String, cell: Vector2i, spawn_radius: int = 0) -> SimUn
 	u.atk_min = int(m.atk[0])
 	u.atk_max = int(m.atk[1])
 	u.hard_def = int(m.def)
+	u.size = String(m.get("size", "medium"))
 	u.attack_range = int(m.range)
 	u.attack_interval = float(m.attack_delay)
 	u.attack_motion = float(m.attack_motion)
@@ -145,6 +184,7 @@ func command_move(unit_id: int, cell: Vector2i) -> bool:
 		return false
 	u.target_id = 0
 	u.pickup_target = 0
+	u.talk_target = 0
 	var path := pathfinder.find_path(u.walker.planning_origin(), cell)
 	if path.is_empty():
 		return false
@@ -191,6 +231,109 @@ func command_use_item(unit_id: int, index: int) -> bool:
 	return true
 
 
+## Equips the inventory entry at `index`; a previously equipped item returns to the inventory.
+func command_equip(unit_id: int, index: int) -> bool:
+	var u: SimUnit = units.get(unit_id)
+	if u == null or u.dead or not u.is_player() or index < 0 or index >= u.inventory.entries.size():
+		return false
+	var item_id := int(u.inventory.entries[index].id)
+	var def: Dictionary = item_db.get(str(item_id), {})
+	var slot := String(def.get("equip", ""))
+	if slot == "" or u.level < int(def.get("equip_level", 1)):
+		return false
+	u.inventory.remove_at(index, 1)
+	if u.equipment.has(slot):
+		u.inventory.entries.append({"id": int(u.equipment[slot]), "amount": 1})
+	u.equipment[slot] = item_id
+	_recalc_player(u)
+	events.append({"type": "equipment", "id": u.id})
+	events.append({"type": "inventory", "id": u.id})
+	return true
+
+
+func command_unequip(unit_id: int, slot: String) -> bool:
+	var u: SimUnit = units.get(unit_id)
+	if u == null or not u.equipment.has(slot):
+		return false
+	if u.inventory.entries.size() >= Inventory.MAX_ENTRIES:
+		return false
+	u.inventory.entries.append({"id": int(u.equipment[slot]), "amount": 1})
+	u.equipment.erase(slot)
+	_recalc_player(u)
+	events.append({"type": "equipment", "id": u.id})
+	events.append({"type": "inventory", "id": u.id})
+	return true
+
+
+## Walk to an NPC and open its shop.
+func command_talk(unit_id: int, npc_id: int) -> bool:
+	var u: SimUnit = units.get(unit_id)
+	if u == null or u.dead or not npcs.has(npc_id):
+		return false
+	u.target_id = 0
+	u.pickup_target = 0
+	u.talk_target = npc_id
+	return true
+
+
+## Buys from the open shop. Validated here, never by the client.
+func command_buy(unit_id: int, item_id: int, amount: int) -> bool:
+	var u: SimUnit = units.get(unit_id)
+	var shop := _open_shop_of(u)
+	if shop.is_empty() or amount <= 0 or not (shop.items as Array).has(item_id):
+		return _trade(u, false, "That item is not sold here.")
+	var def: Dictionary = item_db.get(str(item_id), {})
+	var cost := int(def.get("price", 0)) * amount
+	if cost > u.zeny:
+		return _trade(u, false, "Not enough Zeny.")
+	if not u.inventory.add(item_id, amount, item_db, u.max_weight() - u.equipment_weight(item_db)):
+		return _trade(u, false, "You cannot carry that much.")
+	u.zeny -= cost
+	events.append({"type": "inventory", "id": u.id})
+	return _trade(u, true, "Bought  %s  ×%d   −%d z" % [def.name, amount, cost])
+
+
+## Sells inventory entry `index` to the open shop at half the item price.
+func command_sell(unit_id: int, index: int, amount: int) -> bool:
+	var u: SimUnit = units.get(unit_id)
+	if _open_shop_of(u).is_empty() or index < 0 or index >= u.inventory.entries.size() or amount <= 0:
+		return _trade(u, false, "Nothing to sell.")
+	var item_id := int(u.inventory.entries[index].id)
+	var def: Dictionary = item_db.get(str(item_id), {})
+	if u.inventory.remove_at(index, amount) < 0:
+		return _trade(u, false, "You do not have that many.")
+	var gain := int(def.get("price", 0)) / 2 * amount
+	u.zeny += gain
+	events.append({"type": "inventory", "id": u.id})
+	return _trade(u, true, "Sold  %s  ×%d   +%d z" % [def.name, amount, gain])
+
+
+func close_shop(unit_id: int) -> void:
+	var u: SimUnit = units.get(unit_id)
+	if u:
+		u.open_shop = 0
+
+
+func _open_shop_of(u: SimUnit) -> Dictionary:
+	if u == null or u.dead or u.open_shop == 0 or not npcs.has(u.open_shop):
+		return {}
+	var npc: Dictionary = npcs[u.open_shop]
+	if _chebyshev(u.walker.cell, npc.cell) > NPC_TRADE_RANGE:
+		return {}
+	return shop_db.get(npc.shop, {})
+
+
+func _trade(u: SimUnit, ok: bool, text: String) -> bool:
+	if u:
+		events.append({"type": "trade", "id": u.id, "ok": ok, "text": text})
+	return ok
+
+
+static func _slot_fits(def: Dictionary, slot: String) -> bool:
+	var s := String(def.get("equip", ""))
+	return s == slot or (s == "acc" and slot.begins_with("acc"))
+
+
 ## Spends status points to raise a stat by one. Returns false if not allowed.
 func command_raise_stat(unit_id: int, stat: String) -> bool:
 	var u: SimUnit = units.get(unit_id)
@@ -220,7 +363,9 @@ func tick(ms: float) -> void:
 				_revive(u)
 			continue
 		u.attack_cooldown = maxf(0.0, u.attack_cooldown - ms)
-		if u.pickup_target != 0:
+		if u.talk_target != 0:
+			_pursue_talk(u)
+		elif u.pickup_target != 0:
 			_pursue_pickup(u)
 		elif u.target_id != 0:
 			_pursue(u)
@@ -272,6 +417,26 @@ func _pursue(u: SimUnit) -> void:
 			u.walker.walk(path)
 
 
+func _pursue_talk(u: SimUnit) -> void:
+	var npc: Dictionary = npcs.get(u.talk_target, {})
+	if npc.is_empty():
+		u.talk_target = 0
+		return
+	if _chebyshev(u.walker.cell, npc.cell) <= NPC_TALK_RANGE and not u.walker.is_moving():
+		u.open_shop = u.talk_target
+		u.talk_target = 0
+		u.walker.direction = GridWalker.direction_to(u.walker.cell, npc.cell)
+		events.append({"type": "npc_open", "id": u.id, "npc": npc.id})
+		return
+	if not u.walker.is_moving():
+		var goal := pathfinder.nearest_walkable(npc.cell + Vector2i(0, -1), 3)
+		var path := pathfinder.find_path(u.walker.planning_origin(), goal)
+		if path.is_empty():
+			u.talk_target = 0
+		else:
+			u.walker.walk(path)
+
+
 func _pursue_pickup(u: SimUnit) -> void:
 	var g: Dictionary = ground_items.get(u.pickup_target, {})
 	if g.is_empty():
@@ -284,7 +449,7 @@ func _pursue_pickup(u: SimUnit) -> void:
 		if g.owner != 0 and g.owner != u.id and g.age < OWNER_PRIORITY_MS:
 			events.append({"type": "pickup_fail", "id": u.id, "reason": "You cannot pick up this item yet."})
 			return
-		if not u.inventory.add(int(g.item), int(g.amount), item_db, u.max_weight()):
+		if not u.inventory.add(int(g.item), int(g.amount), item_db, u.max_weight() - u.equipment_weight(item_db)):
 			events.append({"type": "pickup_fail", "id": u.id, "reason": "You are carrying too much weight."})
 			return
 		ground_items.erase(gid)
@@ -450,10 +615,20 @@ func _recalc_player(u: SimUnit) -> void:
 	var s := u.stats
 	u.max_hp = CombatRulesPreRenewal.novice_max_hp(u.level, int(s.vit))
 	u.max_sp = CombatRulesPreRenewal.novice_max_sp(u.level, int(s.int))
-	var batk := StatRulesPreRenewal.status_atk(int(s.str), int(s.dex), int(s.luk))
-	u.atk_min = batk  # bare-handed: no weapon ATK variance
-	u.atk_max = batk
-	var a := CombatRulesPreRenewal.aspd(NOVICE_FIST_BTBA, int(s.agi), int(s.dex))
+	u.batk = StatRulesPreRenewal.status_atk(int(s.str), int(s.dex), int(s.luk))
+	var weapon: Dictionary = item_db.get(str(u.equipment.get("weapon", 0)), {})
+	u.weapon_type = String(weapon.get("weapon_type", "fist"))
+	var wr := CombatRulesPreRenewal.weapon_atk_range(int(weapon.get("atk", 0)), int(weapon.get("weapon_level", 1)), int(s.dex))
+	u.watk_min = wr.x
+	u.watk_max = wr.y
+	u.atk_min = u.batk + wr.x
+	u.atk_max = u.batk + wr.y
+	var def_total := 0
+	for slot in u.equipment:
+		def_total += int(item_db.get(str(u.equipment[slot]), {}).get("def", 0))
+	u.hard_def = def_total
+	var btba: float = NOVICE_BTBA.get(u.weapon_type, 0.6)
+	var a := CombatRulesPreRenewal.aspd(btba, int(s.agi), int(s.dex))
 	u.attack_interval = CombatRulesPreRenewal.attack_interval_ms(a)
 	u.attack_motion = minf(u.attack_interval, 500.0)
 

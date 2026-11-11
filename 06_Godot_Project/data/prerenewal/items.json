@@ -1,14 +1,171 @@
 {
-  "_provenance": "Pre-Renewal item values as documented by iRO Wiki classic and the rAthena pre-re item database (facts only). resname = client resource name used for data\\sprite\\아이템\\<resname>.spr and data\\texture\\유저인터페이스\\item\\<resname>.bmp. Confidence: High for weights/prices/heals, pending Hercules cross-check.",
-  "501": {"name": "Red Potion", "resname": "빨간포션", "type": "usable", "weight": 7, "price": 50, "heal_hp": [45, 65], "desc": "A potion made from red herbs. Restores a small amount of HP."},
-  "512": {"name": "Apple", "resname": "사과", "type": "usable", "weight": 2, "price": 15, "heal_hp": [16, 18], "desc": "A juicy red apple. Restores a little HP."},
-  "515": {"name": "Carrot", "resname": "당근", "type": "usable", "weight": 2, "price": 15, "heal_hp": [18, 24], "desc": "A crunchy carrot. Restores a little HP."},
-  "619": {"name": "Unripe Apple", "resname": "풋사과", "type": "etc", "weight": 4, "price": 0, "desc": "A sour green apple. Porings are said to love it."},
-  "705": {"name": "Clover", "resname": "클로버", "type": "etc", "weight": 1, "price": 6, "desc": "A three-leaf clover."},
-  "713": {"name": "Empty Bottle", "resname": "빈병", "type": "etc", "weight": 2, "price": 6, "desc": "An empty glass bottle."},
-  "909": {"name": "Jellopy", "resname": "젤로피", "type": "etc", "weight": 1, "price": 6, "desc": "A small crystal found inside monsters."},
-  "914": {"name": "Fluff", "resname": "솜털", "type": "etc", "weight": 1, "price": 8, "desc": "Soft, fine fluff."},
-  "916": {"name": "Feather of Birds", "resname": "새의깃털", "type": "etc", "weight": 1, "price": 12, "desc": "A light feather."},
-  "938": {"name": "Sticky Mucus", "resname": "끈적끈적한액체", "type": "etc", "weight": 1, "price": 7, "desc": "A sticky, gooey liquid."},
-  "1201": {"name": "Knife", "resname": "나이프", "type": "weapon", "weight": 40, "price": 50, "atk": 17, "slots": 3, "desc": "A basic dagger. (Equipping is not implemented yet.)"}
+  "_provenance": "Pre-Renewal item values as documented by iRO Wiki classic and the rAthena pre-re item database (facts only). resname = client resource name used for data\\sprite\\아이템\\<resname>.spr and data\\texture\\유저인터페이스\\item\\<resname>.bmp. Confidence: High for weights/prices/heals, pending Hercules cross-check. Equipment: atk/def/weight/price per Pre-Renewal item data; 'equip' is the slot, 'weapon_level' drives the DEX-based minimum weapon damage.",
+  "501": {
+    "name": "Red Potion",
+    "resname": "빨간포션",
+    "type": "usable",
+    "weight": 7,
+    "price": 50,
+    "heal_hp": [
+      45,
+      65
+    ],
+    "desc": "A potion made from red herbs. Restores a small amount of HP."
+  },
+  "512": {
+    "name": "Apple",
+    "resname": "사과",
+    "type": "usable",
+    "weight": 2,
+    "price": 15,
+    "heal_hp": [
+      16,
+      18
+    ],
+    "desc": "A juicy red apple. Restores a little HP."
+  },
+  "515": {
+    "name": "Carrot",
+    "resname": "당근",
+    "type": "usable",
+    "weight": 2,
+    "price": 15,
+    "heal_hp": [
+      18,
+      24
+    ],
+    "desc": "A crunchy carrot. Restores a little HP."
+  },
+  "619": {
+    "name": "Unripe Apple",
+    "resname": "풋사과",
+    "type": "etc",
+    "weight": 4,
+    "price": 0,
+    "desc": "A sour green apple. Porings are said to love it."
+  },
+  "705": {
+    "name": "Clover",
+    "resname": "클로버",
+    "type": "etc",
+    "weight": 1,
+    "price": 6,
+    "desc": "A three-leaf clover."
+  },
+  "713": {
+    "name": "Empty Bottle",
+    "resname": "빈병",
+    "type": "etc",
+    "weight": 2,
+    "price": 6,
+    "desc": "An empty glass bottle."
+  },
+  "909": {
+    "name": "Jellopy",
+    "resname": "젤로피",
+    "type": "etc",
+    "weight": 1,
+    "price": 6,
+    "desc": "A small crystal found inside monsters."
+  },
+  "914": {
+    "name": "Fluff",
+    "resname": "솜털",
+    "type": "etc",
+    "weight": 1,
+    "price": 8,
+    "desc": "Soft, fine fluff."
+  },
+  "916": {
+    "name": "Feather of Birds",
+    "resname": "새의깃털",
+    "type": "etc",
+    "weight": 1,
+    "price": 12,
+    "desc": "A light feather."
+  },
+  "938": {
+    "name": "Sticky Mucus",
+    "resname": "끈적끈적한액체",
+    "type": "etc",
+    "weight": 1,
+    "price": 7,
+    "desc": "A sticky, gooey liquid."
+  },
+  "1201": {
+    "name": "Knife",
+    "resname": "나이프",
+    "type": "weapon",
+    "equip": "weapon",
+    "weapon_type": "dagger",
+    "weapon_level": 1,
+    "atk": 17,
+    "slots": 3,
+    "weight": 40,
+    "price": 50,
+    "equip_level": 1,
+    "desc": "A basic dagger, light and quick to swing."
+  },
+  "1207": {
+    "name": "Main Gauche",
+    "resname": "망고슈",
+    "type": "weapon",
+    "equip": "weapon",
+    "weapon_type": "dagger",
+    "weapon_level": 1,
+    "atk": 23,
+    "slots": 3,
+    "weight": 60,
+    "price": 2400,
+    "equip_level": 1,
+    "desc": "A parrying dagger favoured by duelists."
+  },
+  "2301": {
+    "name": "Cotton Shirt",
+    "resname": "코튼셔츠",
+    "type": "armor",
+    "equip": "body",
+    "def": 1,
+    "slots": 0,
+    "weight": 10,
+    "price": 10,
+    "equip_level": 1,
+    "desc": "A plain cotton shirt. Better than nothing."
+  },
+  "2101": {
+    "name": "Guard",
+    "resname": "가드",
+    "type": "armor",
+    "equip": "shield",
+    "def": 1,
+    "slots": 0,
+    "weight": 30,
+    "price": 500,
+    "equip_level": 1,
+    "desc": "A small round shield strapped to the forearm."
+  },
+  "2501": {
+    "name": "Hood",
+    "resname": "후드",
+    "type": "armor",
+    "equip": "garment",
+    "def": 1,
+    "slots": 0,
+    "weight": 20,
+    "price": 1000,
+    "equip_level": 1,
+    "desc": "A cloth hood worn over the shoulders."
+  },
+  "2401": {
+    "name": "Sandals",
+    "resname": "샌들",
+    "type": "armor",
+    "equip": "shoes",
+    "def": 1,
+    "slots": 0,
+    "weight": 20,
+    "price": 400,
+    "equip_level": 1,
+    "desc": "Simple leather sandals."
+  }
 }

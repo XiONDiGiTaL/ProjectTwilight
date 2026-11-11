@@ -71,7 +71,7 @@ func _ready() -> void:
 	right.add_theme_constant_override("h_separation", 14)
 	right.add_theme_constant_override("v_separation", 4)
 	cols.add_child(right)
-	for k in ["ATK", "MATK", "HIT", "FLEE", "CRIT", "ASPD", "SOFT DEF", "WEIGHT"]:
+	for k in ["ATK", "MATK", "HIT", "FLEE", "CRIT", "ASPD", "DEF", "WEIGHT"]:
 		right.add_child(UiTheme.label(k, 11, Color(UiTheme.ACCENT, 0.85), 600, 2))
 		var v := UiTheme.label("", 13, UiTheme.TEXT, 600)
 		v.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
@@ -99,12 +99,12 @@ func refresh() -> void:
 	_points.text = "STATUS POINTS   %d" % _unit.status_points
 	var st := _unit.stats
 	var m := StatRulesPreRenewal.matk_range(int(st.int))
-	var aspd := CombatRulesPreRenewal.aspd(FieldSimulation.NOVICE_FIST_BTBA, int(st.agi), int(st.dex))
-	(_derived["ATK"] as Label).text = str(_unit.atk_max)
+	var aspd := 200.0 - _unit.attack_interval / 20.0
+	(_derived["ATK"] as Label).text = "%d ~ %d" % [_unit.atk_min, _unit.atk_max] if _unit.atk_min != _unit.atk_max else str(_unit.atk_max)
 	(_derived["MATK"] as Label).text = "%d ~ %d" % [m.x, m.y]
 	(_derived["HIT"] as Label).text = str(_unit.hit())
 	(_derived["FLEE"] as Label).text = "%d + %d" % [_unit.flee(), StatRulesPreRenewal.perfect_dodge(int(st.luk))]
 	(_derived["CRIT"] as Label).text = "%.1f%%" % StatRulesPreRenewal.critical_rate(int(st.luk))
 	(_derived["ASPD"] as Label).text = str(roundi(aspd))
-	(_derived["SOFT DEF"] as Label).text = str(int(st.vit))
+	(_derived["DEF"] as Label).text = "%d + %d" % [_unit.hard_def, int(st.vit)]
 	(_derived["WEIGHT"] as Label).text = str(_unit.max_weight())

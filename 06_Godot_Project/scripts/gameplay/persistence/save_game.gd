@@ -13,7 +13,7 @@ extends RefCounted
 ## half-written save.
 
 const FORMAT := "project-twilight-save"
-const VERSION := 1
+const VERSION := 2  # v2 adds "equipment"; v1 files still load
 const SAVE_DIR := "user://saves/"
 const STAT_NAMES := ["str", "agi", "vit", "int", "dex", "luk"]
 
@@ -39,6 +39,7 @@ static func capture(u: SimUnit, map_name: String) -> Dictionary:
 			"stats": u.stats.duplicate(), "status_points": u.status_points,
 			"hp": u.hp, "sp": u.sp, "zeny": u.zeny,
 			"inventory": u.inventory.to_array(),
+			"equipment": u.equipment.duplicate(),
 			"map": map_name, "cell": [u.walker.cell.x, u.walker.cell.y],
 		},
 	}
@@ -96,6 +97,14 @@ static func validate(parsed: Variant, item_db: Dictionary, classes: Dictionary) 
 	out.zeny = clampi(int(c.get("zeny", 0)), 0, 1000000000)
 	var inv: Variant = c.get("inventory", [])
 	out.inventory = Inventory.from_array(inv if inv is Array else [], item_db).to_array()
+	var eq := {}
+	var raw_eq: Variant = c.get("equipment", {})
+	if raw_eq is Dictionary:
+		for slot in raw_eq:
+			var id := int(raw_eq[slot])
+			if item_db.has(str(id)) and String(item_db[str(id)].get("equip", "")) != "":
+				eq[String(slot)] = id
+	out.equipment = eq
 	out.map = String(c.get("map", ""))
 	var cell: Variant = c.get("cell", [0, 0])
 	out.cell = Vector2i(int(cell[0]), int(cell[1])) if cell is Array and cell.size() == 2 else Vector2i.ZERO

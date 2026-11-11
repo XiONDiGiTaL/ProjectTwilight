@@ -16,6 +16,7 @@ var _was_dead := false
 
 
 func build_player(res: Node, male: bool, hair_style: int, hair_color: int) -> bool:
+	_male = male
 	var sex := "남" if male else "여"
 	var body := BODY_DIR + "%s\\%s_%s" % [sex, unit.sprite, sex]
 	var head := HEAD_DIR + "%s\\%d_%s" % [sex, hair_style, sex]
@@ -42,6 +43,28 @@ func build_monster(res: Node) -> bool:
 	add_child(sprite)
 	sprite.setup(spr, act)
 	return true
+
+
+## Weapon type -> Korean sprite suffix used by the client's job sprites.
+const WEAPON_SPRITES := {"dagger": "단검", "sword": "검", "axe": "도끼", "rod": "롯드"}
+const JOB_SPRITE_DIR := "data/sprite/인간족/"
+var _male := true
+var _weapon_shown := ""
+
+
+## Shows the equipped weapon on a player's sprite (the client's per-job weapon layer).
+func update_weapon(res: Node) -> void:
+	if sprite == null or not unit.is_player():
+		return
+	if unit.weapon_type == _weapon_shown:
+		return
+	_weapon_shown = unit.weapon_type
+	if not WEAPON_SPRITES.has(unit.weapon_type):
+		sprite.set_weapon(null, null)
+		return
+	var sex := "남" if _male else "여"
+	var base := JOB_SPRITE_DIR + "%s/%s_%s_%s" % [unit.sprite, unit.sprite, sex, WEAPON_SPRITES[unit.weapon_type]]
+	sprite.set_weapon(SprFile.decode(res.read(base + ".spr")), ActFile.decode(res.read(base + ".act")))
 
 
 ## World position just above the sprite's head (for HP bars and text).

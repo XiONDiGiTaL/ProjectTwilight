@@ -3,6 +3,14 @@
 ## [Unreleased] - 2026-11-10
 
 ### Added
+- **Equipment:** slots (weapon, shield, armor, garment, shoes, accessories, headgear), equip and unequip with swaps, and equipment weight counted toward the carry limit.
+  - Pre-Renewal weapon damage: status ATK + weapon ATK with a DEX-based minimum, scaled by the weapon-vs-size table.
+  - Armor adds hard DEF; Novice weapon delay (fist 0.5 s, dagger 0.65 s) feeds into ASPD.
+  - The equipped weapon is drawn on the character using the client's weapon layer.
+- **Items:** Knife, Main Gauche, Cotton Shirt, Guard, Hood and Sandals.
+- **Merchant NPC** (`data/prerenewal/shops.json`): click to walk over and open the shop. Buy at the item price, sell at half price. Trades are validated by the simulation (Zeny, weight, distance), and walking away closes the shop.
+- **Glass windows:** Equipment window (Q / Alt+Q) with per-slot rows, ATK/DEF/ASPD totals and double-click to unequip. Shop window with greeting, BUY/SELL tabs, item rows, quantity, total and Zeny. Double-click equipment in the inventory to equip it.
+- **Saves:** format v2 adds equipment; v1 saves still load.
 - **Items and loot:** item database (`data/prerenewal/items.json`) and Pre-Renewal drop tables for Poring, Fabre and Lunatic. Drops land around the death cell, the killer gets 3 s of exclusive pickup, and ground items expire after 60 s.
 - **Inventory:** stacking, a 100-entry limit, and the Pre-Renewal weight limit (2000 + STR × 30). Pick up items by clicking them; use usable items to heal.
 - **Glass windows:** draggable, with remembered positions.
@@ -25,6 +33,7 @@
 - Model shader with classic ambient/diffuse lighting. Synthetic RSM unit test and sampled client model test.
 
 ### Fixed
+- Shop catalogue IDs parsed from JSON as floats never matched integer item IDs, so nothing could be bought; they are now normalised to integers.
 - RSW 2.7 model records: the extra f32 precedes the filename, so RSM2 references on 2.7 maps now resolve.
 
 ### Earlier

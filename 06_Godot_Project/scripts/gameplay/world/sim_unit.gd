@@ -41,11 +41,28 @@ var data: Dictionary = {}      # raw database entry
 var inventory := Inventory.new()
 var zeny := 0
 var pickup_target := 0         # ground item id being walked to
+var talk_target := 0           # NPC id being walked to
+var open_shop := 0             # NPC id whose shop is open (server-side check for trades)
+## Equipped items: slot -> item id. Slots: weapon, shield, body, garment, shoes, acc1, acc2, head_top, head_mid, head_low.
+var equipment: Dictionary = {}
+var batk := 1                  # status ATK (players)
+var watk_min := 0
+var watk_max := 0
+var weapon_type := "fist"
+var size := "medium"
 
 
 ## Pre-Renewal weight limit: 2000 + STR * 30 (+ job bonus; Novice 0). High confidence.
 func max_weight() -> int:
 	return 2000 + int(stats.str) * 30
+
+
+## Weight of equipped items (they still count toward the carry limit).
+func equipment_weight(db: Dictionary) -> int:
+	var w := 0
+	for slot in equipment:
+		w += int(db.get(str(equipment[slot]), {}).get("weight", 0))
+	return w
 
 
 func is_player() -> bool:
@@ -69,5 +86,10 @@ func combat_profile() -> Dictionary:
 	return {
 		"hit": hit(), "flee": flee(), "luk": int(stats.luk), "vit": int(stats.vit),
 		"atk_min": atk_min, "atk_max": atk_max, "def": hard_def,
-		"is_player": is_player(), "can_crit": is_player(),
+		"is_player": is_player(), "can_crit": is_player(), "size": size,
+	} if not is_player() else {
+		"hit": hit(), "flee": flee(), "luk": int(stats.luk), "vit": int(stats.vit),
+		"atk_min": atk_min, "atk_max": atk_max, "def": hard_def,
+		"is_player": true, "can_crit": true, "size": size,
+		"batk": batk, "watk_min": watk_min, "watk_max": watk_max, "weapon_type": weapon_type,
 	}

@@ -4,7 +4,7 @@ extends Node3D
 ## turns input into simulation commands. Progress is saved locally.
 ##
 ## Controls: left-click monster = attack, item = pick up, ground = walk.
-## I / Alt+E = inventory, Alt+A / S = status, F5 = save now.
+## I / Alt+E = inventory, Alt+A / S = status, Q / Alt+Q = equipment, F5 = save now.
 
 @export var map_name := "prt_fild08"
 @export var start_cell := Vector2i(170, 200)
@@ -22,6 +22,7 @@ var sim: FieldSimulation
 var player: SimUnit
 var views: Dictionary = {}         # unit id -> UnitView
 var item_views: Dictionary = {}    # ground id -> GroundItemView
+var npc_views: Dictionary = {}     # npc id -> NpcView
 var camera: RoCamera
 var hud: CombatHud
 var walker: GridWalker:            # kept for tools/tests that inspect the player walker
@@ -61,6 +62,7 @@ func _ready() -> void:
 		player.inventory.add(501, 3, sim.item_db, player.max_weight())  # starter Red Potions
 	for mob in spawns:
 		sim.spawn_random(mob, int(spawns[mob]))
+	sim.spawn_npcs(map_name)
 
 	camera = RoCamera.new()
 	camera.distance = 240.0
@@ -73,9 +75,16 @@ func _ready() -> void:
 	hud.inventory.use_requested.connect(func(i): sim.command_use_item(player.id, i))
 	hud.status_window.bind_unit(player)
 	hud.status_window.raise_requested.connect(func(s): sim.command_raise_stat(player.id, s))
+	hud.inventory.equip_requested.connect(func(i): sim.command_equip(player.id, i))
+	hud.equipment_window.bind_unit(player, sim.item_db)
+	hud.equipment_window.unequip_requested.connect(func(s): sim.command_unequip(player.id, s))
+	hud.shop.buy_requested.connect(func(item, n): sim.command_buy(player.id, item, n))
+	hud.shop.sell_requested.connect(func(i, n): sim.command_sell(player.id, i, n))
+	hud.shop.shop_closed.connect(func(): sim.close_shop(player.id))
 	_build_marker()
 	_consume_events()  # creates views for the initial spawns
 	camera.follow = views[player.id]
+	(views[player.id] as UnitView).update_weapon(_res)
 	hud.update_player(player, sim.next_base_exp(player), sim.next_job_exp(player), true)
 	if loaded_msg != "":
 		hud.notify(loaded_msg, UiTheme.ACCENT)
@@ -111,10 +120,16 @@ func _unhandled_input(e: InputEvent) -> void:
 					hud.status_window.toggle()
 			KEY_S:
 				hud.status_window.toggle()
+			KEY_Q:
+				hud.equipment_window.toggle()
 			KEY_F5:
 				save_now(true)
 		return
 	if not (e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT):
+		return
+	var npc := npc_at_screen(e.position)
+	if npc != 0:
+		sim.command_talk(player.id, npc)
 		return
 	var target := monster_at_screen(e.position)
 	if target != 0:
@@ -145,6 +160,17 @@ func monster_at_screen(p: Vector2) -> int:
 			best_d = d
 			best = id
 	return best
+
+
+## NPC id whose sprite is under the screen point, or 0.
+func npc_at_screen(p: Vector2) -> int:
+	for nid in npc_views:
+		var v: NpcView = npc_views[nid]
+		var feet := camera.unproject_position(v.global_position)
+		var head := camera.unproject_position(v.head_position())
+		if Geometry2D.get_closest_point_to_segment(p, feet, head).distance_to(p) < PICK_RADIUS_PX:
+			return nid
+	return 0
 
 
 ## Ground item id under the screen point, or 0.
@@ -216,6 +242,10 @@ func _process(delta: float) -> void:
 		hud.hover_tag(iv.item_name, camera.unproject_position(iv.head_position()))
 	else:
 		hud.hover_tag("", Vector2.ZERO)
+	# Walking away from the merchant closes the shop (the simulation also enforces range).
+	if hud.shop.visible and sim._open_shop_of(player).is_empty():
+		hud.shop.toggle(false)
+		hud.notify("You walked away from the shop.", UiTheme.TEXT_DIM)
 	_autosave_in -= delta
 	if _autosave_in <= 0.0:
 		_autosave_in = AUTOSAVE_SEC
@@ -277,12 +307,30 @@ func _consume_events() -> void:
 				inventory_changed = inventory_changed or ev.id == player.id
 			"stats":
 				player_changed = player_changed or ev.id == player.id
+			"equipment":
+				var ev_view: UnitView = views.get(ev.id)
+				if ev_view:
+					ev_view.update_weapon(_res)
+				player_changed = player_changed or ev.id == player.id
+			"npc_spawn":
+				_create_npc_view(ev.npc)
+			"npc_open":
+				if ev.id == player.id:
+					var npc: Dictionary = sim.npcs[ev.npc]
+					var shop_def: Dictionary = sim.shop_db.get(npc.shop, {})
+					hud.shop.open(npc.name, npc.greeting, shop_def.get("items", []), player, sim.item_db)
+			"trade":
+				if ev.id == player.id:
+					hud.notify(ev.text, UiTheme.TEXT if ev.ok else UiTheme.HP_MID)
+					hud.shop.refresh()
+					player_changed = true
 	if inventory_changed:
 		hud.inventory.refresh()
 	if player_changed:
 		hud.update_player(player, sim.next_base_exp(player), sim.next_job_exp(player))
 		hud.status_window.refresh()
 		hud.inventory.refresh()
+		hud.equipment_window.refresh()
 
 
 func _on_damage(ev: Dictionary) -> void:
@@ -320,6 +368,13 @@ func _create_view(u: SimUnit) -> void:
 		push_warning("No sprite for %s (%s)" % [u.name, u.sprite])
 	v.position = map.cell_pos_to_world(u.walker.position())
 	views[u.id] = v
+
+
+func _create_npc_view(nid: int) -> void:
+	var v := NpcView.new()
+	add_child(v)
+	v.setup(sim.npcs[nid], _res, map)
+	npc_views[nid] = v
 
 
 func _create_item_view(gid: int) -> void:

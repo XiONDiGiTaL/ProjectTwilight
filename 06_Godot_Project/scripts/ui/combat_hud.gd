@@ -67,12 +67,20 @@ func _ready() -> void:
 	status_window = StatusWindow.new()
 	_root.add_child(status_window)
 	status_window.position = Vector2(400, 160)
+	equipment_window = EquipmentWindow.new()
+	_root.add_child(equipment_window)
+	equipment_window.position = Vector2(500, 120)
+	shop = ShopWindow.new()
+	_root.add_child(shop)
+	shop.position = Vector2(380, 140)
 
 
 # --- System feed and hover tag ---------------------------------------------------
 
 var inventory: InventoryWindow
 var status_window: StatusWindow
+var equipment_window: EquipmentWindow
+var shop: ShopWindow
 var _feed: VBoxContainer
 var _hover_tag: GlassPanel
 var _hover_label: Label
