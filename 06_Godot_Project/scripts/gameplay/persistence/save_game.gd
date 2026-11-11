@@ -13,13 +13,34 @@ extends RefCounted
 ## half-written save.
 
 const FORMAT := "project-twilight-save"
-const VERSION := 2  # v2 adds "equipment"; v1 files still load
-const SAVE_DIR := "user://saves/"
+const VERSION := 3  # v2 adds "equipment", v3 adds appearance; older files still load
+## Save folder; tests point this at a temporary folder.
+static var save_dir := "user://saves/"
 const STAT_NAMES := ["str", "agi", "vit", "int", "dex", "luk"]
 
 
+## Lists saved characters: [{slot, ok, error, character}] for slot1..slotN in order.
+static func list_slots(max_slots: int, item_db: Dictionary, classes: Dictionary) -> Array:
+	var out := []
+	for i in max_slots:
+		var slot := "slot%d" % (i + 1)
+		if exists(slot):
+			var r := read(slot, item_db, classes)
+			out.append({"slot": slot, "ok": r.ok, "error": r.error, "character": r.character})
+		else:
+			out.append({"slot": slot, "ok": false, "error": "", "character": {}})
+	return out
+
+
+## Permanently deletes a slot's save file. Returns OK or an error.
+static func delete(slot: String) -> Error:
+	if not exists(slot):
+		return ERR_FILE_NOT_FOUND
+	return DirAccess.remove_absolute(path_for(slot))
+
+
 static func path_for(slot: String) -> String:
-	return SAVE_DIR + slot + ".json"
+	return save_dir + slot + ".json"
 
 
 static func exists(slot: String) -> bool:
@@ -40,13 +61,14 @@ static func capture(u: SimUnit, map_name: String) -> Dictionary:
 			"hp": u.hp, "sp": u.sp, "zeny": u.zeny,
 			"inventory": u.inventory.to_array(),
 			"equipment": u.equipment.duplicate(),
+			"male": u.male, "hair_style": u.hair_style, "hair_color": u.hair_color,
 			"map": map_name, "cell": [u.walker.cell.x, u.walker.cell.y],
 		},
 	}
 
 
 static func write(slot: String, data: Dictionary) -> Error:
-	DirAccess.make_dir_recursive_absolute(SAVE_DIR)
+	DirAccess.make_dir_recursive_absolute(save_dir)
 	var final_path := path_for(slot)
 	var tmp_path := final_path + ".tmp"
 	var f := FileAccess.open(tmp_path, FileAccess.WRITE)
@@ -54,7 +76,7 @@ static func write(slot: String, data: Dictionary) -> Error:
 		return FileAccess.get_open_error()
 	f.store_string(JSON.stringify(data, "  "))
 	f.close()
-	var dir := DirAccess.open(SAVE_DIR)
+	var dir := DirAccess.open(save_dir)
 	if dir.file_exists(final_path.get_file()):
 		dir.remove(final_path.get_file())
 	return dir.rename(tmp_path.get_file(), final_path.get_file())
@@ -92,8 +114,11 @@ static func validate(parsed: Variant, item_db: Dictionary, classes: Dictionary) 
 		stats[k] = clampi(int(raw_stats.get(k, 1)) if raw_stats is Dictionary else 1, 1, 99)
 	out.stats = stats
 	out.status_points = clampi(int(c.get("status_points", 0)), 0, 9999)
-	out.hp = maxi(1, int(c.get("hp", 1)))
+	out.hp = maxi(0, int(c.get("hp", 0)))   # 0 = full on load
 	out.sp = maxi(0, int(c.get("sp", 0)))
+	out.male = bool(c.get("male", true))
+	out.hair_style = clampi(int(c.get("hair_style", 2)), 1, 99)
+	out.hair_color = clampi(int(c.get("hair_color", 0)), 0, 99)
 	out.zeny = clampi(int(c.get("zeny", 0)), 0, 1000000000)
 	var inv: Variant = c.get("inventory", [])
 	out.inventory = Inventory.from_array(inv if inv is Array else [], item_db).to_array()

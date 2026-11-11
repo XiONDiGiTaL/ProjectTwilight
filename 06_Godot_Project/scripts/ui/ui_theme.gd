@@ -61,6 +61,57 @@ static func label(text: String, size: int, color := TEXT, weight := 400, spacing
 	return l
 
 
+## Applies the glass button look. primary = accent-filled call to action.
+static func style_button(b: BaseButton, primary := false, danger := false, font_size := 13) -> void:
+	var accent := HP_LOW if danger else ACCENT
+	b.focus_mode = Control.FOCUS_NONE
+	b.add_theme_font_override("font", font(600, 3))
+	b.add_theme_font_size_override("font_size", font_size)
+	b.add_theme_color_override("font_color", TEXT if primary else TEXT_DIM)
+	b.add_theme_color_override("font_hover_color", Color.WHITE)
+	b.add_theme_color_override("font_pressed_color", Color.WHITE)
+	b.add_theme_color_override("font_disabled_color", Color(TEXT_DIM, 0.35))
+	var make := func(bg_a: float, border_a: float) -> StyleBoxFlat:
+		var sb := StyleBoxFlat.new()
+		sb.bg_color = Color(accent, bg_a)
+		sb.border_color = Color(accent, border_a)
+		sb.set_border_width_all(1)
+		sb.set_corner_radius_all(2)
+		sb.content_margin_left = 16
+		sb.content_margin_right = 16
+		sb.content_margin_top = 6
+		sb.content_margin_bottom = 6
+		return sb
+	b.add_theme_stylebox_override("normal", make.call(0.2 if primary else 0.05, 0.75 if primary else 0.3))
+	b.add_theme_stylebox_override("hover", make.call(0.35 if primary else 0.14, 0.95))
+	b.add_theme_stylebox_override("pressed", make.call(0.45, 1.0))
+	b.add_theme_stylebox_override("hover_pressed", make.call(0.45, 1.0))
+	b.add_theme_stylebox_override("disabled", make.call(0.02, 0.12))
+	b.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+
+
+## Glass-styled single-line text input.
+static func style_line_edit(e: LineEdit) -> void:
+	e.add_theme_font_override("font", font(600, 1))
+	e.add_theme_font_size_override("font_size", 16)
+	e.add_theme_color_override("font_color", TEXT)
+	e.add_theme_color_override("font_placeholder_color", Color(TEXT_DIM, 0.5))
+	e.add_theme_color_override("caret_color", ACCENT)
+	for state in ["normal", "focus"]:
+		var sb := StyleBoxFlat.new()
+		sb.bg_color = Color(0.02, 0.05, 0.09, 0.6)
+		sb.border_color = Color(ACCENT, 0.8 if state == "focus" else 0.3)
+		sb.border_width_bottom = 2 if state == "focus" else 1
+		sb.border_width_left = 1
+		sb.border_width_right = 1
+		sb.border_width_top = 1
+		sb.content_margin_left = 10
+		sb.content_margin_right = 10
+		sb.content_margin_top = 6
+		sb.content_margin_bottom = 6
+		e.add_theme_stylebox_override(state, sb)
+
+
 ## HP colour by remaining fraction (green -> amber -> red), blended smoothly.
 static func hp_color(frac: float) -> Color:
 	if frac > 0.5:

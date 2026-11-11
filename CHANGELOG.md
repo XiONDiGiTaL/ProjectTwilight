@@ -3,6 +3,14 @@
 ## [Unreleased] - 2026-11-10
 
 ### Added
+- **Character select:** six local character slots in glass style, with a live rotating preview on a glowing platform, details (class insignia, levels, stats, location, Zeny), PLAY, and DELETE behind a confirmation.
+- **Character creation:**
+  - Name validation: 4–23 letters, numbers or single spaces, unique among local characters.
+  - Sex, hairstyle (only styles the client actually has) and nine hair colours, previewed live with the client's sprites.
+  - The classic Pre-Renewal stat hexagon as an interactive radar chart: opposing pairs sum to 10, and every build spends exactly 48 points.
+  - New Novices start with a Knife and Cotton Shirt equipped and 3 Red Potions.
+- **Title screen** rebuilt in glass over a live orbiting Prontera backdrop (`MenuBackdrop`). The flow is now Title → Character Select → Field (via the `GameSession` autoload).
+- **Saves:** format v3 adds appearance (sex, hairstyle, hair colour); v1/v2 saves load with default looks. Characters are drawn with their saved appearance.
 - **Equipment:** slots (weapon, shield, armor, garment, shoes, accessories, headgear), equip and unequip with swaps, and equipment weight counted toward the carry limit.
   - Pre-Renewal weapon damage: status ATK + weapon ATK with a DEX-based minimum, scaled by the weapon-vs-size table.
   - Armor adds hard DEF; Novice weapon delay (fist 0.5 s, dagger 0.65 s) feeds into ASPD.

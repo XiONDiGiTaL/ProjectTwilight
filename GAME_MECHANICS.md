@@ -66,6 +66,18 @@ Implementation: `scripts/gameplay/items/inventory.gd`, `field_simulation.gd`, `d
 | NPC prices | Buy at the item price; sell at floor(price / 2) | High (without Discount/Overcharge) |
 | Interaction range | Talk within 2 cells; trades rejected beyond 6 cells | Medium |
 
+## Character creation
+
+Implementation: `scripts/gameplay/character/character_rules.gd`. Tests: `tests/unit/test_character.gd`.
+
+| Rule | Value | Confidence |
+|---|---|---|
+| Stat hexagon | STR/INT, AGI/LUK and VIT/DEX pairs; each stat 1–9; each pair sums to 10 | High |
+| Starting points | Every legal hexagon spends exactly 48 (each pair costs 16 at 2 points per raise), leaving 0 | High |
+| Names | 4–23 characters (local rule; server rules may differ) | Medium |
+| Starting gear | Knife and Cotton Shirt equipped, plus 3 Red Potions | Medium |
+| Start location | prt_fild08 (170, 200) for now; classic start points come with more maps | — |
+
 ## Movement
 
 Implementation: `scripts/gameplay/world/grid_pathfinder.gd`, `grid_walker.gd`. Tests: `tests/unit/test_movement.gd`.

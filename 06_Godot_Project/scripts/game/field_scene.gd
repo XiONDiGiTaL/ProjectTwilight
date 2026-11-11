@@ -37,6 +37,9 @@ func _ready() -> void:
 	_res = get_node("/root/RoResources")
 	if not _res.is_mounted:
 		_res.mount()
+	var session := get_node_or_null("/root/GameSession")
+	if session and session.slot != "" and save_slot != "":
+		save_slot = session.slot
 	var env := WorldEnvironment.new()
 	env.environment = Environment.new()
 	env.environment.background_mode = Environment.BG_COLOR
@@ -363,7 +366,7 @@ func _create_view(u: SimUnit) -> void:
 	v.unit = u
 	v.map = map
 	add_child(v)
-	var ok := v.build_player(_res, true, 2, 0) if u.is_player() else v.build_monster(_res)
+	var ok := v.build_player(_res, u.male, u.hair_style, u.hair_color) if u.is_player() else v.build_monster(_res)
 	if not ok:
 		push_warning("No sprite for %s (%s)" % [u.name, u.sprite])
 	v.position = map.cell_pos_to_world(u.walker.position())

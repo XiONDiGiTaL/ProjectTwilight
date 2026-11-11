@@ -112,6 +112,9 @@ func spawn_npcs(map_name: String) -> void:
 func add_player_from_save(c: Dictionary) -> SimUnit:
 	var u := add_player(String(c.name), c.cell, c.stats)
 	u.job = String(c.job)
+	u.male = bool(c.get("male", true))
+	u.hair_style = int(c.get("hair_style", 2))
+	u.hair_color = int(c.get("hair_color", 0))
 	u.level = int(c.level)
 	u.job_level = int(c.job_level)
 	u.base_exp = int(c.base_exp)
@@ -125,8 +128,8 @@ func add_player_from_save(c: Dictionary) -> SimUnit:
 		if EQUIP_SLOTS.has(slot) and _slot_fits(def, String(slot)):
 			u.equipment[slot] = int(eq[slot])
 	_recalc_player(u)
-	u.hp = clampi(int(c.hp), 1, u.max_hp)
-	u.sp = clampi(int(c.sp), 0, u.max_sp)
+	u.hp = u.max_hp if int(c.hp) <= 0 else clampi(int(c.hp), 1, u.max_hp)
+	u.sp = u.max_sp if int(c.hp) <= 0 else clampi(int(c.sp), 0, u.max_sp)
 	return u
 
 
