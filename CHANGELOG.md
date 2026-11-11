@@ -3,6 +3,13 @@
 ## [Unreleased] - 2026-11-10
 
 ### Added
+- RSM/RSM2 model decoder (1.4, 1.5, 2.2, 2.3) and mesh baker. Maps now render their buildings, trees and props (for example, 1,303 instances in Prontera).
+- Model shader with classic ambient/diffuse lighting. Synthetic RSM unit test and sampled client model test.
+
+### Fixed
+- RSW 2.7 model records: the extra f32 precedes the filename, so RSM2 references on 2.7 maps now resolve.
+
+### Earlier
 - GAT, GND (1.7/1.8/1.9) and RSW (1.9 to 2.7) decoders. All 3,366 map files in the reference client parse completely.
 - Ground renderer: per-texture mesh surfaces, lightmap atlas, smoothed normals, classic sRGB lighting shader, and a water plane.
 - `RoMap` node with cell/world conversion, `RoCamera` isometric camera, and a Map Viewer tool (added to the main menu).

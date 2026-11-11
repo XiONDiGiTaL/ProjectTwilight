@@ -36,7 +36,7 @@ func _run() -> void:
 			print("load failed ", m)
 			map.queue_free()
 			continue
-		print("%s built in %d ms" % [m, map.load_ms])
+		print("%s built in %d ms, models %s" % [m, map.load_ms, map.model_stats])
 		var shots := [["overview", 0.0, 1100.0, 60.0], ["close", 45.0, 260.0, 50.0]]
 		for s in shots:
 			cam.focus = map.center()

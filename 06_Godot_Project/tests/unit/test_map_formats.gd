@@ -114,3 +114,57 @@ func test_rsw_21(_t) -> Variant:
 	if not r.objects_complete or r.models.size() != 1 or r.models[0].file != "tree.rsm" or r.models[0].rot != Vector3(0, 90, 0):
 		return "model wrong: %s" % str(r.models)
 	return true
+
+
+func _make_rsm_14() -> PackedByteArray:
+	var b := "GRSM".to_ascii_buffer()
+	b.append(1); b.append(4)
+	_u32(b, 0); _u32(b, 1)  # anim length, shade FLAT
+	b.append(255)  # alpha
+	b.resize(b.size() + 16)
+	_u32(b, 1); _fixed(b, "wall.bmp", 40)
+	_fixed(b, "root", 40)
+	_u32(b, 1)  # one node
+	_fixed(b, "root", 40); _fixed(b, "", 40)
+	_u32(b, 1); _u32(b, 0)  # texture ref 0
+	for v in [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]: _f32(b, v)  # offset = identity
+	for v in [0.0, 0.0, 0.0]: _f32(b, v)  # position
+	for v in [0.0, 0.0, 0.0]: _f32(b, v)  # translation
+	_f32(b, 0.0)
+	for v in [0.0, 1.0, 0.0]: _f32(b, v)  # rot axis
+	for v in [1.0, 1.0, 1.0]: _f32(b, v)  # scale
+	_u32(b, 3)  # triangle spanning x 0..10, RO y -20..0 (up is negative), z 0
+	for v in [0.0, 0.0, 0.0, 10.0, 0.0, 0.0, 0.0, -20.0, 0.0]: _f32(b, v)
+	_u32(b, 3)
+	for uv in [[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]]:
+		_u32(b, 0xFFFFFFFF); _f32(b, uv[0]); _f32(b, uv[1])
+	_u32(b, 1)  # one face
+	for i in [0, 1, 2, 0, 1, 2, 0, 0]:
+		b.append(i & 0xFF); b.append(0)
+	_u32(b, 0); _u32(b, 0)  # two_sided, smooth group
+	_u32(b, 0)  # rot keys
+	_u32(b, 0); _u32(b, 0)  # trailer
+	return b
+
+
+func test_rsm_decode_and_centre(_t) -> Variant:
+	var rsm := RsmFile.decode(_make_rsm_14())
+	if rsm == null or rsm.nodes.size() != 1 or rsm.textures[0] != "wall.bmp":
+		return "decode failed"
+	var n: Dictionary = rsm.nodes[0]
+	if n.vertices.size() != 3 or n.uvs.size() != 3 or n.faces.size() != 8:
+		return "node counts wrong"
+	var builder := RsmMeshBuilder.new()
+	builder.rsm = rsm
+	var mesh := builder.build()
+	if mesh.get_surface_count() != 1:
+		return "expected 1 surface"
+	# Centring: x centred (-5..5), RO max y moved to 0 (model sits on the ground).
+	var aabb := mesh.get_aabb()
+	if not aabb.position.is_equal_approx(Vector3(-5, -20, 0)) or not Vector2(aabb.size.x, aabb.size.y).is_equal_approx(Vector2(10, 20)):
+		return "centring wrong: %s" % aabb
+	# In Godot space (RO_TO_GODOT) the model must rise upward from y = 0.
+	var g := Transform3D(RsmMeshBuilder.RO_TO_GODOT, Vector3.ZERO) * aabb
+	if not is_equal_approx(g.position.y, 0.0) or not is_equal_approx(g.end.y, 20.0):
+		return "not upright in Godot space: %s" % g
+	return true

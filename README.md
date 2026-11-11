@@ -38,7 +38,7 @@ Project Twilight **contains no Gravity game data**. On first launch you point it
 | Pre-Renewal stat formulas (core) | 🔧 In development |
 | Co-op invitation codes | ✅ Implemented and tested · networking 📋 planned |
 | Map decoding (GAT/GND/RSW) and ground rendering | ✅ Implemented and tested |
-| Map models (RSM/RSM2: buildings, trees) | 📋 Next |
+| Map models (RSM/RSM2: buildings, trees, props) | ✅ Implemented and tested (static) |
 | First offline playable (character, map, monster, combat, save) | 📋 Planned |
 | Private co-op sessions | 📋 Planned |
 | eAthena / Hercules compatibility | 🔍 Under investigation, not claimed |

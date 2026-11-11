@@ -72,3 +72,39 @@ func test_all_maps_decode(_t) -> Variant:
 	if not incomplete.is_empty() or not odd_light.is_empty():
 		return "RSW layout gaps (see above)"
 	return true
+
+
+## Decodes and bakes a sample of every RSM/RSM2 in the client.
+func test_model_sample_builds(_t) -> Variant:
+	var g: GrfArchive = ClientGrf._archive()
+	if g == null:
+		return "SKIP no client configured"
+	var tried := 0
+	var bad: Array = []
+	var empty := 0
+	var versions := {}
+	var i := 0
+	for raw in g.list_raw_names():
+		var key := GrfArchive.normalize(raw)
+		if not (key.ends_with(".rsm") or key.ends_with(".rsm2")):
+			continue
+		i += 1
+		if i % 13 != 0:
+			continue
+		tried += 1
+		var r := RsmFile.new()
+		if not r._parse(g.read(key)):
+			if r.last_error.contains("not supported yet"):
+				versions["unsupported"] = versions.get("unsupported", 0) + 1
+				continue
+			bad.append("%s: %s" % [Cp949.decode_latin1(raw), r.last_error])
+			continue
+		versions["%x" % r.version] = versions.get("%x" % r.version, 0) + 1
+		var b := RsmMeshBuilder.new()
+		b.rsm = r
+		if b.build().get_surface_count() == 0:
+			empty += 1
+	print("    [models] sampled %d, failures=%d, empty meshes=%d, versions=%s" % [tried, bad.size(), empty, versions])
+	if not bad.is_empty():
+		return "failures: %s" % str(bad.slice(0, 5))
+	return true

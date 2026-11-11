@@ -15,10 +15,15 @@ Workspace, tools, client, Eternal Love package and Shattered Marches audited. Se
 3. ✅ Sprite previewing (Sprite Viewer tool)
 4. ✅ Animation playback (ACT, ActSprite)
 5. ✅ Map decoding (GAT, GND, RSW; all 3,366 client map files)
-6. 🔧 Isometric map rendering: ✅ ground, lightmaps, water plane, camera · 📋 RSM/RSM2 models ← **next** · 📋 animated water
+6. ✅ Isometric map rendering: ground, lightmaps, water plane, camera, RSM/RSM2 models (static first frame) · 📋 model animation, animated water, model translucency
 7. 📋 Character composition (body + head via ACT anchors, hair palettes)
 8. 📋 Cell-based movement on GAT walkability
 9. 📋 Versioned local save/load
+
+## Asset independence 📋
+The engine never runs Gravity code; only *content* comes from the client. Two complementary paths:
+- **Local importer** (near term): convert the player's own client once into Godot-native resources under `user://`, so the GRF is no longer read at runtime. Nothing is redistributed.
+- **Original replacement assets** (long term): independently created sprites, maps, models and music in the classic style. This is required for any publicly distributable standalone build. The resource layer already treats assets as replaceable.
 
 ## Phase 4: First playable (offline) 📋
 Main menu → character creation → one classic map → movement → one monster → basic combat → EXP → inventory → save/load.

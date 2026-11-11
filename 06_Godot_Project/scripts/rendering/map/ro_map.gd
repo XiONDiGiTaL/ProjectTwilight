@@ -11,6 +11,9 @@ var gnd: GndFile
 var rsw: RswFile
 var ground: MeshInstance3D
 var load_ms := 0
+var load_models := true
+var models_root: Node3D
+var model_stats := {"instances": 0, "unique": 0, "failed": 0}
 
 var _textures: Dictionary = {}
 ## The RoResources VFS node (looked up at runtime so tools and tests can use RoMap).
@@ -40,6 +43,8 @@ func load_map(name: String) -> bool:
 	ground.mesh = builder.build()
 	add_child(ground)
 	_add_water()
+	if load_models:
+		_add_models()
 	load_ms = Time.get_ticks_msec() - t0
 	return true
 
@@ -77,6 +82,46 @@ func _load_texture(latin1_name: String) -> Texture2D:
 		tex = ImageTexture.create_from_image(img)
 	_textures[latin1_name] = tex
 	return tex
+
+
+func _add_models() -> void:
+	if rsw == null:
+		return
+	models_root = Node3D.new()
+	models_root.name = "Models"
+	add_child(models_root)
+	var cache := {}  # latin1 file -> ArrayMesh or null
+	var light_dir := rsw.light_direction()
+	var dif: Color = rsw.light.diffuse
+	var amb: Color = rsw.light.ambient
+	for entry in rsw.models:
+		var file: String = entry.file
+		if not cache.has(file):
+			var path := "data\\model\\" + Cp949.decode_latin1(file)
+			var rsm := RsmFile.decode(res.read(path))
+			var mesh: ArrayMesh = null
+			if rsm:
+				var b := RsmMeshBuilder.new()
+				b.rsm = rsm
+				b.texture_loader = _load_texture
+				mesh = b.build()
+				for s in mesh.get_surface_count():
+					var mat := mesh.surface_get_material(s) as ShaderMaterial
+					mat.set_shader_parameter("light_dir", light_dir)
+					mat.set_shader_parameter("light_diffuse", Vector3(dif.r, dif.g, dif.b))
+					mat.set_shader_parameter("light_ambient", Vector3(amb.r, amb.g, amb.b))
+			cache[file] = mesh
+			if mesh == null:
+				model_stats.failed += 1
+		var m: ArrayMesh = cache[file]
+		if m == null:
+			continue
+		var mi := MeshInstance3D.new()
+		mi.mesh = m
+		mi.transform = RsmMeshBuilder.instance_transform(entry, gnd)
+		models_root.add_child(mi)
+		model_stats.instances += 1
+	model_stats.unique = cache.size()
 
 
 func _add_water() -> void:

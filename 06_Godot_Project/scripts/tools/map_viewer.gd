@@ -59,7 +59,7 @@ func _load() -> void:
 		return
 	_camera.focus = _map.center()
 	_set_lightmaps(_lightmap_on)
-	_info.text = "%s  |  GND %dx%d v%x, %d textures, %d surfaces  |  RSW v%x: %d models (not drawn yet)  |  built in %d ms  |  WASD pan, right-drag rotate, wheel zoom" % [
+	_info.text = "%s  |  GND %dx%d v%x, %d textures, %d surfaces  |  RSW v%x: %d model instances  |  built in %d ms  |  WASD pan, right-drag rotate, wheel zoom" % [
 		name, _map.gnd.width, _map.gnd.height, _map.gnd.version, _map.gnd.textures.size(),
 		_map.gnd.surface_count(), _map.rsw.version if _map.rsw else 0,
 		_map.rsw.models.size() if _map.rsw else 0, _map.load_ms]

@@ -102,12 +102,50 @@ Implementation: `scripts/resources/formats/rsw_file.gd`
 - **Light:** i32 longitude, i32 latitude, f32 diffuse[3], f32 ambient[3], f32 opacity. Then the ground bounds as i32 × 4.
 - **2.7 and later:** u32 n followed by n×4 bytes (n = 16 in every map; purpose unknown).
 - **Objects:** u32 count, then per object an i32 type followed by its record:
-  - **1 = model:** char[40] name, i32 animation type, f32 animation speed, i32 block type, [extra u8], char[80] file, char[80] node, f32 position[3], rotation[3], scale[3], [**2.7: trailing f32**, observed −1.0]. The extra u8 is present in all 2.7 files and in 2.6 from build 162, plus builds 8 and 18. Those last two are probably the u8 build counter wrapping past 255 (Medium confidence).
+  - **1 = model:** char[40] name, i32 animation type, f32 animation speed, i32 block type, [u8], [**2.7: f32**, often −1.0], char[80] file, char[80] node, f32 position[3], rotation[3], scale[3].
+    - The u8 is present in all 2.7 files and in 2.6 from build 162, plus builds 8 and 18. Those last two are probably the u8 build counter wrapping past 255 (Medium confidence).
+    - *Correction:* the 2.7 f32 comes **before** the filename, not after the scale. Confirmed because every RSM2 model on 2.7 maps such as `mu_fild02` and `kindlbrk` now resolves and loads.
   - **2 = light:** 108 bytes.
   - **3 = sound:** 192 bytes.
   - **4 = effect:** 116 bytes.
 - **Light direction:** longitude/latitude are converted to a vector. With a latitude of 45 the top-face N·L is the same whatever the longitude convention. The exact sign convention is Medium confidence.
 
+## RSM / RSM2 models (Confirmed for 1.4, 1.5, 2.2, 2.3; 2.0/2.1 unsupported)
+
+Implementation: `scripts/resources/formats/rsm_file.gd`. Baking: `scripts/rendering/map/rsm_mesh_builder.gd`.
+
+Versions in the reference client: 1.4 (6,588), 1.5 (490), 2.1 (2, `engine/biggear*`), 2.2 (448) and 2.3 (2,098).
+
+### Header
+
+- `"GRSM"`, u8 major, u8 minor, i32 animation length, i32 shade type (0 none, 1 flat, 2 smooth), then u8 alpha for ≥ 1.4.
+- **1.x:** 16 reserved bytes, i32 n + n × char[40] textures, char[40] root name, i32 node count.
+- **2.x:** f32 fps, [**2.2 only:** i32 n + n length-prefixed texture names], i32 n + n length-prefixed root names, i32 node count.
+
+### Node
+
+- Name and parent name: char[40] in 1.x, length-prefixed strings in 2.x.
+- Texture references: i32 n, then i32 indices into the global list (1.x and 2.2) or length-prefixed names (2.3).
+- f32 offset[9] (3×3, column-major), then f32 position[3].
+- **1.x only:** f32 translation[3], f32 rotation angle (radians), f32 rotation axis[3], f32 scale[3].
+- Vertices: i32 n + n × f32[3].
+- Texture coordinates: i32 n + n × ([u32 colour if ≥ 1.2], f32 u, f32 v).
+- Faces: i32 n + n × ([**2.x:** i32 record length], u16 v[3], u16 t[3], u16 texture, u16 pad, i32 two-sided, [i32 smoothing group if ≥ 1.2]).
+- Keyframes: [≥ 1.6: scale keys, 20 bytes each], rotation keys (i32 frame + quaternion xyzw), [≥ 2.2: position keys, 20 bytes each], [≥ 2.3: texture animations].
+- A few trailing bytes (volume boxes) follow the last node.
+
+### Baking (RO space, y down)
+
+- **1.x** (High confidence; visually verified on prontera, izlude and prt_fild08):
+  - `node_world = parent * T(translation) * R(first rotation key, or angle/axis) * S(scale)`
+  - `v' = centre * node_world * T(position) [skipped for single-node models] * offset * v`
+  - `centre = T(−bbox.center.x, −bbox.max.y, −bbox.center.z)`, so models stand on y = 0.
+- **2.x** (Medium confidence; looks plausible on mu_fild02 and kindlbrk):
+  - `node_world = parent * T(first position key, or position) * R(rotation key) * S(scale key)`
+  - `v' = node_world * offset * v`, with no centring.
+- **Instances** (from RSW): `T(pos + map half-extent) * Rz * Rx * Ry * S`, with RSW rotation in degrees. RO space is then converted to Godot by `diag(1, −1, −1)`, which is a proper rotation. The map orientation is confirmed: Prontera's church appears in the northeast.
+- **Shading:** `texture × clamp(ambient + diffuse × N·L)`. Smooth-shaded models average normals per vertex and smoothing group. Magenta texels are discarded.
+
 ## Next to document
 
-RSM/RSM2 (models; needed for buildings and trees), STR (effects), PAL (1,024-byte palettes for hair and clothes), IMF, and Lua/LUB tables.
+STR (effects), PAL (1,024-byte palettes for hair and clothes), IMF, and Lua/LUB tables.

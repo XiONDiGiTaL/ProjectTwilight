@@ -111,17 +111,18 @@ func _parse_objects(d: PackedByteArray, p: int) -> void:
 		p += 4
 		match type:
 			1:
-				# Extra leading byte in model records: all 2.7; 2.6 from build 162 on.
-				# Builds 8 and 18 also carry it, so the u8 build counter appears to
-				# wrap past 255 (medium confidence; only build 161 lacks it in kRO 2025).
+				# After block_type, newer records insert data before the filename:
+				#   u8  : all 2.7; 2.6 from build 162 on. Builds 8 and 18 also carry it,
+				#         so the u8 build counter appears to wrap past 255 (medium
+				#         confidence; only build 161 lacks it in kRO 2025).
+				#   f32 : 2.7 only (often -1.0; purpose unknown).
 				var extra := version >= 0x0207 or (version == 0x0206 and (build >= 162 or build < 100))
-				var lead := 1 if extra else 0
-				# 2.7 appends an unknown f32 (observed -1.0) after the scale.
-				var size := 248 + lead + (4 if version >= 0x0207 else 0)
+				var lead := (1 if extra else 0) + (4 if version >= 0x0207 else 0)
+				var size := 248 + lead
 				if p + size > d.size():
 					last_error = "Truncated model %d" % i
 					return
-				var q := p + lead
+				var q := p + lead  # fields from the filename on are shifted by `lead`
 				models.append({
 					"name": _str(d, p, 40), "anim_type": d.decode_s32(p + 40),
 					"anim_speed": d.decode_float(p + 44), "block_type": d.decode_s32(p + 48),
