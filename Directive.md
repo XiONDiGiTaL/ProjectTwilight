@@ -143,7 +143,7 @@ Full brief: Swordman → **Dark Knight**, female Acolyte → **Shaman**, with fu
 
 - [ ] Open rAthena `shop` NPCs in the shop window.
 - [ ] `OnTouch` areas and NPC timers.
-- [ ] Load rAthena `npc/warps` so every map gets its portals; map spawns from `npc/pre-re/mobs`.
+- [x] Load rAthena `npc/warps` so every map gets its portals; map spawns from `npc/pre-re/mobs` (done 2026-11-11).
 - [ ] Draw falcon, cart and Peco; add Falconry, Pushcart and Riding to the classes that need them.
 - [ ] Export presets: include `data/**/*.txt` in exported builds.
 
