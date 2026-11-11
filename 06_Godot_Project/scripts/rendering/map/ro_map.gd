@@ -66,6 +66,33 @@ func cell_to_world(x: int, y: int) -> Vector3:
 	return Vector3((x + 0.5) * half, hgt, -(y + 0.5) * half)
 
 
+## Godot position for a continuous GAT position (cell units, centre = n + 0.5).
+func cell_pos_to_world(p: Vector2) -> Vector3:
+	var half := gnd.zoom / 2.0
+	var c := Vector2i(floori(p.x), floori(p.y))
+	var hgt := -gat.height_at(c.x, c.y, p.x - c.x, p.y - c.y) if gat else 0.0
+	return Vector3(p.x * half, hgt, -p.y * half)
+
+
+## Ground hit for a ray (ray-marched against GAT heights). Returns (-1, -1) on miss.
+func pick_cell(origin: Vector3, dir: Vector3, max_dist: float = 4000.0) -> Vector2i:
+	if gat == null:
+		return Vector2i(-1, -1)
+	var half := gnd.zoom / 2.0
+	var step := half * 0.25
+	var t := 0.0
+	while t < max_dist:
+		var p := origin + dir * t
+		var c := world_to_cell(p)
+		if gat.in_bounds(c.x, c.y):
+			var fx := p.x / half - c.x
+			var fy := -p.z / half - c.y
+			if p.y <= -gat.height_at(c.x, c.y, fx, fy):
+				return c
+		t += step
+	return Vector2i(-1, -1)
+
+
 func world_to_cell(p: Vector3) -> Vector2i:
 	var half := gnd.zoom / 2.0
 	return Vector2i(floori(p.x / half), floori(-p.z / half))

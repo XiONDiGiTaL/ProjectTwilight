@@ -16,8 +16,8 @@ Workspace, tools, client, Eternal Love package and Shattered Marches audited. Se
 4. ✅ Animation playback (ACT, ActSprite)
 5. ✅ Map decoding (GAT, GND, RSW; all 3,366 client map files)
 6. ✅ Isometric map rendering: ground, lightmaps, water plane, camera, RSM/RSM2 models (static first frame) · 📋 model animation, animated water, model translucency
-7. 📋 Character composition (body + head via ACT anchors, hair palettes)
-8. 📋 Cell-based movement on GAT walkability
+7. ✅ Character composition (body + head via ACT anchors, hair palettes, 8 directions with camera-yaw correction)
+8. ✅ Cell-based movement on GAT walkability (A*, no corner cutting, 150 ms/cell, click-to-walk)
 9. 📋 Versioned local save/load
 
 ## Asset independence 📋

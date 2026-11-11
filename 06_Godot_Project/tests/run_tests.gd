@@ -18,6 +18,7 @@ func _init() -> void:
 		preload("res://tests/unit/test_invitation_code.gd"),
 		preload("res://tests/unit/test_mechanics.gd"),
 		preload("res://tests/unit/test_map_formats.gd"),
+		preload("res://tests/unit/test_movement.gd"),
 		preload("res://tests/integration/test_client_grf.gd"),
 		preload("res://tests/integration/test_client_maps.gd"),
 	]

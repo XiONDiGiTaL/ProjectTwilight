@@ -16,6 +16,19 @@ Implementation: `06_Godot_Project/scripts/gameplay/progression/stat_rules_preren
 | Status ATK (melee) | STR + floor(STR/10)² + floor(DEX/5) + floor(LUK/5) | High | iRO Wiki classic. Ranged weapons swap STR and DEX. |
 | MATK range | INT + floor(INT/7)² … INT + floor(INT/5)² | High | iRO Wiki classic |
 
+## Movement
+
+Implementation: `scripts/gameplay/world/grid_pathfinder.gd`, `grid_walker.gd`. Tests: `tests/unit/test_movement.gd`.
+
+| Rule | Value | Confidence | Notes |
+|---|---|---|---|
+| Grid | GAT cells, 8 directions | Confirmed | GAT types 0 and 3 are walkable |
+| Base walk speed | 150 ms per cell | High | Default speed shared by players and emulators (`DEFAULT_WALK_SPEED`) |
+| Diagonal step | 1.4 × straight | High | Emulators use a 14/10 move cost |
+| Corner cutting | Not allowed | High | A diagonal step needs both orthogonal neighbours walkable |
+| Click-to-walk range | 64 steps | Medium | Typical client/emulator path limit; needs verification |
+| Direction codes | 0 S, 1 SW, 2 W, 3 NW, 4 N, 5 NE, 6 E, 7 SE | Confirmed | Verified visually against the client's sprite directions |
+
 ## Still to research
 
 Experience tables, job-based HP/SP, ASPD, cast time and after-cast delay, DEF/MDEF (hard and soft), the element table, size modifiers, the refine table, monster data, skills and drop rates.

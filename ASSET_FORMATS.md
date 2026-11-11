@@ -146,6 +146,16 @@ Versions in the reference client: 1.4 (6,588), 1.5 (490), 2.1 (2, `engine/biggea
 - **Instances** (from RSW): `T(pos + map half-extent) * Rz * Rx * Ry * S`, with RSW rotation in degrees. RO space is then converted to Godot by `diag(1, −1, −1)`, which is a proper rotation. The map orientation is confirmed: Prontera's church appears in the northeast.
 - **Shading:** `texture × clamp(ambient + diffuse × N·L)`. Smooth-shaded models average normals per vertex and smoothing group. Magenta texels are discarded.
 
+## Character composition (Confirmed visually)
+
+- **Body:** `data\sprite\인간족\몸통\{남|여}\{job}_{sex}`.
+- **Head:** `data\sprite\인간족\머리통\{sex}\{style}_{sex}`.
+- **Hair dye:** `data\palette\머리\머리{style}_{sex}_{colour}.pal`, a 1,024-byte palette that replaces the head SPR palette.
+- **Head offset:** `body_frame.anchors[0] − head_frame.anchors[0]`, applied to every head layer. The head frame is chosen as `body_frame % head_frame_count`.
+- **Action groups** (× 8 directions): 0 idle, 1 walk, 2 sit, 3 pick up, 4 ready, 5 attack, 6 hurt, 8 dead. Idle frames 0–2 are head turns, not an animation.
+- **Displayed direction:** `(world_direction + round(camera_yaw / 45)) mod 8`. A ring of 8 characters faces outward at yaw 0° and 90°.
+- **Scale:** 35 sprite pixels per GAT cell (Medium confidence, tuned visually).
+
 ## Next to document
 
 STR (effects), PAL (1,024-byte palettes for hair and clothes), IMF, and Lua/LUB tables.

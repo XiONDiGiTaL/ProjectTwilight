@@ -3,6 +3,10 @@
 ## [Unreleased] - 2026-11-10
 
 ### Added
+- Walkable character: `GridPathfinder` (8-directional A* over GAT, no corner cutting, 64-step limit) and `GridWalker` (deterministic 150 ms/cell movement, 1.4× for diagonals, re-click finishes the current step). Both are pure gameplay logic.
+- `CharacterSprite`: body and head composed through ACT anchors with hair palettes, shown as a camera-facing billboard that is depth-tested against the map.
+- `PlayerAvatar` and the "Explore Prontera" offline prototype scene: click-to-walk, follow camera, target marker.
+- Movement unit tests and a visual direction-ring capture.
 - RSM/RSM2 model decoder (1.4, 1.5, 2.2, 2.3) and mesh baker. Maps now render their buildings, trees and props (for example, 1,303 instances in Prontera).
 - Model shader with classic ambient/diffuse lighting. Synthetic RSM unit test and sampled client model test.
 
