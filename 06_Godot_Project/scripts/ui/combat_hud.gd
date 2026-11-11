@@ -88,6 +88,7 @@ func _ready() -> void:
 	dialog = NpcDialog.new()
 	_root.add_child(dialog)
 	_build_minimap()
+	_build_chat()
 
 
 # --- System feed and hover tag ---------------------------------------------------
@@ -100,6 +101,7 @@ var skill_window: SkillWindow
 var hotkeys: HotkeyBar
 var dialog: NpcDialog
 var minimap: Minimap
+var chat: ChatConsole
 var _minimap_panel: GlassPanel
 var _minimap_title: Label
 var _feed: VBoxContainer
@@ -276,6 +278,18 @@ func bind_minimap(gat: GatFile, sim: FieldSimulation, player_id: int, title: Str
 
 func toggle_minimap() -> void:
 	_minimap_panel.visible = not _minimap_panel.visible
+
+
+## Bottom-left command line (Enter to open).
+func _build_chat() -> void:
+	chat = ChatConsole.new()
+	_root.add_child(chat)
+	chat.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
+	chat.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	chat.offset_left = 16
+	chat.offset_right = 388   # clear of the centred hotkey bar
+	chat.offset_bottom = -16
+	chat.offset_top = -54
 
 
 ## Shows a small name tag at a screen position (ground item hover); "" hides it.

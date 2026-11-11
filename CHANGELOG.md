@@ -10,6 +10,9 @@
   - They wear real gear and palettes, carry a role-coloured name tag and never trigger map portals or touch the player's save.
 - **Minimap:** a corner overview in the Twilight Glass style with the map's walkability silhouette, portals, monsters, the player and the CPU adventurers as role-coloured blips. Toggle with **M**.
 - **Diagnostics:** `tests/diag_warps.gd` reports loaded portals and spawns per map; `tests/capture_bots.gd` renders the CPU adventurers and minimap.
+- **Data-folder mode:** mount a folder of `.grf` archives (with or without `DATA.INI`) or a loose `data/` tree. Godot is the engine, so no client executable, launcher or patcher is involved.
+- **Server rules (`RuleConfig`):** EXP / job / drop rates, autoloot and the level cap, read from `data/config.json`, then `user://server.cfg`, then an rAthena/Hercules `conf/battle` tree. Unknown keys are ignored and every value is clamped.
+- **Command console:** press **Enter** for private-server style commands — `@go`, `@warp`, `@heal`, `@save`, `@die`, `@revive`, `@rates`, `@autoloot`, `@mobinfo`, `@who`, `@exp`, `@job`, `@where`, `@time`, `@help`. They run through the simulation, so a host or server validates them the same way.
 - **World travel:**
   - Every map gets its warp portals from rAthena's warp lists (2,999 portals, with Pre-Renewal overrides), using rAthena's touch areas. Same-map portals teleport.
   - Monster spawns come from rAthena's Pre-Renewal lists, for the monsters this build has data for.

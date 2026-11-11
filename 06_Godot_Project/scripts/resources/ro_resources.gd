@@ -25,10 +25,20 @@ var _spr_cache: Dictionary = {}
 var _act_cache: Dictionary = {}
 
 
-## Mounts the client directory. Safe to call again with a different path.
+## The Settings autoload, resolved through the tree so this script can also be
+## used (and tested) without the project's autoload globals.
+static func settings_node() -> Node:
+	var loop := Engine.get_main_loop()
+	return loop.root.get_node_or_null("Settings") if loop is SceneTree else null
+
+
+## Mounts a client directory or a plain data folder. Safe to call again with a
+## different path. A data folder needs no client executable: it may hold GRF
+## archives (with or without DATA.INI) and/or a loose data/ tree.
 func mount(root: String = "") -> bool:
 	if root == "":
-		root = Settings.client_path()
+		var s := settings_node()
+		root = s.client_path() if s != null else ""
 	archives.clear()
 	_spr_cache.clear()
 	_act_cache.clear()
@@ -52,9 +62,12 @@ func mount(root: String = "") -> bool:
 	return is_mounted
 
 
-## Reads DATA.INI ([Data] N=file.grf). Falls back to data.grf.
+## GRF load order: DATA.INI [Data] entries first (lower number = higher
+## priority), then any other *.grf in the folder and in <folder>/Data, so a
+## bare folder of archives works without DATA.INI or a client executable.
 func _grf_order(root: String) -> PackedStringArray:
 	var out := PackedStringArray()
+	var seen := {}
 	var ini := FileAccess.open(root.path_join("DATA.INI"), FileAccess.READ)
 	if ini:
 		var entries := {}
@@ -70,9 +83,22 @@ func _grf_order(root: String) -> PackedStringArray:
 		var keys := entries.keys()
 		keys.sort()
 		for k in keys:
-			out.append(entries[k])
-	if out.is_empty() and FileAccess.file_exists(root.path_join("data.grf")):
-		out.append("data.grf")
+			var name := String(entries[k]).replace("\\", "/")
+			out.append(name)
+			seen[name.to_lower()] = true
+	for dir in [root, root.path_join("Data")]:
+		if not DirAccess.dir_exists_absolute(dir):
+			continue
+		var files := Array(DirAccess.get_files_at(dir)).filter(func(f): return String(f).to_lower().ends_with(".grf"))
+		files.sort()
+		# data.grf is the main archive, so it loads before optional patches.
+		files.sort_custom(func(a, b): return String(a).to_lower() == "data.grf" and String(b).to_lower() != "data.grf")
+		for f in files:
+			if seen.has(String(f).to_lower()):
+				continue
+			var name := String(f) if dir == root else "Data/" + String(f)
+			out.append(name)
+			seen[String(f).to_lower()] = true
 	return out
 
 
@@ -80,7 +106,8 @@ func _grf_order(root: String) -> PackedStringArray:
 func _mount_pack() -> void:
 	pack_archives.clear()
 	_overlay.clear()
-	pack_root = Settings.resource_pack_path()
+	var s := settings_node()
+	pack_root = s.resource_pack_path() if s != null else ""
 	if pack_root == "":
 		return
 	var grfs := Array(DirAccess.get_files_at(pack_root)).filter(func(f): return String(f).to_lower().ends_with(".grf"))
@@ -124,7 +151,8 @@ func from_pack(path: String) -> bool:
 ## Absolute path of a file inside the pack folder (fonts, sheets), or "".
 func pack_file(relative: String) -> String:
 	if pack_root == "":
-		pack_root = Settings.resource_pack_path()
+		var s := settings_node()
+		pack_root = s.resource_pack_path() if s != null else ""
 	var p := pack_root.path_join(relative) if pack_root != "" else ""
 	return p if p != "" and FileAccess.file_exists(p) else ""
 

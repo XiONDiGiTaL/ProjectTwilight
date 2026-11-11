@@ -1,0 +1,8 @@
+{
+  "_doc": "Server rule defaults. Override them in user://server.cfg (key: value) or point RuleConfig at an rAthena/Hercules conf/battle tree. Values are percentages: 100 is the Pre-Renewal baseline.",
+  "exp_rate": 100,
+  "job_exp_rate": 100,
+  "drop_rate": 100,
+  "autoloot": false,
+  "max_level": 99
+}

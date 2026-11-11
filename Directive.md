@@ -165,13 +165,32 @@ Full brief: Swordman → **Dark Knight**, female Acolyte → **Shaman**, with fu
 - [ ] Cleanse debuffs once a cure skill exists.
 - [ ] Minimap: player facing arrow and click-to-walk.
 
+## Task: data folder, server rules and command console (owner brief, 2026-11-11) — done
+
+Owner brief: the game should run from the essential `.grf` data in a folder, without the ragexe/launcher, because Godot is the engine; add private-server quality of life; characters must move between offline, co-op and MMO; the MMO should read rAthena/Hercules server configuration.
+
+- [x] `RoResources._grf_order`: `DATA.INI` order first, then every other `*.grf` in the folder and in `Data/`. A bare folder of archives mounts without an executable; a loose `data/` tree mounts too. `Settings` is resolved through the tree so the script is testable standalone.
+- [x] `RuleConfig` (`scripts/gameplay/rules/rule_config.gd`): EXP / job / drop rates, autoloot, level cap. Sources: `data/config.json` → `user://server.cfg` → `<server>/conf/battle/{exp,drops,levels}.conf` (rAthena/Hercules). Unknown keys ignored, values clamped.
+- [x] `FieldSimulation` applies the rules to EXP, drops, autoloot and the level cap; `FieldSimulation.new(gat, seed, rules)` accepts an injected rule set for tests and servers.
+- [x] `ChatCommands` + `ChatConsole`: **Enter** opens the command line; `@go`, `@warp`, `@heal`, `@save`, `@die`, `@revive`, `@rates`, `@autoloot`, `@mobinfo`, `@who`, `@exp`, `@job`, `@where`, `@time`, `@help`. Plain text is local speech.
+- [x] Tests: `test_rule_config.gd`, `test_chat_commands.gd`, `test_resource_mount.gd`. Suite: 145 passed, 0 failed.
+- [x] `tests/capture_qol.gd` renders the console and command feedback.
+
+### Follow-ups (open)
+
+- [ ] Kafra storage, refine, cards and socketing — the private-server staples still missing.
+- [ ] A real chat channel with speech bubbles and a party window (needs co-op transport).
+- [ ] Character export/import UI so a save can be carried between offline, co-op and MMO servers.
+- [ ] Read more rAthena conf groups (party, guild, PvP) once the corresponding systems exist.
+- [ ] `@item`, `@jobchange` and other GM commands behind a permission flag for the MMO mode.
+
 ## Where the three play modes stand (2026-11-11)
 
 | Mode | State |
 |---|---|
 | **Offline** | Playable: character creation → Training Grounds (or skip straight to Prontera) → field combat, loot, jobs, saves, warps, rAthena NPC scripts, CPU adventurers. |
 | **Private co-op** | Authority logic exists (`FieldSimulation` validates every command) and invitation codes are implemented and tested. **No transport**: no ENet peer, no session, no sync. |
-| **MMO** | **Not implemented.** rAthena and Hercules are read as script/data sources only; there is no packet adapter. Their protocols target the original client and specific `PACKETVER`s. |
+| **MMO** | **Not implemented.** rAthena and Hercules are read as script/data sources only; there is no packet adapter. Their protocols target the original client and specific `PACKETVER`s. `RuleConfig` now reads their `conf/battle` rates, which is the first piece of server-config loading. |
 
 ## Asset independence (still open)
 

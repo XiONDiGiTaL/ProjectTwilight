@@ -67,12 +67,12 @@ func _ready() -> void:
 	UiTheme.style_button(coop, false, false, 12)
 	inner.add_child(coop)
 
-	inner.add_child(UiTheme.label("RAGNAROK CLIENT FOLDER  (read-only)", 10, UiTheme.ACCENT, 600, 3))
+	inner.add_child(UiTheme.label("RAGNAROK DATA FOLDER  ·  CLIENT OR .GRF ARCHIVES  (read-only)", 10, UiTheme.ACCENT, 600, 3))
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 8)
 	inner.add_child(row)
 	_path_edit = LineEdit.new()
-	_path_edit.placeholder_text = "Path to your Ragnarok client folder"
+	_path_edit.placeholder_text = "Client folder, or a folder containing data.grf"
 	_path_edit.text = settings.client_path()
 	_path_edit.custom_minimum_size = Vector2(380, 0)
 	UiTheme.style_line_edit(_path_edit)
@@ -104,7 +104,7 @@ func _update_status() -> void:
 			n += a.entry_count()
 		_status.text = "Client mounted  ·  %d archive(s)  ·  %s files" % [res.archives.size(), InventoryWindow._fmt_zeny(n)]
 	else:
-		_status.text = "Project Twilight ships no game data. Point it at your own Ragnarok client folder and press MOUNT."
+		_status.text = "Project Twilight ships no game data. Point it at your own Ragnarok client folder — or any folder of .grf archives — and press MOUNT."
 
 
 func _on_mount() -> void:

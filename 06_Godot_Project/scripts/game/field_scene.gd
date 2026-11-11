@@ -6,7 +6,7 @@ extends Node3D
 ## Controls: left-click monster = attack, item = pick up, ground = walk.
 ## I / Alt+E = inventory, Alt+A / S = status, Q / Alt+Q = equipment, K / Alt+S = skills,
 ## F1-F9 = hotkey bar, Insert = sit / stand, U = cycle aura, M = minimap,
-## F12 = save now.
+## Enter = chat / @commands, F12 = save now.
 
 @export var map_name := "prt_fild08"
 @export var start_cell := Vector2i(170, 200)
@@ -116,6 +116,7 @@ func _ready() -> void:
 	hud.skill_window.use_requested.connect(func(c): sim.command_use_skill(player.id, c))
 	hud.hotkeys.bind_unit(player, sim.item_db, sim.skill_db)
 	hud.hotkeys.activate_requested.connect(use_hotkey)
+	hud.chat.submitted.connect(_on_chat_submit)
 	_build_marker()
 	_consume_events()  # creates views for the initial spawns
 	camera.follow = views[player.id]
@@ -143,6 +144,33 @@ func _build_marker() -> void:
 
 
 # --- Input -------------------------------------------------------------------
+
+## Enter opens the command line before the GUI consumes it, so the same key
+## that submits a command cannot immediately reopen the console.
+func _input(e: InputEvent) -> void:
+	if hud == null or player == null:
+		return
+	if not (e is InputEventKey and e.pressed and not e.echo):
+		return
+	if e.keycode != KEY_ENTER and e.keycode != KEY_KP_ENTER:
+		return
+	if hud.chat.is_open():
+		return
+	hud.chat.open()
+	get_viewport().set_input_as_handled()
+
+
+## Chat line: @commands run through the simulation, plain text is local speech.
+func _on_chat_submit(text: String) -> void:
+	var r := ChatCommands.execute(sim, player, text)
+	if r.has("action"):
+		var a: Dictionary = r.action
+		if String(a.get("kind", "")) == "warp":
+			script_warp(String(a.map), int(a.x), int(a.y))
+	var msg := String(r.get("text", ""))
+	if msg != "":
+		hud.notify(msg, UiTheme.ACCENT if bool(r.get("ok", true)) else UiTheme.HP_MID)
+
 
 func _unhandled_input(e: InputEvent) -> void:
 	if e is InputEventKey and e.pressed and not e.echo:
@@ -419,6 +447,11 @@ func _consume_events() -> void:
 			"pickup_fail":
 				if ev.id == player.id:
 					hud.notify(ev.reason, UiTheme.HP_MID)
+			"autoloot":
+				if ev.id == player.id:
+					var adef: Dictionary = sim.item_db.get(str(ev.item), {})
+					hud.notify("Obtained  %s  ×%d" % [adef.get("name", "item"), ev.amount], UiTheme.TEXT)
+					inventory_changed = true
 			"heal":
 				var hv: UnitView = views.get(ev.id)
 				if hv:

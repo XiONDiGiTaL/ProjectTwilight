@@ -21,9 +21,11 @@ It is planned to support three ways to play, all sharing one gameplay core:
 | **Private co-op** | Host a session and share an invitation code with friends over LAN, VPN or direct internet |
 | **Persistent MMO** | Dedicated servers with persistent worlds, with configurable eAthena/Hercules integration as a goal |
 
-### Bring your own client
+### Bring your own data
 
-Project Twilight **contains no Gravity game data**. On first launch you point it at your own Ragnarok Online client folder. Sprites, maps and sounds are then decoded directly from that installation, which is opened read-only and never modified or copied.
+Project Twilight **contains no Gravity game data**. On first launch you point it at your own Ragnarok Online data: a full client folder, or simply a folder containing `data.grf` and any patch archives. Sprites, maps and sounds are decoded directly from those archives, which are opened read-only and never modified or copied.
+
+**No client executable is used.** Godot is the engine: the original launcher, patcher and `Ragexe` are not needed, only the data.
 
 ## Development status
 
@@ -51,6 +53,8 @@ Project Twilight **contains no Gravity game data**. On first launch you point it
 | Novice skills, skill window, F1–F9 hotkey bar, sitting and regen | ✅ Implemented and tested |
 | Prontera ⇄ Prontera Field travel through warp portals | ✅ Implemented and tested |
 | CPU adventurers (2–4 per map), name tags and minimap blips | ✅ Implemented and tested |
+| Data-folder mount: GRF archives without a client executable | ✅ Implemented and tested |
+| Server rates, autoloot and `@commands` | ✅ Implemented and tested |
 | Job change to all six first jobs; Swordman skill tree | ✅ Implemented and tested |
 | Other first-job skill trees, magic and elements, more maps and monsters | 📋 Next |
 | First offline playable (character, map, monster, combat, save) | 📋 Planned |
@@ -92,7 +96,7 @@ The classic isometric camera, sprite characters and original map layouts stay. L
 
 Requirements:
 - Godot **4.8** (currently developed on 4.8-beta1)
-- Your own Ragnarok Online client installation
+- Your own Ragnarok Online data (a client folder, or a folder of `.grf` archives)
 - Python 3 (only to regenerate the encoding table)
 
 ```bash
@@ -100,7 +104,7 @@ git clone https://github.com/XiONDiGiTaL/ProjectTwilight.git
 ```
 
 1. Open `06_Godot_Project/project.godot` in Godot.
-2. Run it, enter your client folder on the title screen and press **Mount**. Alternatively, set the `TWILIGHT_RO_CLIENT` environment variable, or create `06_Godot_Project/twilight.local.cfg` (git-ignored) containing:
+2. Run it, enter your data folder on the title screen and press **Mount**. Alternatively, set the `TWILIGHT_RO_CLIENT` environment variable, or create `06_Godot_Project/twilight.local.cfg` (git-ignored) containing:
    ```ini
    [resources]
    client_path="D:/Games/RagnarokOnline"
@@ -119,6 +123,7 @@ git clone https://github.com/XiONDiGiTaL/ProjectTwilight.git
 | F1–F9 | Hotkeys |
 | Insert | Sit |
 | M | Minimap |
+| Enter | Chat / `@commands` |
 | U | Cycle aura |
 | F12 | Save (progress also saves automatically) |
 
@@ -129,6 +134,7 @@ git clone https://github.com/XiONDiGiTaL/ProjectTwilight.git
 - **Healer:** free full heal.
 - **Warper:** fast travel to any town, field or dungeon in your client.
 - **Stylist:** hair style, hair colour and cloth dye.
+- **Commands:** press **Enter** — `@go prontera`, `@heal`, `@rates`, `@mobinfo poring`, `@autoloot on`, `@save`, `@help`.
 - Also: **Platinum Skills**, **Rental** and **Reset**.
 
 The main menu also has a **Map Viewer** (fly around any classic map) and a **Sprite Viewer** (browse animated sprites from your client).

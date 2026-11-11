@@ -65,6 +65,8 @@ var shop_db: Dictionary = {}
 var skill_db: Dictionary = {}
 var map_db: Dictionary = {}
 var job_db: Dictionary = {}
+## Server rules: EXP / drop rates, autoloot and the level cap (RuleConfig).
+var rules: RuleConfig
 var map_name := ""
 var map_info: Dictionary = {}
 ## Warp portals on this map: {cell: Vector2i, to_map, to_cell: Vector2i, label}
@@ -77,12 +79,16 @@ var _next_npc := 1
 var _next_id := 1
 
 
-func _init(p_gat: GatFile, seed_value: int = 1) -> void:
+func _init(p_gat: GatFile, seed_value: int = 1, p_rules: RuleConfig = null) -> void:
 	gat = p_gat
 	pathfinder = GridPathfinder.new(gat)
 	rng.seed = seed_value
+	rules = p_rules if p_rules != null else RuleConfig.load_config()
 	monster_db = _load_json(MONSTER_DB)
+	monster_db.erase("_doc")
+	monster_db.erase("_provenance")
 	exp_tables = _load_json(EXP_DB)
+	exp_tables.erase("_doc")
 	item_db = _load_json(ITEM_DB)
 	item_db.erase("_provenance")
 	job_db = _load_json(JOB_DB)
@@ -1131,6 +1137,20 @@ func add_script_npc(def: Dictionary, sprite: String) -> int:
 	return nid
 
 
+## Stands a fallen player up where they lie (@revive). Used by QoL commands.
+func command_revive(unit_id: int, pct := 50) -> bool:
+	var u: SimUnit = units.get(unit_id)
+	if u == null or not u.dead or not u.is_player():
+		return false
+	u.dead = false
+	u.sitting = false
+	u.trickdead = false
+	u.respawn_in = 0.0
+	u.hp = clampi(u.max_hp * pct / 100, 1, u.max_hp)
+	events.append({"type": "revive", "id": u.id})
+	return true
+
+
 ## Sit or stand (Insert). Needs Basic Skill level 3.
 func command_sit(unit_id: int) -> bool:
 	var u: SimUnit = units.get(unit_id)
@@ -1406,13 +1426,21 @@ const DROP_OFFSETS: Array[Vector2i] = [Vector2i(0, 0), Vector2i(1, 0), Vector2i(
 
 
 func _drop_loot(t: SimUnit, owner_id: int) -> void:
+	var owner: SimUnit = units.get(owner_id)
 	var drops: Array = t.data.get("drops", [])
 	var placed := 0
 	for d in drops:
-		if rng.randi_range(0, 9999) >= int(d[1]):
+		# d[1] is a chance in 10000; drop_rate is a percentage of it.
+		var chance := mini(10000, int(round(float(d[1]) * rules.drop_rate / 100.0)))
+		if chance <= 0 or rng.randi_range(0, 9999) >= chance:
 			continue
 		if not item_db.has(str(int(d[0]))):
 			continue
+		if rules.autoloot and owner != null and owner.is_player():
+			if owner.inventory.add(int(d[0]), 1, item_db, owner.max_weight() - owner.equipment_weight(item_db)):
+				events.append({"type": "autoloot", "id": owner.id, "item": int(d[0]), "amount": 1})
+				events.append({"type": "inventory", "id": owner.id})
+				continue
 		# Spread drops over the death cell and its neighbours, like the client.
 		var c: Vector2i = t.walker.cell + DROP_OFFSETS[placed % DROP_OFFSETS.size()]
 		if not pathfinder.is_walkable(c):
@@ -1566,11 +1594,13 @@ func _wander(u: SimUnit, ms: float) -> void:
 # --- Progression ----------------------------------------------------------------
 
 func _gain_exp(p: SimUnit, base: int, job: int) -> void:
+	base = roundi(base * rules.exp_rate / 100.0)
+	job = roundi(job * rules.job_exp_rate / 100.0)
 	events.append({"type": "exp", "id": p.id, "base": base, "job": job})
 	p.base_exp += base
 	p.job_exp += job
 	var base_table: Array = exp_tables.get("base_normal", [])
-	while p.level - 1 < base_table.size() and p.base_exp >= int(base_table[p.level - 1]):
+	while p.level < rules.max_level and p.level - 1 < base_table.size() and p.base_exp >= int(base_table[p.level - 1]):
 		p.base_exp -= int(base_table[p.level - 1])
 		p.status_points += StatRulesPreRenewal.status_points_gained(p.level)
 		p.level += 1
