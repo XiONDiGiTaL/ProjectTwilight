@@ -13,7 +13,7 @@ extends RefCounted
 ## half-written save.
 
 const FORMAT := "project-twilight-save"
-const VERSION := 3  # v2 adds "equipment", v3 adds appearance; older files still load
+const VERSION := 4  # v2 equipment, v3 appearance, v4 skills + hotkeys; older files still load
 ## Save folder; tests point this at a temporary folder.
 static var save_dir := "user://saves/"
 const STAT_NAMES := ["str", "agi", "vit", "int", "dex", "luk"]
@@ -62,6 +62,7 @@ static func capture(u: SimUnit, map_name: String) -> Dictionary:
 			"inventory": u.inventory.to_array(),
 			"equipment": u.equipment.duplicate(),
 			"male": u.male, "hair_style": u.hair_style, "hair_color": u.hair_color,
+			"skills": u.skills.duplicate(), "skill_points": u.skill_points, "hotkeys": u.hotkeys.duplicate(true),
 			"map": map_name, "cell": [u.walker.cell.x, u.walker.cell.y],
 		},
 	}
@@ -130,6 +131,23 @@ static func validate(parsed: Variant, item_db: Dictionary, classes: Dictionary) 
 			if item_db.has(str(id)) and String(item_db[str(id)].get("equip", "")) != "":
 				eq[String(slot)] = id
 	out.equipment = eq
+	var sk := {}
+	var raw_sk: Variant = c.get("skills", {})
+	if raw_sk is Dictionary:
+		for code in raw_sk:
+			sk[String(code)] = clampi(int(raw_sk[code]), 0, 10)
+	if not sk.is_empty():
+		out.skills = sk
+		out.skill_points = clampi(int(c.get("skill_points", 0)), 0, 100)
+	var hk := []
+	var raw_hk: Variant = c.get("hotkeys", [])
+	if raw_hk is Array:
+		for e in raw_hk.slice(0, 9):
+			if e is Dictionary and String(e.get("type", "")) in ["item", "skill"]:
+				hk.append({"type": String(e.type), "id": e.get("id")})
+			else:
+				hk.append(null)
+	out.hotkeys = hk
 	out.map = String(c.get("map", ""))
 	var cell: Variant = c.get("cell", [0, 0])
 	out.cell = Vector2i(int(cell[0]), int(cell[1])) if cell is Array and cell.size() == 2 else Vector2i.ZERO

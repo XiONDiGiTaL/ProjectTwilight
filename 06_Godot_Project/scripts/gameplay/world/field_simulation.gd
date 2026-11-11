@@ -14,6 +14,8 @@ extends RefCounted
 ##   {type: "heal", id, amount}  {type: "inventory", id}  {type: "stats", id}
 ##   {type: "equipment", id}  {type: "npc_spawn", npc}  {type: "npc_open", id, npc}
 ##   {type: "trade", id, ok, text}
+##   {type: "skill", id, skill, text}  {type: "skill_fail", id, text}  {type: "skills", id}
+##   {type: "posture", id}   (sitting / play dead changed)  {type: "regen", id}
 
 const MONSTER_DB := "res://data/prerenewal/monsters.json"
 const EXP_DB := "res://data/prerenewal/exp_tables.json"
@@ -25,6 +27,7 @@ const SHOP_DB := "res://data/prerenewal/shops.json"
 const EQUIP_SLOTS := ["head_top", "head_mid", "head_low", "weapon", "shield", "body", "garment", "shoes", "acc1", "acc2"]
 ## Novice base weapon delay (BTBA, seconds) per weapon type. Medium confidence.
 const NOVICE_BTBA := {"fist": 0.5, "dagger": 0.65}
+const SKILL_DB := "res://data/prerenewal/skills.json"
 const NPC_TALK_RANGE := 2
 const NPC_TRADE_RANGE := 6
 const NOVICE_FIST_BTBA := 0.5     # seconds; Medium confidence
@@ -46,6 +49,7 @@ var item_db: Dictionary = {}
 var ground_items: Dictionary = {}
 var _next_ground := 1
 var shop_db: Dictionary = {}
+var skill_db: Dictionary = {}
 ## npc id -> {id, name, sprite, cell: Vector2i, direction, shop, greeting}
 var npcs: Dictionary = {}
 var _next_npc := 1
@@ -61,6 +65,8 @@ func _init(p_gat: GatFile, seed_value: int = 1) -> void:
 	exp_tables = _load_json(EXP_DB)
 	item_db = _load_json(ITEM_DB)
 	item_db.erase("_provenance")
+	skill_db = _load_json(SKILL_DB)
+	skill_db.erase("_provenance")
 	shop_db = _load_json(SHOP_DB)
 	shop_db.erase("_doc")
 	for sid in shop_db:  # JSON numbers are floats; catalogues use int item ids
@@ -87,6 +93,7 @@ func add_player(name: String, cell: Vector2i, stats: Dictionary) -> SimUnit:
 	u.walker = GridWalker.new(pathfinder.nearest_walkable(cell, 20))
 	u.spawn_cell = u.walker.cell
 	u.status_points = StatRulesPreRenewal.NOVICE_START_POINTS - _stat_cost(stats)
+	_grant_default_skills(u)
 	_recalc_player(u)
 	u.hp = u.max_hp
 	u.sp = u.max_sp
@@ -122,6 +129,21 @@ func add_player_from_save(c: Dictionary) -> SimUnit:
 	u.status_points = int(c.status_points)
 	u.zeny = int(c.zeny)
 	u.inventory = Inventory.from_array(c.inventory, item_db)
+	var saved_skills: Dictionary = c.get("skills", {})
+	if not saved_skills.is_empty():
+		u.skills = {}
+		for code in saved_skills:
+			if skill_db.has(code):
+				u.skills[code] = clampi(int(saved_skills[code]), 0, int(skill_db[code].max_level))
+		_grant_default_skills(u, false)
+	if c.has("skill_points") and c.has("skills"):
+		u.skill_points = int(c.skill_points)
+	else:
+		u.skill_points = maxi(0, u.job_level - 1 - _spent_skill_points(u))
+	var hk: Variant = c.get("hotkeys", [])
+	if hk is Array:
+		for i in mini(hk.size(), u.hotkeys.size()):
+			u.hotkeys[i] = hk[i]
 	var eq: Dictionary = c.get("equipment", {})
 	for slot in eq:
 		var def: Dictionary = item_db.get(str(eq[slot]), {})
@@ -185,6 +207,9 @@ func command_move(unit_id: int, cell: Vector2i) -> bool:
 	var u: SimUnit = units.get(unit_id)
 	if u == null or u.dead:
 		return false
+	if u.trickdead:
+		return _skill_fail(u, "You cannot move while playing dead.")
+	u.sitting = false
 	u.target_id = 0
 	u.pickup_target = 0
 	u.talk_target = 0
@@ -200,6 +225,9 @@ func command_attack(unit_id: int, target_id: int) -> bool:
 	var t: SimUnit = units.get(target_id)
 	if u == null or t == null or u.dead or t.dead or u == t:
 		return false
+	if u.trickdead:
+		return _skill_fail(u, "You cannot attack while playing dead.")
+	u.sitting = false
 	u.target_id = target_id
 	u.pickup_target = 0
 	return true
@@ -208,8 +236,9 @@ func command_attack(unit_id: int, target_id: int) -> bool:
 ## Walk to a ground item and pick it up.
 func command_pickup(unit_id: int, ground_id: int) -> bool:
 	var u: SimUnit = units.get(unit_id)
-	if u == null or u.dead or not ground_items.has(ground_id):
+	if u == null or u.dead or u.trickdead or not ground_items.has(ground_id):
 		return false
+	u.sitting = false
 	u.target_id = 0
 	u.pickup_target = ground_id
 	return true
@@ -337,6 +366,104 @@ static func _slot_fits(def: Dictionary, slot: String) -> bool:
 	return s == slot or (s == "acc" and slot.begins_with("acc"))
 
 
+## Learns one level of a skill with a skill point.
+func command_learn_skill(unit_id: int, code: String) -> bool:
+	var u: SimUnit = units.get(unit_id)
+	var s: Dictionary = skill_db.get(code, {})
+	if u == null or s.is_empty() or s.get("quest", false) or u.skill_points <= 0:
+		return false
+	var lv := int(u.skills.get(code, 0))
+	if lv >= int(s.max_level):
+		return false
+	u.skills[code] = lv + 1
+	u.skill_points -= 1
+	events.append({"type": "skills", "id": u.id})
+	return true
+
+
+## Uses a skill. Validated here: learned, SP, delay, posture.
+func command_use_skill(unit_id: int, code: String) -> bool:
+	var u: SimUnit = units.get(unit_id)
+	var s: Dictionary = skill_db.get(code, {})
+	if u == null or u.dead or s.is_empty():
+		return false
+	if int(u.skills.get(code, 0)) <= 0:
+		return _skill_fail(u, "You have not learned %s." % s.name)
+	if s.type == "passive":
+		return _skill_fail(u, "%s is a passive skill." % s.name)
+	if code == "NV_TRICKDEAD" and u.trickdead:
+		u.trickdead = false
+		events.append({"type": "posture", "id": u.id})
+		events.append({"type": "skill", "id": u.id, "skill": code, "text": "You get back up."})
+		return true
+	if u.trickdead:
+		return _skill_fail(u, "You cannot do that while playing dead.")
+	if u.skill_delay > 0.0:
+		return _skill_fail(u, "Skill is not ready yet.")
+	var cost := int((s.get("sp_cost", [0]) as Array)[0])
+	if u.sp < cost:
+		return _skill_fail(u, "Not enough SP.")
+	u.sp -= cost
+	u.skill_delay = float(s.get("after_cast_delay", 0))
+	match code:
+		"NV_FIRSTAID":
+			var before := u.hp
+			u.hp = mini(u.max_hp, u.hp + int(s.heal_hp))
+			events.append({"type": "heal", "id": u.id, "amount": u.hp - before})
+			events.append({"type": "skill", "id": u.id, "skill": code, "text": "First Aid"})
+		"NV_TRICKDEAD":
+			u.trickdead = true
+			u.sitting = false
+			u.target_id = 0
+			u.walker.stop()
+			for id in units:
+				var m: SimUnit = units[id]
+				if m.target_id == u.id:
+					m.target_id = 0
+			events.append({"type": "posture", "id": u.id})
+			events.append({"type": "skill", "id": u.id, "skill": code, "text": "Play Dead"})
+	return true
+
+
+## Sit or stand (Insert). Needs Basic Skill level 3.
+func command_sit(unit_id: int) -> bool:
+	var u: SimUnit = units.get(unit_id)
+	if u == null or u.dead or u.trickdead:
+		return false
+	if int(u.skills.get("NV_BASIC", 0)) < 3:
+		return _skill_fail(u, "Sitting requires Basic Skill level 3.")
+	u.sitting = not u.sitting
+	if u.sitting:
+		u.walker.stop()
+		u.target_id = 0
+	events.append({"type": "posture", "id": u.id})
+	return true
+
+
+func _skill_fail(u: SimUnit, text: String) -> bool:
+	events.append({"type": "skill_fail", "id": u.id, "text": text})
+	return false
+
+
+func _grant_default_skills(u: SimUnit, reset := true) -> void:
+	if reset:
+		u.skills = {}
+	for code in skill_db:
+		var s: Dictionary = skill_db[code]
+		if s.get("quest", false) and int(u.skills.get(code, 0)) == 0:
+			u.skills[code] = 1   # quest skills granted until their quests exist
+		elif not u.skills.has(code):
+			u.skills[code] = 0
+
+
+func _spent_skill_points(u: SimUnit) -> int:
+	var n := 0
+	for code in u.skills:
+		if not skill_db.get(code, {}).get("quest", false):
+			n += int(u.skills[code])
+	return n
+
+
 ## Spends status points to raise a stat by one. Returns false if not allowed.
 func command_raise_stat(unit_id: int, stat: String) -> bool:
 	var u: SimUnit = units.get(unit_id)
@@ -366,6 +493,9 @@ func tick(ms: float) -> void:
 				_revive(u)
 			continue
 		u.attack_cooldown = maxf(0.0, u.attack_cooldown - ms)
+		u.skill_delay = maxf(0.0, u.skill_delay - ms)
+		if u.is_player():
+			_regen(u, ms)
 		if u.talk_target != 0:
 			_pursue_talk(u)
 		elif u.pickup_target != 0:
@@ -392,7 +522,7 @@ func drain_events() -> Array:
 
 func _pursue(u: SimUnit) -> void:
 	var t: SimUnit = units.get(u.target_id)
-	if t == null or t.dead:
+	if t == null or t.dead or t.trickdead:
 		u.target_id = 0
 		return
 	var dist := _chebyshev(u.walker.cell, t.walker.cell)
@@ -418,6 +548,28 @@ func _pursue(u: SimUnit) -> void:
 			u.walker.walk(path)
 		elif path.size() == 1 and _chebyshev(u.walker.planning_origin(), t.walker.cell) > u.attack_range:
 			u.walker.walk(path)
+
+
+func _regen(u: SimUnit, ms: float) -> void:
+	if u.trickdead or RegenRulesPreRenewal.blocked_by_weight(u.inventory.weight(item_db) + u.equipment_weight(item_db), u.max_weight()):
+		u.hp_regen_t = 0.0
+		u.sp_regen_t = 0.0
+		return
+	var changed := false
+	u.hp_regen_t += ms
+	if u.hp_regen_t >= RegenRulesPreRenewal.interval(RegenRulesPreRenewal.HP_INTERVAL_MS, u.sitting):
+		u.hp_regen_t = 0.0
+		if u.hp < u.max_hp:
+			u.hp = mini(u.max_hp, u.hp + RegenRulesPreRenewal.hp_amount(u.max_hp, int(u.stats.vit)))
+			changed = true
+	u.sp_regen_t += ms
+	if u.sp_regen_t >= RegenRulesPreRenewal.interval(RegenRulesPreRenewal.SP_INTERVAL_MS, u.sitting):
+		u.sp_regen_t = 0.0
+		if u.sp < u.max_sp:
+			u.sp = mini(u.max_sp, u.sp + RegenRulesPreRenewal.sp_amount(u.max_sp, int(u.stats.int)))
+			changed = true
+	if changed:
+		events.append({"type": "regen", "id": u.id})
 
 
 func _pursue_talk(u: SimUnit) -> void:
@@ -519,7 +671,7 @@ func _attack(u: SimUnit, t: SimUnit) -> void:
 
 ## Passive monsters fight back when attacked.
 func _provoke(victim: SimUnit, attacker: SimUnit) -> void:
-	if not victim.is_player() and victim.target_id == 0:
+	if not victim.is_player() and victim.target_id == 0 and not attacker.trickdead:
 		victim.target_id = attacker.id
 
 
@@ -556,6 +708,8 @@ func _kill(t: SimUnit, killer: SimUnit) -> void:
 
 func _revive(u: SimUnit) -> void:
 	u.dead = false
+	u.sitting = false
+	u.trickdead = false
 	u.hp = u.max_hp
 	if u.is_player():
 		u.walker = GridWalker.new(u.spawn_cell)
@@ -600,6 +754,7 @@ func _gain_exp(p: SimUnit, base: int, job: int) -> void:
 	while p.job_level - 1 < job_table.size() and p.job_exp >= int(job_table[p.job_level - 1]):
 		p.job_exp -= int(job_table[p.job_level - 1])
 		p.job_level += 1
+		p.skill_points += 1
 		events.append({"type": "levelup", "id": p.id, "level": p.job_level, "kind": "job"})
 
 

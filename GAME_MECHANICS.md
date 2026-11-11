@@ -78,6 +78,21 @@ Implementation: `scripts/gameplay/character/character_rules.gd`. Tests: `tests/u
 | Starting gear | Knife and Cotton Shirt equipped, plus 3 Red Potions | Medium |
 | Start location | prt_fild08 (170, 200) for now; classic start points come with more maps | — |
 
+## Skills and regeneration
+
+Implementation: `field_simulation.gd`, `scripts/gameplay/skills/regen_rules_prerenewal.gd`, `data/prerenewal/skills.json`. Tests: `tests/unit/test_skills.gd`.
+
+| Rule | Value | Confidence |
+|---|---|---|
+| Novice skill points | 1 per job level above 1 (9 at job level 10) | High |
+| Basic Skill | Levels 1–9; level 3 allows sitting; level 9 is required for a job change | High |
+| First Aid | +5 HP for 3 SP; quest skill | High (the 1 s delay is Medium) |
+| Play Dead | 5 SP toggle; monsters lose and cannot acquire you; no moving or attacking; getting up is free | High |
+| HP regen | max(1, floor(MaxHP / 200)) + floor(VIT / 5) every 6 s, or 3 s while sitting | Medium-high |
+| SP regen | 1 + floor(MaxSP / 100) + floor(INT / 6) every 8 s, or 4 s while sitting | Medium-high |
+| Weight | No natural regeneration at 50% weight or more | High |
+| Quest skills | Granted at creation until the quests are implemented | Simplification |
+
 ## Movement
 
 Implementation: `scripts/gameplay/world/grid_pathfinder.gd`, `grid_walker.gd`. Tests: `tests/unit/test_movement.gd`.

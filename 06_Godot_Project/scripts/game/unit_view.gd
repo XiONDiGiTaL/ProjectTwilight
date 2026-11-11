@@ -13,6 +13,7 @@ var sprite: CharacterSprite
 var camera_yaw := 0.0
 var _fade := 1.0
 var _was_dead := false
+var _feigning := false
 
 
 func build_player(res: Node, male: bool, hair_style: int, hair_color: int) -> bool:
@@ -90,4 +91,17 @@ func _process(delta: float) -> void:
 		_fade = 1.0
 		sprite.modulate.a = 1.0
 		sprite.reset_action()
+	# Play Dead holds the collapse frame without fading; getting up restores it.
+	if unit.trickdead:
+		if not _feigning:
+			_feigning = true
+			sprite.play_once("dead", 300.0, true)
+		sprite.set_action("idle", dir)
+		return
+	if _feigning:
+		_feigning = false
+		sprite.reset_action()
+	if unit.sitting:
+		sprite.set_action("sit", dir)
+		return
 	sprite.set_action("walk" if unit.walker.is_moving() else "idle", dir)

@@ -48,7 +48,8 @@ Project Twilight **contains no Gravity game data**. On first launch you point it
 | Equipment (weapon damage model, armor DEF, weapon sprites) | ✅ Implemented and tested |
 | NPC merchant and shop (buy/sell, Zeny) | ✅ Implemented and tested |
 | Character select and creation (classic stat hexagon, live preview) | ✅ Implemented and tested |
-| Skills, more maps and monsters, warps | 📋 Next |
+| Novice skills, skill window, F1–F9 hotkey bar, sitting and regen | ✅ Implemented and tested |
+| Warps and more maps, job change, first-job skills | 📋 Next |
 | First offline playable (character, map, monster, combat, save) | 📋 Planned |
 | Private co-op sessions | 📋 Planned |
 | eAthena / Hercules compatibility | 🔍 Under investigation, not claimed |
@@ -101,7 +102,7 @@ git clone https://github.com/XiONDiGiTaL/ProjectTwilight.git
    [resources]
    client_path="D:/Games/RagnarokOnline"
    ```
-3. Choose **PLAY**, create a character, then fight Porings, Lunatics and Fabres on prt_fild08. Left-click to walk, attack or pick up loot; press **I** for the inventory, **S** for status, **Q** for equipment and **F5** to save. Click the Field Merchant to buy and sell. Progress also saves automatically. to walk around as a Novice, or open **Map Viewer** to fly around any classic map, or **Sprite Viewer** to browse animated sprites from your client.
+3. Choose **PLAY**, create a character, then fight Porings, Lunatics and Fabres on prt_fild08. Left-click to walk, attack or pick up loot; press **I** for the inventory, **S** for status, **Q** for equipment, **K** for skills, **F1–F9** for hotkeys, **Insert** to sit and **F12** to save. Click the Field Merchant to buy and sell. Progress also saves automatically. to walk around as a Novice, or open **Map Viewer** to fly around any classic map, or **Sprite Viewer** to browse animated sprites from your client.
 
 ### Tests
 

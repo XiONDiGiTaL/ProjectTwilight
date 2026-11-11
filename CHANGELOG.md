@@ -3,6 +3,18 @@
 ## [Unreleased] - 2026-11-10
 
 ### Added
+- **Skills** (`data/prerenewal/skills.json`):
+  - Basic Skill (1–9, learned with skill points; level 3 unlocks sitting).
+  - First Aid (+5 HP, 3 SP, 1 s delay) and Play Dead (a toggle: monsters drop and ignore you; you can't move or attack). Both are quest skills, granted until their quests exist.
+  - Job level-ups grant skill points.
+- **Natural HP/SP regeneration:** Pre-Renewal amounts and intervals, twice as fast while sitting (Insert), and no regeneration at 50%+ weight or while playing dead.
+- **Glass skill window** (K / Alt+S): client icons, level pips, learn buttons, tooltips with Basic Skill unlocks. Active skills can be dragged out.
+- **Hotkey bar** (F1–F9, bottom centre): drag skills or usable items onto slots, use by key or click, right-click to clear, live item counts, and an "on" icon for active toggles. Saved per character.
+- **Postures:** sitting and Play Dead are shown on the character.
+- **Saves:** format v4 adds skills, skill points and hotkeys; older saves get skill points derived from job level.
+
+### Changed
+- Manual save moved to F12, because F1–F9 are now hotkeys.
 - **Character select:** six local character slots in glass style, with a live rotating preview on a glowing platform, details (class insignia, levels, stats, location, Zeny), PLAY, and DELETE behind a confirmation.
 - **Character creation:**
   - Name validation: 4–23 letters, numbers or single spaces, unique among local characters.

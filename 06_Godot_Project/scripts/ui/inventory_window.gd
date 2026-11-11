@@ -134,6 +134,7 @@ func _slot(index: int, e: Dictionary, def: Dictionary) -> Control:
 		slot.icon = ItemIcons.icon(def)
 		slot.amount = int(e.amount)
 		slot.def = def
+		slot._item_id = int(e.id)
 		var equippable := String(def.get("equip", "")) != ""
 		slot.activated.connect(func(i): equip_requested.emit(i) if equippable else use_requested.emit(i))
 	return slot
@@ -189,6 +190,18 @@ class ItemSlot extends Control:
 			var pos := Vector2(size.x - w - 4, size.y - 4)
 			draw_string_outline(f, pos, txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, 3, Color(0, 0, 0, 0.8))
 			draw_string(f, pos, txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, UiTheme.TEXT)
+
+	func _get_drag_data(_at: Vector2) -> Variant:
+		if index < 0 or def.get("type", "") != "usable" or icon == null:
+			return null
+		var preview := TextureRect.new()
+		preview.texture = icon
+		preview.custom_minimum_size = Vector2(32, 32)
+		preview.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		set_drag_preview(preview)
+		return {"type": "item", "id": _item_id}
+
+	var _item_id := 0
 
 	func _make_custom_tooltip(_text: String) -> Object:
 		var p := GlassPanel.new()

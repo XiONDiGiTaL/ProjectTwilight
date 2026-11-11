@@ -4,7 +4,8 @@ extends Node3D
 ## turns input into simulation commands. Progress is saved locally.
 ##
 ## Controls: left-click monster = attack, item = pick up, ground = walk.
-## I / Alt+E = inventory, Alt+A / S = status, Q / Alt+Q = equipment, F5 = save now.
+## I / Alt+E = inventory, Alt+A / S = status, Q / Alt+Q = equipment, K / Alt+S = skills,
+## F1-F9 = hotkey bar, Insert = sit / stand, F12 = save now.
 
 @export var map_name := "prt_fild08"
 @export var start_cell := Vector2i(170, 200)
@@ -84,6 +85,11 @@ func _ready() -> void:
 	hud.shop.buy_requested.connect(func(item, n): sim.command_buy(player.id, item, n))
 	hud.shop.sell_requested.connect(func(i, n): sim.command_sell(player.id, i, n))
 	hud.shop.shop_closed.connect(func(): sim.close_shop(player.id))
+	hud.skill_window.bind_unit(player, sim.skill_db)
+	hud.skill_window.learn_requested.connect(func(c): sim.command_learn_skill(player.id, c))
+	hud.skill_window.use_requested.connect(func(c): sim.command_use_skill(player.id, c))
+	hud.hotkeys.bind_unit(player, sim.item_db, sim.skill_db)
+	hud.hotkeys.activate_requested.connect(use_hotkey)
 	_build_marker()
 	_consume_events()  # creates views for the initial spawns
 	camera.follow = views[player.id]
@@ -122,11 +128,20 @@ func _unhandled_input(e: InputEvent) -> void:
 				if e.alt_pressed:
 					hud.status_window.toggle()
 			KEY_S:
-				hud.status_window.toggle()
+				if e.alt_pressed:
+					hud.skill_window.toggle()
+				else:
+					hud.status_window.toggle()
+			KEY_K:
+				hud.skill_window.toggle()
+			KEY_INSERT:
+				sim.command_sit(player.id)
+			KEY_F1, KEY_F2, KEY_F3, KEY_F4, KEY_F5, KEY_F6, KEY_F7, KEY_F8, KEY_F9:
+				use_hotkey(e.keycode - KEY_F1)
+			KEY_F12:
+				save_now(true)
 			KEY_Q:
 				hud.equipment_window.toggle()
-			KEY_F5:
-				save_now(true)
 		return
 	if not (e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT):
 		return
@@ -163,6 +178,21 @@ func monster_at_screen(p: Vector2) -> int:
 			best_d = d
 			best = id
 	return best
+
+
+## Uses hotkey slot `i`: a skill or a usable item from the inventory.
+func use_hotkey(i: int) -> void:
+	var e: Variant = hud.hotkeys.entry(i)
+	if e == null:
+		return
+	if e.type == "skill":
+		sim.command_use_skill(player.id, String(e.id))
+		return
+	for k in player.inventory.entries.size():
+		if int(player.inventory.entries[k].id) == int(e.id):
+			sim.command_use_item(player.id, k)
+			return
+	hud.notify("You have no %s left." % sim.item_db.get(str(int(e.id)), {}).get("name", "items"), UiTheme.HP_MID)
 
 
 ## NPC id whose sprite is under the screen point, or 0.
@@ -275,8 +305,10 @@ func _consume_events() -> void:
 				player_changed = player_changed or ev.id == player.id
 			"exp":
 				var pv: UnitView = views[ev.id]
-				hud.numbers.spawn_offset(pv.global_position, Vector2(110, -40), "+%d BASE EXP" % ev.base, DamageNumbers.Kind.EXP_BASE)
-				hud.numbers.spawn_offset(pv.global_position, Vector2(110, -18), "+%d JOB EXP" % ev.job, DamageNumbers.Kind.EXP_JOB)
+				if ev.base > 0:
+					hud.numbers.spawn_offset(pv.global_position, Vector2(110, -40), "+%d BASE EXP" % ev.base, DamageNumbers.Kind.EXP_BASE)
+				if ev.job > 0:
+					hud.numbers.spawn_offset(pv.global_position, Vector2(110, -18), "+%d JOB EXP" % ev.job, DamageNumbers.Kind.EXP_JOB)
 				player_changed = true
 			"levelup":
 				var lv: UnitView = views[ev.id]
@@ -310,6 +342,17 @@ func _consume_events() -> void:
 				inventory_changed = inventory_changed or ev.id == player.id
 			"stats":
 				player_changed = player_changed or ev.id == player.id
+			"skills":
+				player_changed = player_changed or ev.id == player.id
+			"skill":
+				if ev.id == player.id:
+					hud.notify(ev.text, UiTheme.ACCENT)
+				player_changed = player_changed or ev.id == player.id
+			"skill_fail":
+				if ev.id == player.id:
+					hud.notify(ev.text, UiTheme.HP_MID)
+			"posture", "regen":
+				player_changed = player_changed or ev.id == player.id
 			"equipment":
 				var ev_view: UnitView = views.get(ev.id)
 				if ev_view:
@@ -329,11 +372,14 @@ func _consume_events() -> void:
 					player_changed = true
 	if inventory_changed:
 		hud.inventory.refresh()
+		hud.hotkeys.refresh()
 	if player_changed:
 		hud.update_player(player, sim.next_base_exp(player), sim.next_job_exp(player))
 		hud.status_window.refresh()
 		hud.inventory.refresh()
 		hud.equipment_window.refresh()
+		hud.skill_window.refresh()
+		hud.hotkeys.refresh()
 
 
 func _on_damage(ev: Dictionary) -> void:

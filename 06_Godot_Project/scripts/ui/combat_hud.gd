@@ -73,6 +73,11 @@ func _ready() -> void:
 	shop = ShopWindow.new()
 	_root.add_child(shop)
 	shop.position = Vector2(380, 140)
+	skill_window = SkillWindow.new()
+	_root.add_child(skill_window)
+	skill_window.position = Vector2(120, 200)
+	hotkeys = HotkeyBar.new()
+	_root.add_child(hotkeys)
 
 
 # --- System feed and hover tag ---------------------------------------------------
@@ -81,6 +86,8 @@ var inventory: InventoryWindow
 var status_window: StatusWindow
 var equipment_window: EquipmentWindow
 var shop: ShopWindow
+var skill_window: SkillWindow
+var hotkeys: HotkeyBar
 var _feed: VBoxContainer
 var _hover_tag: GlassPanel
 var _hover_label: Label

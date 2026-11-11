@@ -1,0 +1,18 @@
+{
+  "_provenance": "Pre-Renewal Novice skills as documented by iRO Wiki classic and the rAthena pre-re skill database (facts only). resname = client icon in data\\texture\\유저인터페이스\\item\\<resname>.bmp. Quest skills are learned through NPC quests in the classic game; until those quests exist they are granted to new characters (documented simplification).",
+  "NV_BASIC": {
+    "id": 1, "name": "Basic Skill", "resname": "nv_basic", "type": "passive", "max_level": 9, "quest": false,
+    "desc": "Unlocks basic interface features as it levels. Level 3 lets you sit (Insert), level 9 is required for a job change.",
+    "unlocks": {"1": "Trading", "2": "Emotions", "3": "Sitting", "4": "Chat rooms", "5": "Joining parties", "6": "Kafra storage", "7": "Creating parties", "8": "—", "9": "Job change"}
+  },
+  "NV_FIRSTAID": {
+    "id": 142, "name": "First Aid", "resname": "nv_firstaid", "type": "active", "max_level": 1, "quest": true,
+    "sp_cost": [3], "heal_hp": 5, "after_cast_delay": 1000,
+    "desc": "Bandage your wounds to restore 5 HP. Costs 3 SP."
+  },
+  "NV_TRICKDEAD": {
+    "id": 143, "name": "Play Dead", "resname": "nv_trickdead", "type": "toggle", "max_level": 1, "quest": true,
+    "sp_cost": [5],
+    "desc": "Feign death. Monsters lose interest and cannot target you, but you cannot move or attack. Use again to get up. Costs 5 SP."
+  }
+}

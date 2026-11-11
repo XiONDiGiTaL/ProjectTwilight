@@ -53,6 +53,16 @@ var watk_min := 0
 var watk_max := 0
 var weapon_type := "fist"
 var size := "medium"
+## Skills: code (e.g. "NV_BASIC") -> learned level.
+var skills: Dictionary = {}
+var skill_points := 0
+var skill_delay := 0.0         # ms until another skill may be used (after-cast delay)
+var sitting := false
+var trickdead := false         # Play Dead active
+var hp_regen_t := 0.0
+var sp_regen_t := 0.0
+## Hotkey bar (9 slots): null or {"type": "item"|"skill", "id": int|String}. Saved per character.
+var hotkeys: Array = [null, null, null, null, null, null, null, null, null]
 
 
 ## Pre-Renewal weight limit: 2000 + STR * 30 (+ job bonus; Novice 0). High confidence.
