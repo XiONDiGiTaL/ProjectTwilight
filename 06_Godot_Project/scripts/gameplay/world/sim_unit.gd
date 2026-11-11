@@ -64,11 +64,15 @@ var hp_regen_t := 0.0
 var sp_regen_t := 0.0
 ## Hotkey bar (9 slots): null or {"type": "item"|"skill", "id": int|String}. Saved per character.
 var hotkeys: Array = [null, null, null, null, null, null, null, null, null]
+var weight_bonus := 0          # class weight bonus (Swordman +800, ...)
+var mastery_atk := 0           # weapon-mastery ATK (added after DEF)
+var queued_skill := ""         # targeted skill to use when the target is in range
+var recovery_t := 0.0          # Increase HP Recovery timer
 
 
 ## Pre-Renewal weight limit: 2000 + STR * 30 (+ job bonus; Novice 0). High confidence.
 func max_weight() -> int:
-	return 2000 + int(stats.str) * 30
+	return 2000 + int(stats.str) * 30 + weight_bonus
 
 
 ## Weight of equipped items (they still count toward the carry limit).
@@ -106,4 +110,5 @@ func combat_profile() -> Dictionary:
 		"atk_min": atk_min, "atk_max": atk_max, "def": hard_def,
 		"is_player": true, "can_crit": true, "size": size,
 		"batk": batk, "watk_min": watk_min, "watk_max": watk_max, "weapon_type": weapon_type,
+		"mastery": mastery_atk,
 	}

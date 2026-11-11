@@ -53,6 +53,16 @@ var _male := true
 var _weapon_shown := ""
 
 
+## Rebuilds a player's sprite (after a job change swaps the body).
+func rebuild_player(res: Node) -> void:
+	if sprite:
+		sprite.queue_free()
+		sprite = null
+	_weapon_shown = "?"
+	build_player(res, unit.male, unit.hair_style, unit.hair_color)
+	update_weapon(res)
+
+
 ## Shows the equipped weapon on a player's sprite (the client's per-job weapon layer).
 func update_weapon(res: Node) -> void:
 	if sprite == null or not unit.is_player():

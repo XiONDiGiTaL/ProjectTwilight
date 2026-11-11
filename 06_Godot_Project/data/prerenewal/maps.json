@@ -1,19 +1,68 @@
 {
   "_doc": "Per-map data: display names, respawn point, monster spawns (mob id -> count) and warp portals. Warp cells follow the classic Prontera south gate / prt_fild08 north edge layout and were checked against the client's GAT walkability (Medium confidence on exact cells).",
   "prontera": {
-    "name": "Prontera", "subtitle": "Capital of the Rune-Midgarts Kingdom", "town": true,
-    "respawn": [156, 60],
+    "name": "Prontera",
+    "subtitle": "Capital of the Rune-Midgarts Kingdom",
+    "town": true,
+    "respawn": [
+      156,
+      60
+    ],
     "spawns": {},
     "warps": [
-      {"cell": [156, 22], "to_map": "prt_fild08", "to_cell": [170, 371], "label": "Prontera Field"}
+      {
+        "cell": [
+          156,
+          22
+        ],
+        "to_map": "prt_fild08",
+        "to_cell": [
+          170,
+          371
+        ],
+        "label": "Prontera Field"
+      }
+    ],
+    "npcs": [
+      {
+        "name": "Job Guide",
+        "sprite": "4_m_01",
+        "cell": [
+          151,
+          46
+        ],
+        "direction": 0,
+        "kind": "job_guide",
+        "greeting": "Novices of Midgard! When your basic training is complete, I can send you to any guild."
+      }
     ]
   },
   "prt_fild08": {
-    "name": "Prontera Field", "subtitle": "South of the capital", "town": false,
-    "respawn": [170, 200],
-    "spawns": {"1002": 25, "1063": 12, "1007": 12},
+    "name": "Prontera Field",
+    "subtitle": "South of the capital",
+    "town": false,
+    "respawn": [
+      170,
+      200
+    ],
+    "spawns": {
+      "1002": 25,
+      "1063": 12,
+      "1007": 12
+    },
     "warps": [
-      {"cell": [170, 376], "to_map": "prontera", "to_cell": [156, 40], "label": "Prontera"}
+      {
+        "cell": [
+          170,
+          376
+        ],
+        "to_map": "prontera",
+        "to_cell": [
+          156,
+          40
+        ],
+        "label": "Prontera"
+      }
     ]
   }
 }

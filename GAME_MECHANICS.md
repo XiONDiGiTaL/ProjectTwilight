@@ -93,6 +93,22 @@ Implementation: `field_simulation.gd`, `scripts/gameplay/skills/regen_rules_prer
 | Weight | No natural regeneration at 50% weight or more | High |
 | Quest skills | Granted at creation until the quests are implemented | Simplification |
 
+## Classes and job change
+
+| Rule | Value | Confidence |
+|---|---|---|
+| Max HP | (35 + BaseLv × B + Σ_{i=2..BaseLv} round(A × i)) × (1 + VIT/100) | Medium-high |
+| Max SP | (10 + BaseLv × SPfactor) × (1 + INT/100) | Medium-high |
+| HP factor A / SP factor | Novice 0/1, Swordman 0.7/2, Mage 0.3/6, Archer 0.5/2, Acolyte 0.4/5, Merchant 0.4/2, Thief 0.5/2 (B = 5 for all) | Medium-high |
+| Weight bonus | Swordman +800, Merchant +800, Archer +600, Acolyte +400, Thief +400, Mage +200 | Medium-high |
+| Job change requirements | Novice job level 10 and Basic Skill 9 | High |
+| Job guilds | Classic per-town guild quests are replaced by a single Job Guide for now | Simplification |
+| First-job job EXP table | Job levels 1–50 entered | Medium |
+| Sword Mastery | +4 ATK per level with daggers and one-handed swords, added after DEF | High |
+| Increase HP Recovery | 5 × lv + 0.2% × lv of Max HP every 10 s while still; +10% × lv to healing items | Medium-high |
+| Bash | ATK × (100 + 30 × lv)%, HIT × (100 + 5 × lv)%; 8 SP (lv 1–5), 15 SP (lv 6–10); cannot crit | High |
+| Magnum Break | ATK × (100 + 20 × lv)%, HIT × (100 + 10 × lv)% in a 5×5 area; 30 SP; requires Bash 5 | High (fire element, knockback and HP cost are not yet applied) |
+
 ## Movement
 
 Implementation: `scripts/gameplay/world/grid_pathfinder.gd`, `grid_walker.gd`. Tests: `tests/unit/test_movement.gd`.

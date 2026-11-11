@@ -1,18 +1,134 @@
 {
   "_provenance": "Pre-Renewal Novice skills as documented by iRO Wiki classic and the rAthena pre-re skill database (facts only). resname = client icon in data\\texture\\유저인터페이스\\item\\<resname>.bmp. Quest skills are learned through NPC quests in the classic game; until those quests exist they are granted to new characters (documented simplification).",
   "NV_BASIC": {
-    "id": 1, "name": "Basic Skill", "resname": "nv_basic", "type": "passive", "max_level": 9, "quest": false,
+    "id": 1,
+    "name": "Basic Skill",
+    "resname": "nv_basic",
+    "type": "passive",
+    "max_level": 9,
+    "quest": false,
     "desc": "Unlocks basic interface features as it levels. Level 3 lets you sit (Insert), level 9 is required for a job change.",
-    "unlocks": {"1": "Trading", "2": "Emotions", "3": "Sitting", "4": "Chat rooms", "5": "Joining parties", "6": "Kafra storage", "7": "Creating parties", "8": "—", "9": "Job change"}
+    "unlocks": {
+      "1": "Trading",
+      "2": "Emotions",
+      "3": "Sitting",
+      "4": "Chat rooms",
+      "5": "Joining parties",
+      "6": "Kafra storage",
+      "7": "Creating parties",
+      "8": "—",
+      "9": "Job change"
+    },
+    "job": "novice"
   },
   "NV_FIRSTAID": {
-    "id": 142, "name": "First Aid", "resname": "nv_firstaid", "type": "active", "max_level": 1, "quest": true,
-    "sp_cost": [3], "heal_hp": 5, "after_cast_delay": 1000,
-    "desc": "Bandage your wounds to restore 5 HP. Costs 3 SP."
+    "id": 142,
+    "name": "First Aid",
+    "resname": "nv_firstaid",
+    "type": "active",
+    "max_level": 1,
+    "quest": true,
+    "sp_cost": [
+      3
+    ],
+    "heal_hp": 5,
+    "after_cast_delay": 1000,
+    "desc": "Bandage your wounds to restore 5 HP. Costs 3 SP.",
+    "job": "novice"
   },
   "NV_TRICKDEAD": {
-    "id": 143, "name": "Play Dead", "resname": "nv_trickdead", "type": "toggle", "max_level": 1, "quest": true,
-    "sp_cost": [5],
-    "desc": "Feign death. Monsters lose interest and cannot target you, but you cannot move or attack. Use again to get up. Costs 5 SP."
+    "id": 143,
+    "name": "Play Dead",
+    "resname": "nv_trickdead",
+    "type": "toggle",
+    "max_level": 1,
+    "quest": true,
+    "sp_cost": [
+      5
+    ],
+    "desc": "Feign death. Monsters lose interest and cannot target you, but you cannot move or attack. Use again to get up. Costs 5 SP.",
+    "job": "novice"
+  },
+  "SM_SWORD": {
+    "id": 2,
+    "name": "Sword Mastery",
+    "resname": "sm_sword",
+    "type": "passive",
+    "max_level": 10,
+    "quest": false,
+    "job": "swordman",
+    "mastery_atk": 4,
+    "mastery_weapons": [
+      "dagger",
+      "sword"
+    ],
+    "desc": "Increases ATK by 4 per level with daggers and one-handed swords. Mastery ATK ignores DEF."
+  },
+  "SM_RECOVERY": {
+    "id": 4,
+    "name": "Increase HP Recovery",
+    "resname": "sm_recovery",
+    "type": "passive",
+    "max_level": 10,
+    "quest": false,
+    "job": "swordman",
+    "desc": "Every 10 seconds while standing still, recover 5 HP + 0.2% of Max HP per level. Healing items restore 10% more per level."
+  },
+  "SM_BASH": {
+    "id": 5,
+    "name": "Bash",
+    "resname": "sm_bash",
+    "type": "active",
+    "target": "enemy",
+    "max_level": 10,
+    "quest": false,
+    "job": "swordman",
+    "sp_cost": [
+      8,
+      8,
+      8,
+      8,
+      8,
+      15,
+      15,
+      15,
+      15,
+      15
+    ],
+    "damage_pct_base": 100,
+    "damage_pct_per_level": 30,
+    "hit_pct_per_level": 5,
+    "desc": "A powerful strike: ATK +30% per level and HIT +5% per level against one enemy in melee range."
+  },
+  "SM_MAGNUM": {
+    "id": 7,
+    "name": "Magnum Break",
+    "resname": "sm_magnum",
+    "type": "active",
+    "target": "self_area",
+    "max_level": 10,
+    "quest": false,
+    "job": "swordman",
+    "sp_cost": [
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30
+    ],
+    "damage_pct_base": 100,
+    "damage_pct_per_level": 20,
+    "hit_pct_per_level": 10,
+    "area": 2,
+    "requires": {
+      "SM_BASH": 5
+    },
+    "after_cast_delay": 2000,
+    "desc": "An explosion around you hitting every enemy within 2 cells: ATK +20% per level, HIT +10% per level. Fire element (element table not yet applied). Requires Bash level 5."
   }
 }

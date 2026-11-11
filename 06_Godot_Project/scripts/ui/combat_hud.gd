@@ -78,6 +78,8 @@ func _ready() -> void:
 	skill_window.position = Vector2(120, 200)
 	hotkeys = HotkeyBar.new()
 	_root.add_child(hotkeys)
+	dialog = NpcDialog.new()
+	_root.add_child(dialog)
 
 
 # --- System feed and hover tag ---------------------------------------------------
@@ -88,6 +90,7 @@ var equipment_window: EquipmentWindow
 var shop: ShopWindow
 var skill_window: SkillWindow
 var hotkeys: HotkeyBar
+var dialog: NpcDialog
 var _feed: VBoxContainer
 var _hover_tag: GlassPanel
 var _hover_label: Label
@@ -156,6 +159,54 @@ func map_banner(title: String, subtitle: String) -> void:
 		line_bot.custom_minimum_size.x = 380.0 * spread
 		box.modulate.a = clampf(age / 0.4, 0.0, 1.0) * clampf((4.0 - age) / 0.8, 0.0, 1.0)
 		return true)
+
+
+## Short burst at a world position when a skill lands.
+func skill_flash(world_pos: Vector3, skill: String) -> void:
+	var big := skill == "SM_MAGNUM"
+	var ring := ColorRect.new()
+	ring.size = Vector2(420, 420) if big else Vector2(160, 160)
+	ring.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var mat := ShaderMaterial.new()
+	mat.shader = _burst_shader()
+	mat.set_shader_parameter("tint", Color(1.0, 0.55, 0.2) if big else Color(1.0, 0.9, 0.6))
+	ring.material = mat
+	_root.add_child(ring)
+	_root.move_child(ring, 0)
+	var t0 := Time.get_ticks_msec()
+	_effects.append(func() -> bool:
+		var age := (Time.get_ticks_msec() - t0) / 1000.0
+		if age > 0.6 or camera == null:
+			ring.queue_free()
+			return false
+		ring.position = camera.unproject_position(world_pos) - ring.size / 2.0
+		mat.set_shader_parameter("age", age)
+		return true)
+
+
+static var _burst: Shader
+
+
+static func _burst_shader() -> Shader:
+	if _burst == null:
+		_burst = Shader.new()
+		_burst.code = """
+shader_type canvas_item;
+uniform float age = 0.0;
+uniform vec4 tint : source_color = vec4(1.0, 0.6, 0.2, 1.0);
+void fragment() {
+	vec2 p = UV * 2.0 - 1.0;
+	p.y *= 1.6;
+	float r = length(p);
+	float t = clamp(age / 0.55, 0.0, 1.0);
+	float radius = mix(0.1, 0.95, 1.0 - pow(1.0 - t, 3.0));
+	float ring = exp(-pow((r - radius) * 12.0, 2.0));
+	float core = exp(-r * r * 9.0) * (1.0 - t);
+	float a = (ring * 0.9 + core) * (1.0 - t);
+	COLOR = vec4(mix(tint.rgb, vec3(1.0), core), a);
+}
+"""
+	return _burst
 
 
 ## Full-screen glass transition shown while changing maps.

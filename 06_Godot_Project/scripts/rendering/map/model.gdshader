@@ -35,6 +35,9 @@ void fragment() {
 	if (occlusion_radius > 0.0 && -VERTEX.z < occlusion_depth - 4.0) {
 		float d = distance(FRAGCOORD.xy, occlusion_center);
 		float fade = mix(0.22, 1.0, smoothstep(occlusion_radius * 0.55, occlusion_radius, d));
+		// Camera near-fade: geometry in the near half of the camera-to-player
+		// distance dissolves so tall buildings never wall off the view.
+		fade = min(fade, smoothstep(occlusion_depth * 0.42, occlusion_depth * 0.62, -VERTEX.z));
 		if (fade < 0.999) {
 			// 4x4 ordered dither (screen-door transparency, no sorting needed).
 			ivec2 q = ivec2(FRAGCOORD.xy) % 4;

@@ -3,6 +3,21 @@
 ## [Unreleased] - 2026-11-10
 
 ### Added
+- **Job change** to all six first jobs (Swordman, Mage, Archer, Acolyte, Merchant, Thief) through the **Job Guide** in Prontera, with a glass NPC dialogue (requirements, choice, confirmation). Requires Novice job level 10 and Basic Skill 9.
+  - The body sprite, insignia and status panel update.
+  - A SYSTEM "JOB CHANGE" notice is shown and the game saves.
+- **Class data** (`data/prerenewal/jobs.json`):
+  - Pre-Renewal Max HP/SP per-class factors, class weight bonus and per-weapon attack delay (BTBA).
+  - Class weapon restrictions.
+  - The first-job job EXP table (job levels 1–50).
+- **Swordman skills:**
+  - Sword Mastery: +4 ATK per level with daggers and swords, added after DEF.
+  - Increase HP Recovery: 10 s still regen and +10% healing items per level.
+  - Bash: +30% ATK and +5% HIT per level; queued until the target is in range.
+  - Magnum Break: hits every enemy within 2 cells, +20% ATK and +10% HIT per level; requires Bash 5. Skill-hit bursts are shown on screen.
+- The skill window shows only the current class's skills, with prerequisite hints.
+- Targeted skills on hotkeys aim at the monster under the cursor.
+- **Camera near-fade:** geometry in the near part of the view dissolves, so tall buildings never wall off the screen.
 - **Multiple maps and warps** (`data/prerenewal/maps.json`): per-map display names, respawn points, monster spawns and warp portals.
   - Prontera (town, with a Tool Dealer) connects to Prontera Field through the classic south gate; the portal cells were checked against the client's GAT walkability.
   - Walking onto a portal saves the character at the destination, shows a glass transition screen, and loads the new map.

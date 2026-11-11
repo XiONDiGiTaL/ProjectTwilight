@@ -8,6 +8,10 @@ signal learn_requested(code: String)
 signal use_requested(code: String)
 
 var skill_db: Dictionary = {}
+## Callable(unit) -> Array of skill codes available to the unit's class.
+var available: Callable
+## Callable(unit, code) -> "" or the unmet prerequisite text.
+var requirements: Callable
 var _unit: SimUnit
 var _list: VBoxContainer
 var _points: Label
@@ -43,9 +47,11 @@ func refresh() -> void:
 		_list.remove_child(c)
 		c.queue_free()
 	_points.text = "SKILL POINTS   %d" % _unit.skill_points
-	for code in skill_db:
+	var codes: Array = available.call(_unit) if available.is_valid() else skill_db.keys()
+	for code in codes:
 		var s: Dictionary = skill_db[code]
 		var lv := int(_unit.skills.get(code, 0))
+		var unmet: String = requirements.call(_unit, code) if requirements.is_valid() else ""
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 8)
 		_list.add_child(row)
@@ -53,6 +59,7 @@ func refresh() -> void:
 		entry.code = code
 		entry.def = s
 		entry.level = lv
+		entry.unmet = unmet
 		entry.custom_minimum_size = Vector2(300, 40)
 		entry.activated.connect(func(c): use_requested.emit(c))
 		row.add_child(entry)
@@ -61,8 +68,8 @@ func refresh() -> void:
 		b.custom_minimum_size = Vector2(30, 30)
 		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		UiTheme.style_button(b, false, false, 13)
-		b.disabled = s.get("quest", false) or lv >= int(s.max_level) or _unit.skill_points <= 0
-		b.tooltip_text = "Quest skill" if s.get("quest", false) else "Learn one level"
+		b.disabled = s.get("quest", false) or lv >= int(s.max_level) or _unit.skill_points <= 0 or unmet != ""
+		b.tooltip_text = "Quest skill" if s.get("quest", false) else (unmet if unmet != "" else "Learn one level")
 		b.pressed.connect(func(): learn_requested.emit(code))
 		row.add_child(b)
 	reset_size()
@@ -74,6 +81,7 @@ class SkillEntry extends Control:
 	var code := ""
 	var def: Dictionary = {}
 	var level := 0
+	var unmet := ""
 	var _hover := false
 
 	func _ready() -> void:
@@ -139,5 +147,9 @@ class SkillEntry extends Control:
 				var have := int(lv) <= level
 				col.add_child(UiTheme.label("LV %s   %s" % [lv, def.unlocks[lv]], 11, UiTheme.HP_HIGH if have else UiTheme.TEXT_DIM, 600 if have else 400))
 		if def.has("sp_cost"):
-			col.add_child(UiTheme.label("SP COST  %d" % int(def.sp_cost[0]), 11, UiTheme.SP, 600, 2))
+			var costs: Array = def.sp_cost
+			var shown := int(costs[clampi(maxi(level, 1) - 1, 0, costs.size() - 1)])
+			col.add_child(UiTheme.label("SP COST  %d" % shown, 11, UiTheme.SP, 600, 2))
+		if unmet != "":
+			col.add_child(UiTheme.label(unmet, 11, UiTheme.HP_MID, 600))
 		return p

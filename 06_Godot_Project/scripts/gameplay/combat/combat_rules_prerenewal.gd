@@ -93,13 +93,17 @@ static func weapon_atk_range(watk: int, weapon_level: int, dex: int) -> Vector2i
 ## status ATK + weapon ATK scaled by the weapon-vs-size modifier.
 static func resolve_attack(attacker: Dictionary, target: Dictionary, rng: RandomNumberGenerator) -> Dictionary:
 	var has_weapon_model := attacker.has("batk")
+	var skill_pct := int(attacker.get("skill_pct", 100))      # skill damage multiplier
+	var hit_mult := int(attacker.get("hit_mult_pct", 100))    # skill accuracy bonus
+	var mastery := int(attacker.get("mastery", 0))            # added after DEF
 	var mod := size_modifier(String(attacker.get("weapon_type", "fist")), String(target.get("size", "medium")))
 	# Critical hits ignore FLEE and DEF and always deal maximum ATK (Pre-Renewal: no x1.4).
-	if attacker.get("can_crit", false):
+	if attacker.get("can_crit", false) and skill_pct == 100:
 		if rng.randi_range(0, 999) < crit_chance_permille(attacker.luk, target.luk):
 			var crit_dmg: int = int(attacker.batk) + int(attacker.watk_max) * mod / 100 if has_weapon_model else int(attacker.atk_max)
-			return {"miss": false, "crit": true, "damage": maxi(1, crit_dmg)}
-	if rng.randi_range(0, 99) >= hit_rate(attacker.hit, target.flee):
+			return {"miss": false, "crit": true, "damage": maxi(1, crit_dmg + mastery)}
+	var chance := mini(100, hit_rate(attacker.hit, target.flee) * hit_mult / 100)
+	if rng.randi_range(0, 99) >= chance:
 		return {"miss": true, "crit": false, "damage": 0}
 	var raw: int
 	if has_weapon_model:
@@ -107,13 +111,26 @@ static func resolve_attack(attacker: Dictionary, target: Dictionary, rng: Random
 	else:
 		raw = rng.randi_range(int(attacker.atk_min), int(attacker.atk_max))
 	var soft := player_vit_def(target.vit, rng) if target.get("is_player", false) else monster_vit_def(target.vit, rng)
-	return {"miss": false, "crit": false, "damage": apply_defense(raw, int(target.def), soft)}
+	raw = raw * skill_pct / 100
+	return {"miss": false, "crit": false, "damage": apply_defense(raw, int(target.def), soft) + mastery}
 
 
-## Novice-style max HP: (35 + 5 * level) * (1 + VIT/100). Medium confidence;
-## other jobs need their HP factors from data.
+## Novice-style max HP: (35 + 5 * level) * (1 + VIT/100). Medium confidence.
 static func novice_max_hp(level: int, vit: int) -> int:
-	return int((35 + 5 * level) * (1.0 + vit / 100.0))
+	return job_max_hp(level, vit, 0.0, 5)
+
+
+## Pre-Renewal Max HP: (35 + lv*B + sum_{i=2..lv} round(A*i)) * (1 + VIT/100). Medium-high confidence.
+static func job_max_hp(level: int, vit: int, hp_a: float, hp_b: int) -> int:
+	var base := 35.0 + level * hp_b
+	for i in range(2, level + 1):
+		base += roundf(hp_a * i)
+	return int(base * (1.0 + vit / 100.0))
+
+
+## Pre-Renewal Max SP: (10 + lv * factor) * (1 + INT/100). Medium-high confidence.
+static func job_max_sp(level: int, int_: int, sp_factor: int) -> int:
+	return int((10 + level * sp_factor) * (1.0 + int_ / 100.0))
 
 
 static func novice_max_sp(level: int, int_: int) -> int:

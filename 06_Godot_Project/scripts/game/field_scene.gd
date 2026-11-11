@@ -94,7 +94,10 @@ func _ready() -> void:
 	hud.shop.buy_requested.connect(func(item, n): sim.command_buy(player.id, item, n))
 	hud.shop.sell_requested.connect(func(i, n): sim.command_sell(player.id, i, n))
 	hud.shop.shop_closed.connect(func(): sim.close_shop(player.id))
+	hud.skill_window.available = sim.available_skills
+	hud.skill_window.requirements = sim.skill_requirements_unmet
 	hud.skill_window.bind_unit(player, sim.skill_db)
+	hud.dialog.chosen.connect(_on_dialog_choice)
 	hud.skill_window.learn_requested.connect(func(c): sim.command_learn_skill(player.id, c))
 	hud.skill_window.use_requested.connect(func(c): sim.command_use_skill(player.id, c))
 	hud.hotkeys.bind_unit(player, sim.item_db, sim.skill_db)
@@ -196,7 +199,12 @@ func use_hotkey(i: int) -> void:
 	if e == null:
 		return
 	if e.type == "skill":
-		sim.command_use_skill(player.id, String(e.id))
+		# Targeted skills aim at the monster under the cursor, else the current target.
+		var hovered := monster_at_screen(get_viewport().get_mouse_position())
+		sim.command_use_skill(player.id, String(e.id), hovered)
+		if hovered != 0:
+			var t: SimUnit = sim.units[hovered]
+			hud.set_target(t.id, t.name, t.level, t.hp, t.max_hp)
 		return
 	for k in player.inventory.entries.size():
 		if int(player.inventory.entries[k].id) == int(e.id):
@@ -289,6 +297,8 @@ func _process(delta: float) -> void:
 		hud.hover_tag(iv.item_name, camera.unproject_position(iv.head_position()))
 	else:
 		hud.hover_tag("", Vector2.ZERO)
+	if hud.dialog.visible and player.walker.is_moving():
+		hud.dialog.close()
 	# Walking away from the merchant closes the shop (the simulation also enforces range).
 	if hud.shop.visible and sim._open_shop_of(player).is_empty():
 		hud.shop.toggle(false)
@@ -380,8 +390,24 @@ func _consume_events() -> void:
 			"npc_open":
 				if ev.id == player.id:
 					var npc: Dictionary = sim.npcs[ev.npc]
-					var shop_def: Dictionary = sim.shop_db.get(npc.shop, {})
-					hud.shop.open(npc.name, npc.greeting, shop_def.get("items", []), player, sim.item_db)
+					if String(npc.get("kind", "shop")) == "job_guide":
+						_job_dialog_start(npc)
+					else:
+						var shop_def: Dictionary = sim.shop_db.get(npc.shop, {})
+						hud.shop.open(npc.name, npc.greeting, shop_def.get("items", []), player, sim.item_db)
+			"job_change":
+				var jv: UnitView = views.get(ev.id)
+				if jv:
+					jv.rebuild_player(_res)
+				if ev.id == player.id:
+					var jname := String(sim.job_db.get(ev.job, {}).get("name", ev.job))
+					hud.level_up(jv.global_position if jv else Vector3.ZERO, "JOB CHANGE", "You are now a %s" % jname)
+					save_now()
+				player_changed = true
+			"skill_hit":
+				var sv: UnitView = views.get(ev.id)
+				if sv:
+					hud.skill_flash(map.cell_to_world(ev.cell.x, ev.cell.y), String(ev.skill))
 			"trade":
 				if ev.id == player.id:
 					hud.notify(ev.text, UiTheme.TEXT if ev.ok else UiTheme.HP_MID)
@@ -434,6 +460,56 @@ func _create_view(u: SimUnit) -> void:
 		push_warning("No sprite for %s (%s)" % [u.name, u.sprite])
 	v.position = map.cell_pos_to_world(u.walker.position())
 	views[u.id] = v
+
+
+# --- Job guide dialogue ------------------------------------------------------------
+
+const FIRST_JOBS := ["swordman", "mage", "archer", "acolyte", "merchant", "thief"]
+var _dialog_npc: Dictionary = {}
+var _dialog_state := ""
+var _dialog_job := ""
+
+
+func _job_dialog_start(npc: Dictionary) -> void:
+	_dialog_npc = npc
+	if player.job != "novice":
+		var jn := String(sim.job_db.get(player.job, {}).get("name", player.job))
+		_dialog_state = "done"
+		hud.dialog.show_page(npc.name, "You have already chosen your path, %s. Train hard and come back stronger!" % jn, ["Close"])
+		return
+	var basic := int(player.skills.get("NV_BASIC", 0))
+	if player.job_level < FieldSimulation.JOB_CHANGE_JOB_LEVEL or basic < FieldSimulation.JOB_CHANGE_BASIC_SKILL:
+		_dialog_state = "done"
+		hud.dialog.show_page(npc.name, "%s\n\nTo choose a guild you need Job Level %d (you have %d) and Basic Skill level %d (you have %d). Hunt Porings in the field to the south and spend your skill points in the skill window (K)." % [
+			npc.greeting, FieldSimulation.JOB_CHANGE_JOB_LEVEL, player.job_level, FieldSimulation.JOB_CHANGE_BASIC_SKILL, basic], ["Close"])
+		return
+	_dialog_state = "choose"
+	var labels: Array = []
+	for j in FIRST_JOBS:
+		labels.append(String(sim.job_db.get(j, {}).get("name", j)))
+	labels.append("Not yet")
+	hud.dialog.show_page(npc.name, "Your basic training is complete. Which path will you walk?", labels)
+
+
+func _on_dialog_choice(i: int) -> void:
+	match _dialog_state:
+		"choose":
+			if i >= FIRST_JOBS.size():
+				hud.dialog.close()
+				return
+			_dialog_job = FIRST_JOBS[i]
+			_dialog_state = "confirm"
+			var jn := String(sim.job_db.get(_dialog_job, {}).get("name", _dialog_job))
+			var note := "" if not (sim.job_db.get(_dialog_job, {}).get("skills", []) as Array).is_empty() else "\n\n(Its guild skills are still being prepared in this build.)"
+			hud.dialog.show_page(_dialog_npc.name, "Become a %s? This choice is permanent.%s" % [jn, note], ["Become a %s" % jn, "Go back"])
+		"confirm":
+			if i == 0:
+				sim.command_job_change(player.id, _dialog_job)
+				hud.dialog.close()
+			else:
+				_job_dialog_start(_dialog_npc)
+		_:
+			hud.dialog.close()
 
 
 ## Moves the player to another map: save at the destination, then reload.

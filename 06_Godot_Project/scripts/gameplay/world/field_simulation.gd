@@ -17,6 +17,7 @@ extends RefCounted
 ##   {type: "skill", id, skill, text}  {type: "skill_fail", id, text}  {type: "skills", id}
 ##   {type: "posture", id}   (sitting / play dead changed)  {type: "regen", id}
 ##   {type: "warp", id, to_map, to_cell: Vector2i}
+##   {type: "job_change", id, job}  {type: "skill_hit", id, skill, cell}
 
 const MONSTER_DB := "res://data/prerenewal/monsters.json"
 const EXP_DB := "res://data/prerenewal/exp_tables.json"
@@ -30,6 +31,9 @@ const EQUIP_SLOTS := ["head_top", "head_mid", "head_low", "weapon", "shield", "b
 const NOVICE_BTBA := {"fist": 0.5, "dagger": 0.65}
 const SKILL_DB := "res://data/prerenewal/skills.json"
 const MAP_DB := "res://data/prerenewal/maps.json"
+const JOB_DB := "res://data/prerenewal/jobs.json"
+const JOB_CHANGE_JOB_LEVEL := 10
+const JOB_CHANGE_BASIC_SKILL := 9
 const WARP_RADIUS := 1
 const NPC_TALK_RANGE := 2
 const NPC_TRADE_RANGE := 6
@@ -54,6 +58,7 @@ var _next_ground := 1
 var shop_db: Dictionary = {}
 var skill_db: Dictionary = {}
 var map_db: Dictionary = {}
+var job_db: Dictionary = {}
 var map_name := ""
 var map_info: Dictionary = {}
 ## Warp portals on this map: {cell: Vector2i, to_map, to_cell: Vector2i, label}
@@ -74,6 +79,8 @@ func _init(p_gat: GatFile, seed_value: int = 1) -> void:
 	exp_tables = _load_json(EXP_DB)
 	item_db = _load_json(ITEM_DB)
 	item_db.erase("_provenance")
+	job_db = _load_json(JOB_DB)
+	job_db.erase("_provenance")
 	map_db = _load_json(MAP_DB)
 	map_db.erase("_doc")
 	skill_db = _load_json(SKILL_DB)
@@ -145,16 +152,24 @@ func spawn_npcs(map_name: String) -> void:
 			continue
 		var nid := _next_npc
 		_next_npc += 1
-		npcs[nid] = {"id": nid, "name": s.npc_name, "sprite": s.sprite,
+		npcs[nid] = {"id": nid, "name": s.npc_name, "sprite": s.sprite, "kind": "shop",
 			"cell": Vector2i(int(s.cell[0]), int(s.cell[1])), "direction": int(s.get("direction", 0)),
 			"shop": shop_id, "greeting": String(s.get("greeting", ""))}
+		events.append({"type": "npc_spawn", "npc": nid})
+	for n in map_db.get(map_name, {}).get("npcs", []):
+		var nid := _next_npc
+		_next_npc += 1
+		npcs[nid] = {"id": nid, "name": String(n.name), "sprite": String(n.sprite), "kind": String(n.get("kind", "talk")),
+			"cell": Vector2i(int(n.cell[0]), int(n.cell[1])), "direction": int(n.get("direction", 0)),
+			"shop": "", "greeting": String(n.get("greeting", ""))}
 		events.append({"type": "npc_spawn", "npc": nid})
 
 
 ## Restores a player from a validated SaveGame character dictionary.
 func add_player_from_save(c: Dictionary) -> SimUnit:
 	var u := add_player(String(c.name), c.cell, c.stats)
-	u.job = String(c.job)
+	u.job = String(c.job) if job_db.has(String(c.job)) else "novice"
+	u.sprite = String(job_db.get(u.job, {}).get("sprite", "초보자"))
 	u.male = bool(c.get("male", true))
 	u.hair_style = int(c.get("hair_style", 2))
 	u.hair_color = int(c.get("hair_color", 0))
@@ -247,6 +262,7 @@ func command_move(unit_id: int, cell: Vector2i) -> bool:
 		return _skill_fail(u, "You cannot move while playing dead.")
 	u.sitting = false
 	u.target_id = 0
+	u.queued_skill = ""
 	u.pickup_target = 0
 	u.talk_target = 0
 	var path := pathfinder.find_path(u.walker.planning_origin(), cell)
@@ -292,6 +308,7 @@ func command_use_item(unit_id: int, index: int) -> bool:
 	var heal_range: Array = def.get("heal_hp", [0, 0])
 	u.inventory.remove_at(index, 1)
 	var amount := rng.randi_range(int(heal_range[0]), int(heal_range[1]))
+	amount = amount * (100 + 10 * int(u.skills.get("SM_RECOVERY", 0))) / 100
 	var before := u.hp
 	u.hp = mini(u.max_hp, u.hp + amount)
 	events.append({"type": "heal", "id": u.id, "amount": u.hp - before})
@@ -309,6 +326,8 @@ func command_equip(unit_id: int, index: int) -> bool:
 	var slot := String(def.get("equip", ""))
 	if slot == "" or u.level < int(def.get("equip_level", 1)):
 		return false
+	if slot == "weapon" and not (job_db.get(u.job, {}).get("btba", {}) as Dictionary).has(String(def.get("weapon_type", ""))):
+		return _skill_fail(u, "Your class cannot use this weapon.")
 	u.inventory.remove_at(index, 1)
 	if u.equipment.has(slot):
 		u.inventory.entries.append({"id": int(u.equipment[slot]), "amount": 1})
@@ -408,17 +427,47 @@ func command_learn_skill(unit_id: int, code: String) -> bool:
 	var s: Dictionary = skill_db.get(code, {})
 	if u == null or s.is_empty() or s.get("quest", false) or u.skill_points <= 0:
 		return false
+	if not available_skills(u).has(code) or skill_requirements_unmet(u, code) != "":
+		return false
 	var lv := int(u.skills.get(code, 0))
 	if lv >= int(s.max_level):
 		return false
 	u.skills[code] = lv + 1
 	u.skill_points -= 1
+	_recalc_player(u)
+	events.append({"type": "skills", "id": u.id})
+	return true
+
+
+## Changes a Novice into a first job (Novice job level 10 and Basic Skill 9).
+func command_job_change(unit_id: int, job: String) -> bool:
+	var u: SimUnit = units.get(unit_id)
+	var j: Dictionary = job_db.get(job, {})
+	if u == null or u.dead or j.is_empty() or int(j.get("tier", 0)) != 1:
+		return false
+	if u.job != "novice":
+		return _skill_fail(u, "Only Novices can take a first job.")
+	if u.job_level < JOB_CHANGE_JOB_LEVEL or int(u.skills.get("NV_BASIC", 0)) < JOB_CHANGE_BASIC_SKILL:
+		return _skill_fail(u, "You need Job Level %d and Basic Skill level %d." % [JOB_CHANGE_JOB_LEVEL, JOB_CHANGE_BASIC_SKILL])
+	var hp_frac := float(u.hp) / maxi(u.max_hp, 1)
+	u.job = job
+	u.sprite = String(j.sprite)
+	u.job_level = 1
+	u.job_exp = 0
+	u.skill_points = 0
+	_grant_default_skills(u, false)
+	# A weapon the new class cannot use goes back to the inventory.
+	if u.equipment.has("weapon") and not (j.btba as Dictionary).has(String(item_db.get(str(u.equipment.weapon), {}).get("weapon_type", ""))):
+		command_unequip(u.id, "weapon")
+	_recalc_player(u)
+	u.hp = clampi(roundi(u.max_hp * hp_frac), 1, u.max_hp)
+	events.append({"type": "job_change", "id": u.id, "job": job})
 	events.append({"type": "skills", "id": u.id})
 	return true
 
 
 ## Uses a skill. Validated here: learned, SP, delay, posture.
-func command_use_skill(unit_id: int, code: String) -> bool:
+func command_use_skill(unit_id: int, code: String, target_id: int = 0) -> bool:
 	var u: SimUnit = units.get(unit_id)
 	var s: Dictionary = skill_db.get(code, {})
 	if u == null or u.dead or s.is_empty():
@@ -436,9 +485,20 @@ func command_use_skill(unit_id: int, code: String) -> bool:
 		return _skill_fail(u, "You cannot do that while playing dead.")
 	if u.skill_delay > 0.0:
 		return _skill_fail(u, "Skill is not ready yet.")
-	var cost := int((s.get("sp_cost", [0]) as Array)[0])
+	var level := int(u.skills.get(code, 0))
+	var costs: Array = s.get("sp_cost", [0])
+	var cost := int(costs[clampi(level - 1, 0, costs.size() - 1)])
 	if u.sp < cost:
 		return _skill_fail(u, "Not enough SP.")
+	if String(s.get("target", "")) == "enemy":
+		# Queue it: the unit walks into range and the skill replaces its next attack.
+		var t: SimUnit = units.get(target_id if target_id != 0 else u.target_id)
+		if t == null or t.dead or t.is_player():
+			return _skill_fail(u, "Select a target first.")
+		u.target_id = t.id
+		u.queued_skill = code
+		u.sitting = false
+		return true
 	u.sp -= cost
 	u.skill_delay = float(s.get("after_cast_delay", 0))
 	match code:
@@ -458,7 +518,29 @@ func command_use_skill(unit_id: int, code: String) -> bool:
 					m.target_id = 0
 			events.append({"type": "posture", "id": u.id})
 			events.append({"type": "skill", "id": u.id, "skill": code, "text": "Play Dead"})
+		"SM_MAGNUM":
+			_magnum_break(u, s, level)
 	return true
+
+
+func _skill_profile(u: SimUnit, s: Dictionary, level: int) -> Dictionary:
+	var prof := u.combat_profile()
+	prof.skill_pct = int(s.get("damage_pct_base", 100)) + int(s.get("damage_pct_per_level", 0)) * level
+	prof.hit_mult_pct = 100 + int(s.get("hit_pct_per_level", 0)) * level
+	prof.can_crit = false
+	return prof
+
+
+func _magnum_break(u: SimUnit, s: Dictionary, level: int) -> void:
+	var prof := _skill_profile(u, s, level)
+	var area := int(s.get("area", 2))
+	events.append({"type": "skill", "id": u.id, "skill": "SM_MAGNUM", "text": "Magnum Break"})
+	events.append({"type": "skill_hit", "id": u.id, "skill": "SM_MAGNUM", "cell": u.walker.cell})
+	for id in units.keys():
+		var t: SimUnit = units[id]
+		if t.is_player() or t.dead or _chebyshev(u.walker.cell, t.walker.cell) > area:
+			continue
+		_apply_hit(u, t, CombatRulesPreRenewal.resolve_attack(prof, t.combat_profile(), rng))
 
 
 ## Sit or stand (Insert). Needs Basic Skill level 3.
@@ -484,12 +566,31 @@ func _skill_fail(u: SimUnit, text: String) -> bool:
 func _grant_default_skills(u: SimUnit, reset := true) -> void:
 	if reset:
 		u.skills = {}
-	for code in skill_db:
+	for code in available_skills(u):
 		var s: Dictionary = skill_db[code]
 		if s.get("quest", false) and int(u.skills.get(code, 0)) == 0:
 			u.skills[code] = 1   # quest skills granted until their quests exist
 		elif not u.skills.has(code):
 			u.skills[code] = 0
+
+
+## Skill codes a unit can have: Novice skills plus those of its current job.
+func available_skills(u: SimUnit) -> Array:
+	var out: Array = []
+	for job in ["novice", u.job]:
+		for code in job_db.get(job, {}).get("skills", []):
+			if skill_db.has(code) and not out.has(code):
+				out.append(code)
+	return out
+
+
+## Returns "" if the skill's prerequisites are met, else a reason.
+func skill_requirements_unmet(u: SimUnit, code: String) -> String:
+	var req: Dictionary = skill_db.get(code, {}).get("requires", {})
+	for r in req:
+		if int(u.skills.get(r, 0)) < int(req[r]):
+			return "Requires %s level %d." % [skill_db.get(r, {}).get("name", r), int(req[r])]
+	return ""
 
 
 func _spent_skill_points(u: SimUnit) -> int:
@@ -609,6 +710,17 @@ func _regen(u: SimUnit, ms: float) -> void:
 		if u.sp < u.max_sp:
 			u.sp = mini(u.max_sp, u.sp + RegenRulesPreRenewal.sp_amount(u.max_sp, int(u.stats.int)))
 			changed = true
+	var rec := int(u.skills.get("SM_RECOVERY", 0))
+	if rec > 0:
+		if u.walker.is_moving():
+			u.recovery_t = 0.0
+		else:
+			u.recovery_t += ms
+			if u.recovery_t >= 10000.0:
+				u.recovery_t = 0.0
+				if u.hp < u.max_hp:
+					u.hp = mini(u.max_hp, u.hp + 5 * rec + int(u.max_hp * 0.002 * rec))
+					changed = true
 	if changed:
 		events.append({"type": "regen", "id": u.id})
 
@@ -619,7 +731,7 @@ func _pursue_talk(u: SimUnit) -> void:
 		u.talk_target = 0
 		return
 	if _chebyshev(u.walker.cell, npc.cell) <= NPC_TALK_RANGE and not u.walker.is_moving():
-		u.open_shop = u.talk_target
+		u.open_shop = u.talk_target if String(npc.get("kind", "shop")) == "shop" else 0
 		u.talk_target = 0
 		u.walker.direction = GridWalker.direction_to(u.walker.cell, npc.cell)
 		events.append({"type": "npc_open", "id": u.id, "npc": npc.id})
@@ -696,8 +808,27 @@ func spawn_ground_item(item_id: int, amount: int, cell: Vector2i) -> int:
 
 func _attack(u: SimUnit, t: SimUnit) -> void:
 	u.attack_cooldown = u.attack_interval
+	var prof := u.combat_profile()
+	if u.queued_skill != "":
+		var code := u.queued_skill
+		u.queued_skill = ""
+		var sk: Dictionary = skill_db.get(code, {})
+		var level := int(u.skills.get(code, 0))
+		var costs: Array = sk.get("sp_cost", [0])
+		var cost := int(costs[clampi(level - 1, 0, costs.size() - 1)])
+		if level > 0 and u.sp >= cost:
+			u.sp -= cost
+			u.skill_delay = float(sk.get("after_cast_delay", 0))
+			prof = _skill_profile(u, sk, level)
+			events.append({"type": "skill", "id": u.id, "skill": code, "text": String(sk.name)})
+			events.append({"type": "skill_hit", "id": u.id, "skill": code, "cell": t.walker.cell})
+		else:
+			_skill_fail(u, "Not enough SP.")
 	events.append({"type": "attack", "id": u.id, "target": t.id})
-	var r := CombatRulesPreRenewal.resolve_attack(u.combat_profile(), t.combat_profile(), rng)
+	_apply_hit(u, t, CombatRulesPreRenewal.resolve_attack(prof, t.combat_profile(), rng))
+
+
+func _apply_hit(u: SimUnit, t: SimUnit, r: Dictionary) -> void:
 	events.append({"type": "damage", "src": u.id, "dst": t.id, "amount": r.damage, "crit": r.crit, "miss": r.miss})
 	if r.miss:
 		_provoke(t, u)
@@ -791,7 +922,7 @@ func _gain_exp(p: SimUnit, base: int, job: int) -> void:
 		p.hp = p.max_hp
 		p.sp = p.max_sp
 		events.append({"type": "levelup", "id": p.id, "level": p.level, "kind": "base"})
-	var job_table: Array = exp_tables.get("job_novice", [])
+	var job_table: Array = exp_tables.get(String(job_db.get(p.job, {}).get("job_table", "job_novice")), [])
 	while p.job_level - 1 < job_table.size() and p.job_exp >= int(job_table[p.job_level - 1]):
 		p.job_exp -= int(job_table[p.job_level - 1])
 		p.job_level += 1
@@ -806,27 +937,36 @@ func next_base_exp(p: SimUnit) -> int:
 
 
 func next_job_exp(p: SimUnit) -> int:
-	var t: Array = exp_tables.get("job_novice", [])
+	var t: Array = exp_tables.get(String(job_db.get(p.job, {}).get("job_table", "job_novice")), [])
 	return int(t[p.job_level - 1]) if p.job_level - 1 < t.size() else 0
 
 
 func _recalc_player(u: SimUnit) -> void:
 	var s := u.stats
-	u.max_hp = CombatRulesPreRenewal.novice_max_hp(u.level, int(s.vit))
-	u.max_sp = CombatRulesPreRenewal.novice_max_sp(u.level, int(s.int))
+	var j: Dictionary = job_db.get(u.job, job_db.get("novice", {}))
+	u.max_hp = CombatRulesPreRenewal.job_max_hp(u.level, int(s.vit), float(j.get("hp_a", 0.0)), int(j.get("hp_b", 5)))
+	u.max_sp = CombatRulesPreRenewal.job_max_sp(u.level, int(s.int), int(j.get("sp_factor", 1)))
+	u.weight_bonus = int(j.get("weight_bonus", 0))
 	u.batk = StatRulesPreRenewal.status_atk(int(s.str), int(s.dex), int(s.luk))
 	var weapon: Dictionary = item_db.get(str(u.equipment.get("weapon", 0)), {})
 	u.weapon_type = String(weapon.get("weapon_type", "fist"))
 	var wr := CombatRulesPreRenewal.weapon_atk_range(int(weapon.get("atk", 0)), int(weapon.get("weapon_level", 1)), int(s.dex))
 	u.watk_min = wr.x
 	u.watk_max = wr.y
-	u.atk_min = u.batk + wr.x
-	u.atk_max = u.batk + wr.y
+	# Weapon masteries (e.g. Sword Mastery) add flat ATK after DEF.
+	u.mastery_atk = 0
+	for code in u.skills:
+		var sk: Dictionary = skill_db.get(code, {})
+		if sk.has("mastery_atk") and (sk.get("mastery_weapons", []) as Array).has(u.weapon_type):
+			u.mastery_atk += int(sk.mastery_atk) * int(u.skills[code])
+	u.atk_min = u.batk + wr.x + u.mastery_atk
+	u.atk_max = u.batk + wr.y + u.mastery_atk
 	var def_total := 0
 	for slot in u.equipment:
 		def_total += int(item_db.get(str(u.equipment[slot]), {}).get("def", 0))
 	u.hard_def = def_total
-	var btba: float = NOVICE_BTBA.get(u.weapon_type, 0.6)
+	var btba_table: Dictionary = j.get("btba", NOVICE_BTBA)
+	var btba: float = float(btba_table.get(u.weapon_type, 0.6))
 	var a := CombatRulesPreRenewal.aspd(btba, int(s.agi), int(s.dex))
 	u.attack_interval = CombatRulesPreRenewal.attack_interval_ms(a)
 	u.attack_motion = minf(u.attack_interval, 500.0)

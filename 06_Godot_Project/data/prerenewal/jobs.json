@@ -1,0 +1,17 @@
+{
+  "_provenance": "Pre-Renewal job data as documented by iRO Wiki classic and the rAthena pre-re job database (facts only). hp_a / hp_b / sp_factor feed MaxHP = (35 + BaseLv*hp_b + sum_{i=2..BaseLv} round(hp_a*i)) * (1 + VIT/100) and MaxSP = (10 + BaseLv*sp_factor) * (1 + INT/100). btba = base weapon delay in seconds per weapon type. sprite = client body sprite name. Confidence: Medium-high for factors and weight bonus, Medium for BTBA values; cross-check pending.",
+  "novice":   {"name": "Novice",   "tier": 0, "sprite": "초보자", "hp_a": 0.0, "hp_b": 5, "sp_factor": 1, "weight_bonus": 0,   "job_table": "job_novice", "max_job_level": 10,
+               "btba": {"fist": 0.5, "dagger": 0.65}, "skills": ["NV_BASIC", "NV_FIRSTAID", "NV_TRICKDEAD"]},
+  "swordman": {"name": "Swordman", "tier": 1, "sprite": "검사",   "hp_a": 0.7, "hp_b": 5, "sp_factor": 2, "weight_bonus": 800, "job_table": "job_first", "max_job_level": 50,
+               "btba": {"fist": 0.4, "dagger": 0.65, "sword": 0.7}, "skills": ["SM_SWORD", "SM_RECOVERY", "SM_BASH", "SM_MAGNUM"]},
+  "mage":     {"name": "Mage",     "tier": 1, "sprite": "마법사", "hp_a": 0.3, "hp_b": 5, "sp_factor": 6, "weight_bonus": 200, "job_table": "job_first", "max_job_level": 50,
+               "btba": {"fist": 0.5, "dagger": 0.6, "rod": 0.7}, "skills": []},
+  "archer":   {"name": "Archer",   "tier": 1, "sprite": "궁수",   "hp_a": 0.5, "hp_b": 5, "sp_factor": 2, "weight_bonus": 600, "job_table": "job_first", "max_job_level": 50,
+               "btba": {"fist": 0.5, "dagger": 0.6, "bow": 0.7}, "skills": []},
+  "acolyte":  {"name": "Acolyte",  "tier": 1, "sprite": "성직자", "hp_a": 0.4, "hp_b": 5, "sp_factor": 5, "weight_bonus": 400, "job_table": "job_first", "max_job_level": 50,
+               "btba": {"fist": 0.5, "mace": 0.7, "rod": 0.7}, "skills": []},
+  "merchant": {"name": "Merchant", "tier": 1, "sprite": "상인",   "hp_a": 0.4, "hp_b": 5, "sp_factor": 2, "weight_bonus": 800, "job_table": "job_first", "max_job_level": 50,
+               "btba": {"fist": 0.4, "dagger": 0.65, "sword": 0.7, "axe": 0.8, "mace": 0.7}, "skills": []},
+  "thief":    {"name": "Thief",    "tier": 1, "sprite": "도둑",   "hp_a": 0.5, "hp_b": 5, "sp_factor": 2, "weight_bonus": 400, "job_table": "job_first", "max_job_level": 50,
+               "btba": {"fist": 0.4, "dagger": 0.5, "sword": 0.7}, "skills": []}
+}
