@@ -94,6 +94,11 @@ var save_map := HUB_MAP
 var save_cell := HUB_CELL
 ## Rental options set by NPC scripts: falcon / cart / peco (saved; cosmetic for now).
 var options: Dictionary = {}
+## CPU adventurer (see BotBrain). Still an ordinary player to the simulation:
+## same stats, combat, EXP, loot and death rules. Presentation shows a name tag.
+var is_bot := false
+var bot_role := ""       # melee | caster | support
+var bot_think := 0.0     # ms until the next decision
 
 
 func has_status(s: String) -> bool:

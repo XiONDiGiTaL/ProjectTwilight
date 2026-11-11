@@ -5,13 +5,16 @@ extends Node3D
 ##
 ## Controls: left-click monster = attack, item = pick up, ground = walk.
 ## I / Alt+E = inventory, Alt+A / S = status, Q / Alt+Q = equipment, K / Alt+S = skills,
-## F1-F9 = hotkey bar, Insert = sit / stand, U = cycle aura, F12 = save now.
+## F1-F9 = hotkey bar, Insert = sit / stand, U = cycle aura, M = minimap,
+## F12 = save now.
 
 @export var map_name := "prt_fild08"
 @export var start_cell := Vector2i(170, 200)
 @export var sim_seed := 1
 ## Save slot; "" disables loading and saving (tests, tools).
 @export var save_slot := "slot1"
+## CPU adventurers that populate the map (off for tools and capture scenes).
+@export var bots_enabled := true
 
 const PICK_RADIUS_PX := 34.0
 const ITEM_PICK_RADIUS_PX := 22.0
@@ -80,6 +83,8 @@ func _ready() -> void:
 		player.walker = GridWalker.new(sim.pathfinder.nearest_walkable(c, 60))
 	sim.setup_map(map_name, ensure_npc_world(_res).warps_on(map_name), ensure_npc_world(_res).monsters_on(map_name))
 	_spawn_script_npcs()
+	if bots_enabled:
+		BotBrain.populate(sim, sim.rng.randi_range(2, 4), BotBrain.map_level(sim), player.walker.cell)
 	_maybe_offer_training.call_deferred()
 	for w in sim.warps:
 		var wv := WarpPortalView.new()
@@ -119,6 +124,7 @@ func _ready() -> void:
 	if loaded_msg != "":
 		hud.notify(loaded_msg, UiTheme.HP_MID)
 	hud.map_banner(String(sim.map_info.get("name", map_name)), String(sim.map_info.get("subtitle", "")))
+	hud.bind_minimap(map.gat, sim, player.id, String(sim.map_info.get("name", map_name)))
 
 
 func _build_marker() -> void:
@@ -166,6 +172,8 @@ func _unhandled_input(e: InputEvent) -> void:
 				hud.equipment_window.toggle()
 			KEY_U:
 				cycle_aura()
+			KEY_M:
+				hud.toggle_minimap()
 		return
 	if not (e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT):
 		return
@@ -358,7 +366,11 @@ func _consume_events() -> void:
 	for ev in sim.drain_events():
 		match ev.type:
 			"spawn":
-				_create_view(sim.units[ev.id])
+				var spawned: SimUnit = sim.units[ev.id]
+				_create_view(spawned)
+				if spawned.is_bot:
+					var tag_color: Color = BotBrain.ROLE_COLORS.get(spawned.bot_role, Color(0.72, 0.9, 1.0))
+					(views[spawned.id] as UnitView).set_name_tag(spawned.name, tag_color)
 			"attack":
 				var a: SimUnit = sim.units[ev.id]
 				var av: UnitView = views.get(ev.id)
@@ -371,21 +383,24 @@ func _consume_events() -> void:
 				hud.unit_died(ev.id)
 				player_changed = player_changed or ev.id == player.id
 			"exp":
-				var pv: UnitView = views[ev.id]
-				if ev.base > 0:
-					hud.numbers.spawn_offset(pv.global_position, Vector2(110, -40), "+%d BASE EXP" % ev.base, DamageNumbers.Kind.EXP_BASE)
-				if ev.job > 0:
-					hud.numbers.spawn_offset(pv.global_position, Vector2(110, -18), "+%d JOB EXP" % ev.job, DamageNumbers.Kind.EXP_JOB)
-				player_changed = true
+				# CPU adventurers earn EXP by the same rules but stay quiet.
+				if ev.id == player.id:
+					var pv: UnitView = views[ev.id]
+					if ev.base > 0:
+						hud.numbers.spawn_offset(pv.global_position, Vector2(110, -40), "+%d BASE EXP" % ev.base, DamageNumbers.Kind.EXP_BASE)
+					if ev.job > 0:
+						hud.numbers.spawn_offset(pv.global_position, Vector2(110, -18), "+%d JOB EXP" % ev.job, DamageNumbers.Kind.EXP_JOB)
+					player_changed = true
 			"levelup":
-				var lv: UnitView = views[ev.id]
-				var lu: SimUnit = sim.units[ev.id]
-				if ev.kind == "base":
-					hud.level_up(lv.global_position, "Level Up", "Lv %d  ·  +%d pts" % [ev.level, lu.status_points])
-				else:
-					hud.level_up(lv.global_position, "Job Level Up", "Job Lv %d" % ev.level)
-				player_changed = true
-				save_now()
+				if ev.id == player.id:
+					var lv: UnitView = views[ev.id]
+					var lu: SimUnit = sim.units[ev.id]
+					if ev.kind == "base":
+						hud.level_up(lv.global_position, "Level Up", "Lv %d  ·  +%d pts" % [ev.level, lu.status_points])
+					else:
+						hud.level_up(lv.global_position, "Job Level Up", "Job Lv %d" % ev.level)
+					player_changed = true
+					save_now()
 			"revive":
 				if ev.id == player.id and ev.has("to_map"):
 					player.dead = false

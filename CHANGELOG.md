@@ -3,6 +3,13 @@
 ## [Unreleased] - 2026-11-11
 
 ### Added
+- **A living world — CPU adventurers:**
+  - Two to four CPU players populate every map, acting only through the same simulation commands a human client sends (move, attack, use skill, pick up, sit).
+  - Roles: melee hunters (Swordman, Dark Knight, Merchant, Thief, Novice), casters that pick the element the target is weakest to, and healer Shamans that heal, buff and resurrect nearby players — including the player.
+  - They fight monsters, take and deal damage, earn EXP, loot, level up, fall in battle and lie there until revived; after 40 s they return to their save point on their own.
+  - They wear real gear and palettes, carry a role-coloured name tag and never trigger map portals or touch the player's save.
+- **Minimap:** a corner overview in the Twilight Glass style with the map's walkability silhouette, portals, monsters, the player and the CPU adventurers as role-coloured blips. Toggle with **M**.
+- **Diagnostics:** `tests/diag_warps.gd` reports loaded portals and spawns per map; `tests/capture_bots.gd` renders the CPU adventurers and minimap.
 - **World travel:**
   - Every map gets its warp portals from rAthena's warp lists (2,999 portals, with Pre-Renewal overrides), using rAthena's touch areas. Same-map portals teleport.
   - Monster spawns come from rAthena's Pre-Renewal lists, for the monsters this build has data for.

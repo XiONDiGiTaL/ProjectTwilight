@@ -50,6 +50,7 @@ Project Twilight **contains no Gravity game data**. On first launch you point it
 | Character select and creation (classic stat hexagon, live preview) | ✅ Implemented and tested |
 | Novice skills, skill window, F1–F9 hotkey bar, sitting and regen | ✅ Implemented and tested |
 | Prontera ⇄ Prontera Field travel through warp portals | ✅ Implemented and tested |
+| CPU adventurers (2–4 per map), name tags and minimap blips | ✅ Implemented and tested |
 | Job change to all six first jobs; Swordman skill tree | ✅ Implemented and tested |
 | Other first-job skill trees, magic and elements, more maps and monsters | 📋 Next |
 | First offline playable (character, map, monster, combat, save) | 📋 Planned |
@@ -117,6 +118,7 @@ git clone https://github.com/XiONDiGiTaL/ProjectTwilight.git
 | K | Skills |
 | F1–F9 | Hotkeys |
 | Insert | Sit |
+| M | Minimap |
 | U | Cycle aura |
 | F12 | Save (progress also saves automatically) |
 

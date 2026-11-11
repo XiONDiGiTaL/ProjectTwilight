@@ -87,6 +87,7 @@ func _ready() -> void:
 	_root.add_child(hotkeys)
 	dialog = NpcDialog.new()
 	_root.add_child(dialog)
+	_build_minimap()
 
 
 # --- System feed and hover tag ---------------------------------------------------
@@ -98,6 +99,9 @@ var shop: ShopWindow
 var skill_window: SkillWindow
 var hotkeys: HotkeyBar
 var dialog: NpcDialog
+var minimap: Minimap
+var _minimap_panel: GlassPanel
+var _minimap_title: Label
 var _feed: VBoxContainer
 var _hover_tag: GlassPanel
 var _hover_label: Label
@@ -233,6 +237,45 @@ func transition(text: String) -> void:
 		var age := (Time.get_ticks_msec() - t0) / 1000.0
 		cover.color.a = clampf(age / 0.35, 0.0, 1.0)
 		return is_instance_valid(cover))
+
+
+# --- Minimap -----------------------------------------------------------------
+
+## Corner overview of the current map: walkability, portals, monsters and the
+## CPU adventurers. Bound once the field has loaded its map.
+func _build_minimap() -> void:
+	_minimap_panel = GlassPanel.new()
+	_minimap_panel.chamfer = 10.0
+	_minimap_panel.sweep = false
+	_minimap_panel.padding = Vector4(6, 5, 6, 6)
+	_minimap_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_root.add_child(_minimap_panel)
+	_minimap_panel.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	_minimap_panel.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	_minimap_panel.offset_left = -196
+	_minimap_panel.offset_right = -16
+	_minimap_panel.offset_top = 16
+	_minimap_panel.offset_bottom = 216
+	var col := VBoxContainer.new()
+	col.add_theme_constant_override("separation", 3)
+	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_minimap_panel.add_child(col)
+	_minimap_title = UiTheme.label("", 9, UiTheme.ACCENT, 600, 2)
+	_minimap_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	col.add_child(_minimap_title)
+	minimap = Minimap.new()
+	minimap.custom_minimum_size = Vector2(168, 168)
+	minimap.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	col.add_child(minimap)
+
+
+func bind_minimap(gat: GatFile, sim: FieldSimulation, player_id: int, title: String) -> void:
+	_minimap_title.text = title.to_upper()
+	minimap.setup(gat, sim, player_id)
+
+
+func toggle_minimap() -> void:
+	_minimap_panel.visible = not _minimap_panel.visible
 
 
 ## Shows a small name tag at a screen position (ground item hover); "" hides it.

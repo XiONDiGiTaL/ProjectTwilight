@@ -1229,6 +1229,8 @@ func tick(ms: float) -> void:
 			continue
 		if u.is_player():
 			_regen(u, ms)
+		if u.is_bot:
+			BotBrain.think(self, u, ms)
 		if u.is_incapacitated():
 			u.walker.advance(ms)
 			continue
@@ -1243,7 +1245,8 @@ func tick(ms: float) -> void:
 		elif not u.is_player():
 			_wander(u, ms)
 		u.walker.advance(ms)
-		if u.is_player() and not u.walker.is_moving() and not u.warping:
+		# Portals move the local player; CPU adventurers stay on their map.
+		if u.is_player() and not u.is_bot and not u.walker.is_moving() and not u.warping:
 			var w := warp_at(u.walker.cell)
 			if not w.is_empty():
 				u.warping = true
@@ -1494,7 +1497,12 @@ func _kill(t: SimUnit, killer: SimUnit) -> void:
 	t.dead = true
 	t.target_id = 0
 	t.walker.stop()
-	t.respawn_in = PLAYER_REVIVE_MS if t.is_player() else MONSTER_RESPAWN_MS
+	# CPU adventurers lie where they fell until a player revives them, then
+	# return to their save point on their own after a while.
+	if t.is_bot:
+		t.respawn_in = BotBrain.BOT_REVIVE_MS
+	else:
+		t.respawn_in = PLAYER_REVIVE_MS if t.is_player() else MONSTER_RESPAWN_MS
 	events.append({"type": "death", "id": t.id, "killer": killer.id})
 	for id in units:
 		var other: SimUnit = units[id]

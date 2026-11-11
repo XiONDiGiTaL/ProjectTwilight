@@ -29,7 +29,7 @@ The engine never runs Gravity code; only *content* comes from the client. Two co
 ✅ map · ✅ movement · ✅ monsters (Poring/Fabre/Lunatic) · ✅ combat · ✅ EXP and levels · ✅ combat HUD · ✅ character creation · ✅ inventory and drops · ✅ save/load · ✅ stat allocation window · ✅ equipment · ✅ NPC shop
 
 ## Phase 5: Core gameplay 🔧
-✅ Novice skills, hotkey bar, regeneration · ✅ multi-map travel (Prontera ⇄ prt_fild08) · ✅ job change · ✅ Swordman and Mage skills, element table, cast times, casting circles, auras · ✅ Dark Knight and Shaman second jobs, status effects · 📋 Archer / Acolyte / Merchant / Thief skills · 📋 Knight / Crusader / Priest / Monk · 📋 more maps and monsters · 📋 quests
+✅ Novice skills, hotkey bar, regeneration · ✅ multi-map travel (Prontera ⇄ prt_fild08) · ✅ job change · ✅ Swordman and Mage skills, element table, cast times, casting circles, auras · ✅ Dark Knight and Shaman second jobs, status effects · ✅ CPU adventurers and minimap · 📋 Archer / Acolyte / Merchant / Thief skills · 📋 Knight / Crusader / Priest / Monk · 📋 more maps and monsters · 📋 quests
 
 ## Phases 6–8 📋
 Core gameplay → private co-op (ENet, invitation codes ✅ already) → server integration and MMO → modernisation.

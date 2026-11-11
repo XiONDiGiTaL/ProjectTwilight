@@ -16,6 +16,8 @@ var _was_dead := false
 var _feigning := false
 var aura: PlayerAura
 var body_source := ""   # client | pack | sheet | fallback (see PlayerSprites)
+var name_tag: Label3D   # CPU adventurers show their name; the local player does not
+var _tag_color := Color.WHITE
 
 
 func build_player(res: Node, male: bool, hair_style: int, hair_color: int) -> bool:
@@ -110,6 +112,26 @@ func set_status_tint(u: SimUnit) -> void:
 	sprite.modulate = Color(c, sprite.modulate.a)
 
 
+## Floating name above the sprite, used for the CPU adventurers so the maps
+## read like a populated world.
+func set_name_tag(text: String, color := Color(0.72, 0.9, 1.0)) -> void:
+	if name_tag == null:
+		name_tag = Label3D.new()
+		name_tag.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+		name_tag.no_depth_test = true
+		name_tag.fixed_size = false
+		name_tag.font = UiTheme.font(600, 1)
+		name_tag.font_size = 40
+		name_tag.pixel_size = 0.045
+		name_tag.outline_size = 12
+		name_tag.outline_modulate = Color(0.02, 0.04, 0.08, 0.85)
+		name_tag.render_priority = 2
+		add_child(name_tag)
+	_tag_color = color
+	name_tag.modulate = color
+	name_tag.text = text
+
+
 ## World position just above the sprite's head (for HP bars and text).
 func head_position() -> Vector3:
 	return global_position + Vector3(0, (sprite.top_height() if sprite else 8.0) + 3.5, 0)
@@ -120,6 +142,9 @@ func _process(delta: float) -> void:
 		return
 	position = map.cell_pos_to_world(unit.walker.position())
 	var dir := PlayerAvatar.sprite_direction(unit.walker.direction, camera_yaw)
+	if name_tag:
+		name_tag.position = Vector3(0, sprite.top_height() + 7.0, 0)
+		name_tag.modulate = Color(_tag_color, 0.4) if unit.dead else _tag_color
 	if unit.dead:
 		if aura:
 			aura.visible = false

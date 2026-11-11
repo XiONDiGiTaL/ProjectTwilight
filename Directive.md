@@ -147,8 +147,39 @@ Full brief: Swordman → **Dark Knight**, female Acolyte → **Shaman**, with fu
 - [ ] Draw falcon, cart and Peco; add Falconry, Pushcart and Riding to the classes that need them.
 - [ ] Export presets: include `data/**/*.txt` in exported builds.
 
+## Task: a living world — CPU adventurers and minimap (owner brief, 2026-11-11) — done
+
+- [x] `BotBrain` (`scripts/gameplay/world/bot_brain.gd`) drives CPU players through the same `FieldSimulation` commands a human client sends. Roles: melee, caster (picks the element the target is weakest to), support Shaman (heal, buff, `SH_PRAYER` revive).
+- [x] `FieldSimulation` ticks bots, keeps them off warp portals, and makes fallen bots wait `BOT_REVIVE_MS` (40 s) instead of the 3 s player revive.
+- [x] `FieldScene` spawns 2–4 per map (`@export bots_enabled`, off for tools/captures) at `BotBrain.map_level`, away from the player.
+- [x] Role-coloured `Label3D` name tags on bots only. `pixel_size * font_size` must stay around 1.5–2 world units to be readable.
+- [x] `Minimap` (`scripts/ui/minimap.gd`): GAT walkability silhouette plus portal / monster / bot / player blips; `M` toggles it.
+- [x] HUD guards: bot EXP and level-ups never write the player's save.
+- [x] Tests: `tests/unit/test_bots.gd` (10 tests). Suite: 128 passed, 0 failed.
+- [x] Diagnostics: `tests/diag_warps.gd` (2,999 portals from rAthena, 0 errors), `tests/capture_bots.gd`.
+
+### Follow-ups (open)
+
+- [ ] Bots should path to town shops and sell there; today junk is converted to Zeny abstractly.
+- [ ] Party behaviour: spread across different monsters instead of stacking on one.
+- [ ] Cleanse debuffs once a cure skill exists.
+- [ ] Minimap: player facing arrow and click-to-walk.
+
+## Where the three play modes stand (2026-11-11)
+
+| Mode | State |
+|---|---|
+| **Offline** | Playable: character creation → Training Grounds (or skip straight to Prontera) → field combat, loot, jobs, saves, warps, rAthena NPC scripts, CPU adventurers. |
+| **Private co-op** | Authority logic exists (`FieldSimulation` validates every command) and invitation codes are implemented and tested. **No transport**: no ENet peer, no session, no sync. |
+| **MMO** | **Not implemented.** rAthena and Hercules are read as script/data sources only; there is no packet adapter. Their protocols target the original client and specific `PACKETVER`s. |
+
+## Asset independence (still open)
+
+The game still reads the player's kRO client for maps, sprites and models; `Resources/` only adds optional packs. There is no original replacement asset set yet, so a standalone distributable build is not possible. Replacing one asset class at a time (starting with tilesets and UI) is the honest path.
+
 ## Backlog after this task
 
 - Archer, Merchant and Thief first-job skills, and Acolyte skills (Heal, Blessing, Holy Light).
 - More maps and monsters; quests.
 - The co-op host and dedicated server transport.
+- Hercules-specific elements: nothing from Hercules is used yet. Its script language is close to rAthena's, so the interpreter is the place to add Hercules deviations — only against a concrete script that fails.
