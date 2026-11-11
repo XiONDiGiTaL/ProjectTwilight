@@ -96,12 +96,15 @@ static func resolve_attack(attacker: Dictionary, target: Dictionary, rng: Random
 	var skill_pct := int(attacker.get("skill_pct", 100))      # skill damage multiplier
 	var hit_mult := int(attacker.get("hit_mult_pct", 100))    # skill accuracy bonus
 	var mastery := int(attacker.get("mastery", 0))            # added after DEF
+	var atk_pct := int(attacker.get("atk_pct", 100))          # buffs (Dark Breath)
 	var mod := size_modifier(String(attacker.get("weapon_type", "fist")), String(target.get("size", "medium")))
 	# Critical hits ignore FLEE and DEF and always deal maximum ATK (Pre-Renewal: no x1.4).
-	if attacker.get("can_crit", false) and skill_pct == 100:
-		if rng.randi_range(0, 999) < crit_chance_permille(attacker.luk, target.luk):
+	var force_crit := bool(attacker.get("force_crit", false))
+	if attacker.get("can_crit", false) and (skill_pct == 100 or force_crit):
+		var chance_c := crit_chance_permille(attacker.luk, target.luk) + int(attacker.get("crit_bonus", 0))
+		if force_crit or rng.randi_range(0, 999) < chance_c:
 			var crit_dmg: int = int(attacker.batk) + int(attacker.watk_max) * mod / 100 if has_weapon_model else int(attacker.atk_max)
-			return {"miss": false, "crit": true, "damage": maxi(1, crit_dmg + mastery)}
+			return {"miss": false, "crit": true, "damage": maxi(1, crit_dmg * skill_pct / 100 * atk_pct / 100 + mastery)}
 	var chance := mini(100, hit_rate(attacker.hit, target.flee) * hit_mult / 100)
 	if rng.randi_range(0, 99) >= chance:
 		return {"miss": true, "crit": false, "damage": 0}
@@ -111,7 +114,7 @@ static func resolve_attack(attacker: Dictionary, target: Dictionary, rng: Random
 	else:
 		raw = rng.randi_range(int(attacker.atk_min), int(attacker.atk_max))
 	var soft := player_vit_def(target.vit, rng) if target.get("is_player", false) else monster_vit_def(target.vit, rng)
-	raw = raw * skill_pct / 100
+	raw = raw * skill_pct / 100 * atk_pct / 100
 	return {"miss": false, "crit": false, "damage": apply_defense(raw, int(target.def), soft) + mastery}
 
 

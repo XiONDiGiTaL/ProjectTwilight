@@ -44,5 +44,22 @@ func client_path() -> String:
 	return ""
 
 
+## Optional resource-pack folder (extra GRFs, loose sprite overlays, fonts,
+## sprite sheets). Defaults to <repo>/Resources next to the Godot project, or
+## <executable dir>/Resources in exported builds. Never copied or committed.
+func resource_pack_path() -> String:
+	var p: String = _cfg.get_value("resources", "pack_path", "")
+	if p != "" and DirAccess.dir_exists_absolute(p):
+		return p
+	p = OS.get_environment("TWILIGHT_RESOURCE_PACK")
+	if p != "" and DirAccess.dir_exists_absolute(p):
+		return p
+	for c in [ProjectSettings.globalize_path("res://").path_join("../Resources").simplify_path(),
+			OS.get_executable_path().get_base_dir().path_join("Resources")]:
+		if DirAccess.dir_exists_absolute(c):
+			return c
+	return ""
+
+
 func set_client_path(p: String) -> void:
 	set_value("resources", "client_path", p)

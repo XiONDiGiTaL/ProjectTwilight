@@ -43,5 +43,26 @@
       2101,
       2501
     ]
+  },
+  "prontera_weapon_dealer": {
+    "npc_name": "Weapon Dealer",
+    "sprite": "1_m_smith",
+    "map": "prontera",
+    "cell": [
+      156,
+      44
+    ],
+    "direction": 0,
+    "greeting": "Blades, axes, clubs and tomes - every guild needs steel or scripture.",
+    "items": [
+      1201,
+      1116,
+      1163,
+      1301,
+      1351,
+      1501,
+      1601,
+      1550
+    ]
   }
 }

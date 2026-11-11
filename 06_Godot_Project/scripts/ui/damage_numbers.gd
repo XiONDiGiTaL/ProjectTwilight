@@ -35,23 +35,23 @@ func spawn(world_pos: Vector3, text: String, kind: Kind) -> void:
 	box.alignment = BoxContainer.ALIGNMENT_CENTER
 	box.add_theme_constant_override("separation", -6)
 	if kind == Kind.CRIT:
-		box.add_child(_label("CRITICAL", UiTheme.font(600, 4), 12, UiTheme.CRIT, 4))
+		box.add_child(_label("CRITICAL", UiTheme.battle_font(3), 13, UiTheme.CRIT, 4))
 	var l: Label
 	match kind:
 		Kind.CRIT:
-			l = _label(text, UiTheme.font(700, 1, -0.18), 42, Color(1.0, 0.95, 0.75), 10, UiTheme.CRIT)
+			l = _label(text, UiTheme.battle_font(1, -0.18), 42, Color(1.0, 0.95, 0.75), 10, UiTheme.CRIT)
 		Kind.TAKEN:
-			l = _label(text, UiTheme.font(700, 1), 28, UiTheme.DAMAGE_TAKEN, 8)
+			l = _label(text, UiTheme.battle_font(1), 28, UiTheme.DAMAGE_TAKEN, 8)
 		Kind.MISS:
-			l = _label(text, UiTheme.font(600, 4), 18, UiTheme.TEXT_DIM, 5)
+			l = _label(text, UiTheme.battle_font(3), 20, UiTheme.TEXT_DIM, 5)
 		Kind.EXP_BASE:
 			l = _label(text, UiTheme.font(600, 2), 14, UiTheme.EXP_BASE, 5)
 		Kind.EXP_JOB:
 			l = _label(text, UiTheme.font(600, 2), 14, UiTheme.EXP_JOB, 5)
 		Kind.HEAL:
-			l = _label(text, UiTheme.font(700, 1), 26, UiTheme.HP_HIGH, 8)
+			l = _label(text, UiTheme.battle_font(1), 26, UiTheme.HP_HIGH, 8)
 		_:
-			l = _label(text, UiTheme.font(700, 1), 30, UiTheme.TEXT, 8, UiTheme.ACCENT)
+			l = _label(text, UiTheme.battle_font(1), 30, UiTheme.TEXT, 8, UiTheme.ACCENT)
 	box.add_child(l)
 	add_child(box)
 	var drift := Vector2(randf_range(-28.0, 28.0), 0.0)

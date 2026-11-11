@@ -1,7 +1,11 @@
 extends Node
 ## Virtual file system over a user-supplied Ragnarok client directory.
 ##
-## Precedence (matches the original client with "read folder" enabled):
+## Precedence:
+##   0. Resource pack (Settings.resource_pack_path()): loose overlays found in
+##      any "<pack>/<folder>/sprite|palette|texture/..." tree (stored with the
+##      usual CP949-as-Latin-1 names), then the pack's *.grf files
+##      (CorrectedSprites first, then alphabetical)
 ##   1. Loose files under <client>/data/...
 ##   2. GRF archives in DATA.INI order (lower number = higher priority)
 ## All access is read-only. Paths are Unicode with either separator, e.g.
@@ -14,6 +18,9 @@ var archives: Array[GrfArchive] = []
 var is_mounted := false
 var last_error: String = ""
 
+var pack_root: String = ""
+var pack_archives: Array[GrfArchive] = []
+var _overlay: Dictionary = {}   # GRF key -> absolute path of a loose pack file
 var _spr_cache: Dictionary = {}
 var _act_cache: Dictionary = {}
 
@@ -31,6 +38,7 @@ func mount(root: String = "") -> bool:
 		last_error = "No Ragnarok client directory configured."
 		mounted.emit(false, last_error)
 		return false
+	_mount_pack()
 	for grf_name in _grf_order(root):
 		var grf := GrfArchive.new()
 		var err := grf.open(root.path_join(grf_name))
@@ -68,7 +76,62 @@ func _grf_order(root: String) -> PackedStringArray:
 	return out
 
 
+## Mounts the optional resource pack: loose overlays and extra GRFs.
+func _mount_pack() -> void:
+	pack_archives.clear()
+	_overlay.clear()
+	pack_root = Settings.resource_pack_path()
+	if pack_root == "":
+		return
+	var grfs := Array(DirAccess.get_files_at(pack_root)).filter(func(f): return String(f).to_lower().ends_with(".grf"))
+	grfs.sort_custom(func(a, b): return (String(a).to_lower().contains("correct") and not String(b).to_lower().contains("correct")) or (String(a).to_lower().contains("correct") == String(b).to_lower().contains("correct") and String(a) < String(b)))
+	for f in grfs:
+		var g := GrfArchive.new()
+		if g.open(pack_root.path_join(f)) == OK:
+			pack_archives.append(g)
+		else:
+			push_warning("Resource pack: skipping %s: %s" % [f, g.last_error])
+	for sub in DirAccess.get_directories_at(pack_root):
+		_index_overlay(pack_root.path_join(sub), "")
+
+
+func _index_overlay(dir: String, rel: String) -> void:
+	for d in DirAccess.get_directories_at(dir):
+		var r := (rel + "/" + d) if rel != "" else d
+		var lower := d.to_lower()
+		if rel == "" and not (lower in ["sprite", "palette", "texture", "data"]):
+			_index_overlay(dir.path_join(d), "")   # descend until the data-tree root
+			continue
+		_index_overlay(dir.path_join(d), r)
+	if rel == "":
+		return
+	for f in DirAccess.get_files_at(dir):
+		var key := GrfArchive.normalize(("data/" + rel.replace("\\", "/") + "/" + f).replace("data/data/", "data/"))
+		_overlay[key] = dir.path_join(f)
+
+
+## True when a path is served by the resource pack (overlay or pack GRF).
+func from_pack(path: String) -> bool:
+	var key := GrfArchive.key_for(path)
+	if _overlay.has(key):
+		return true
+	for a in pack_archives:
+		if a.has_file(key):
+			return true
+	return false
+
+
+## Absolute path of a file inside the pack folder (fonts, sheets), or "".
+func pack_file(relative: String) -> String:
+	if pack_root == "":
+		pack_root = Settings.resource_pack_path()
+	var p := pack_root.path_join(relative) if pack_root != "" else ""
+	return p if p != "" and FileAccess.file_exists(p) else ""
+
+
 func exists(path: String) -> bool:
+	if from_pack(path):
+		return true
 	if FileAccess.file_exists(_loose_path(path)):
 		return true
 	var key := GrfArchive.key_for(path)
@@ -80,6 +143,12 @@ func exists(path: String) -> bool:
 
 ## Returns file bytes or an empty array (last_error set).
 func read(path: String) -> PackedByteArray:
+	var pkey := GrfArchive.key_for(path)
+	if _overlay.has(pkey):
+		return FileAccess.get_file_as_bytes(_overlay[pkey])
+	for a in pack_archives:
+		if a.has_file(pkey):
+			return a.read(pkey)
 	var loose := _loose_path(path)
 	if FileAccess.file_exists(loose):
 		return FileAccess.get_file_as_bytes(loose)

@@ -1,17 +1,225 @@
 {
-  "_provenance": "Pre-Renewal job data as documented by iRO Wiki classic and the rAthena pre-re job database (facts only). hp_a / hp_b / sp_factor feed MaxHP = (35 + BaseLv*hp_b + sum_{i=2..BaseLv} round(hp_a*i)) * (1 + VIT/100) and MaxSP = (10 + BaseLv*sp_factor) * (1 + INT/100). btba = base weapon delay in seconds per weapon type. sprite = client body sprite name. Confidence: Medium-high for factors and weight bonus, Medium for BTBA values; cross-check pending.",
-  "novice":   {"name": "Novice",   "tier": 0, "sprite": "초보자", "hp_a": 0.0, "hp_b": 5, "sp_factor": 1, "weight_bonus": 0,   "job_table": "job_novice", "max_job_level": 10,
-               "btba": {"fist": 0.5, "dagger": 0.65}, "skills": ["NV_BASIC", "NV_FIRSTAID", "NV_TRICKDEAD"]},
-  "swordman": {"name": "Swordman", "tier": 1, "sprite": "검사",   "hp_a": 0.7, "hp_b": 5, "sp_factor": 2, "weight_bonus": 800, "job_table": "job_first", "max_job_level": 50,
-               "btba": {"fist": 0.4, "dagger": 0.65, "sword": 0.7}, "skills": ["SM_SWORD", "SM_RECOVERY", "SM_BASH", "SM_MAGNUM"]},
-  "mage":     {"name": "Mage",     "tier": 1, "sprite": "마법사", "hp_a": 0.3, "hp_b": 5, "sp_factor": 6, "weight_bonus": 200, "job_table": "job_first", "max_job_level": 50,
-               "btba": {"fist": 0.5, "dagger": 0.6, "rod": 0.7}, "skills": ["MG_SRECOVERY", "MG_NAPALMBEAT", "MG_SOULSTRIKE", "MG_COLDBOLT", "MG_FIREBOLT", "MG_LIGHTNINGBOLT"]},
-  "archer":   {"name": "Archer",   "tier": 1, "sprite": "궁수",   "hp_a": 0.5, "hp_b": 5, "sp_factor": 2, "weight_bonus": 600, "job_table": "job_first", "max_job_level": 50,
-               "btba": {"fist": 0.5, "dagger": 0.6, "bow": 0.7}, "skills": []},
-  "acolyte":  {"name": "Acolyte",  "tier": 1, "sprite": "성직자", "hp_a": 0.4, "hp_b": 5, "sp_factor": 5, "weight_bonus": 400, "job_table": "job_first", "max_job_level": 50,
-               "btba": {"fist": 0.5, "mace": 0.7, "rod": 0.7}, "skills": []},
-  "merchant": {"name": "Merchant", "tier": 1, "sprite": "상인",   "hp_a": 0.4, "hp_b": 5, "sp_factor": 2, "weight_bonus": 800, "job_table": "job_first", "max_job_level": 50,
-               "btba": {"fist": 0.4, "dagger": 0.65, "sword": 0.7, "axe": 0.8, "mace": 0.7}, "skills": []},
-  "thief":    {"name": "Thief",    "tier": 1, "sprite": "도둑",   "hp_a": 0.5, "hp_b": 5, "sp_factor": 2, "weight_bonus": 400, "job_table": "job_first", "max_job_level": 50,
-               "btba": {"fist": 0.4, "dagger": 0.5, "sword": 0.7}, "skills": []}
+  "_provenance": "Pre-Renewal job data as documented by iRO Wiki classic and the rAthena pre-re job database (facts only). hp_a / hp_b / sp_factor feed MaxHP = (35 + BaseLv*hp_b + sum_{i=2..BaseLv} round(hp_a*i)) * (1 + VIT/100) and MaxSP = (10 + BaseLv*sp_factor) * (1 + INT/100). btba = base weapon delay in seconds per weapon type. sprite = client body sprite name. Confidence: Medium-high for factors and weight bonus, Medium for BTBA values; cross-check pending. Second jobs: Dark Knight (Swordman) and Shaman (Acolyte, female only) are Project Twilight classes adapted from Ragnarok Online DS concepts; their factors follow the Knight / Priest rows and are design values, not Gravity data. parent = required first job; min_parent_job_level = advancement requirement.",
+  "novice": {
+    "name": "Novice",
+    "tier": 0,
+    "sprite": "초보자",
+    "hp_a": 0.0,
+    "hp_b": 5,
+    "sp_factor": 1,
+    "weight_bonus": 0,
+    "job_table": "job_novice",
+    "max_job_level": 10,
+    "btba": {
+      "fist": 0.5,
+      "dagger": 0.65
+    },
+    "skills": [
+      "NV_BASIC",
+      "NV_FIRSTAID",
+      "NV_TRICKDEAD"
+    ]
+  },
+  "swordman": {
+    "name": "Swordman",
+    "tier": 1,
+    "sprite": "검사",
+    "hp_a": 0.7,
+    "hp_b": 5,
+    "sp_factor": 2,
+    "weight_bonus": 800,
+    "job_table": "job_first",
+    "max_job_level": 50,
+    "btba": {
+      "fist": 0.4,
+      "dagger": 0.65,
+      "sword": 0.7,
+      "two_hand_sword": 0.75,
+      "axe": 0.8,
+      "two_hand_axe": 0.9
+    },
+    "skills": [
+      "SM_SWORD",
+      "SM_TWOHAND",
+      "SM_RECOVERY",
+      "SM_BASH",
+      "SM_MAGNUM"
+    ]
+  },
+  "mage": {
+    "name": "Mage",
+    "tier": 1,
+    "sprite": "마법사",
+    "hp_a": 0.3,
+    "hp_b": 5,
+    "sp_factor": 6,
+    "weight_bonus": 200,
+    "job_table": "job_first",
+    "max_job_level": 50,
+    "btba": {
+      "fist": 0.5,
+      "dagger": 0.6,
+      "rod": 0.7
+    },
+    "skills": [
+      "MG_SRECOVERY",
+      "MG_NAPALMBEAT",
+      "MG_SOULSTRIKE",
+      "MG_COLDBOLT",
+      "MG_FIREBOLT",
+      "MG_LIGHTNINGBOLT"
+    ]
+  },
+  "archer": {
+    "name": "Archer",
+    "tier": 1,
+    "sprite": "궁수",
+    "hp_a": 0.5,
+    "hp_b": 5,
+    "sp_factor": 2,
+    "weight_bonus": 600,
+    "job_table": "job_first",
+    "max_job_level": 50,
+    "btba": {
+      "fist": 0.5,
+      "dagger": 0.6,
+      "bow": 0.7
+    },
+    "skills": []
+  },
+  "acolyte": {
+    "name": "Acolyte",
+    "tier": 1,
+    "sprite": "성직자",
+    "hp_a": 0.4,
+    "hp_b": 5,
+    "sp_factor": 5,
+    "weight_bonus": 400,
+    "job_table": "job_first",
+    "max_job_level": 50,
+    "btba": {
+      "fist": 0.5,
+      "mace": 0.7,
+      "rod": 0.7
+    },
+    "skills": []
+  },
+  "merchant": {
+    "name": "Merchant",
+    "tier": 1,
+    "sprite": "상인",
+    "hp_a": 0.4,
+    "hp_b": 5,
+    "sp_factor": 2,
+    "weight_bonus": 800,
+    "job_table": "job_first",
+    "max_job_level": 50,
+    "btba": {
+      "fist": 0.4,
+      "dagger": 0.65,
+      "sword": 0.7,
+      "axe": 0.8,
+      "mace": 0.7
+    },
+    "skills": []
+  },
+  "thief": {
+    "name": "Thief",
+    "tier": 1,
+    "sprite": "도둑",
+    "hp_a": 0.5,
+    "hp_b": 5,
+    "sp_factor": 2,
+    "weight_bonus": 400,
+    "job_table": "job_first",
+    "max_job_level": 50,
+    "btba": {
+      "fist": 0.4,
+      "dagger": 0.5,
+      "sword": 0.7
+    },
+    "skills": []
+  },
+  "dark_knight": {
+    "name": "Dark Knight",
+    "tier": 2,
+    "parent": "swordman",
+    "min_parent_job_level": 40,
+    "sprite": "기사",
+    "pack_sprite": {
+      "kind": "spr",
+      "name": "운영자"
+    },
+    "hp_a": 1.5,
+    "hp_b": 5,
+    "sp_factor": 3,
+    "weight_bonus": 800,
+    "job_table": "job_second",
+    "max_job_level": 50,
+    "btba": {
+      "fist": 0.38,
+      "dagger": 0.6,
+      "sword": 0.7,
+      "two_hand_sword": 0.6,
+      "axe": 0.75,
+      "two_hand_axe": 0.85
+    },
+    "skills": [
+      "DK_AXEMASTERY",
+      "DK_CRITUP",
+      "DK_AUTOCOUNTER",
+      "DK_DARKBREATH",
+      "DK_SHADOWQUICKEN",
+      "DK_DARKWEAPON",
+      "DK_BLOODYCRASH",
+      "DK_GUILLOTINE",
+      "DK_GENOCIDE",
+      "DK_CHAOS",
+      "DK_BLINDWAVE",
+      "DK_DEATHBLADE",
+      "DK_HELLIMPACT"
+    ]
+  },
+  "shaman": {
+    "name": "Shaman",
+    "tier": 2,
+    "parent": "acolyte",
+    "min_parent_job_level": 40,
+    "sex": "female",
+    "sprite": "프리스트",
+    "pack_sprite": {
+      "kind": "sheet",
+      "file": "Shaman.jpg",
+      "map": "res://data/sprites/shaman_sheet.json"
+    },
+    "hp_a": 0.75,
+    "hp_b": 5,
+    "sp_factor": 8,
+    "weight_bonus": 600,
+    "job_table": "job_second",
+    "max_job_level": 50,
+    "btba": {
+      "fist": 0.4,
+      "mace": 0.6,
+      "rod": 0.6,
+      "book": 0.6
+    },
+    "skills": [
+      "SH_AUTOHEAL",
+      "SH_COMFORT",
+      "SH_BLESSING",
+      "SH_PROTECTION",
+      "SH_PRAYER",
+      "SH_WRATH",
+      "SH_MISTLETOE",
+      "SH_RAINDANCE",
+      "SH_SEWIND",
+      "SH_SUMMON",
+      "SH_SPIRITFIRE",
+      "SH_SPIRITEARTH",
+      "SH_SPIRITWATER",
+      "SH_SPIRITWIND",
+      "SH_DIVINE"
+    ]
+  }
 }

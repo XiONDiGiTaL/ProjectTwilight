@@ -1,5 +1,5 @@
 {
-  "_provenance": "Pre-Renewal Novice skills as documented by iRO Wiki classic and the rAthena pre-re skill database (facts only). resname = client icon in data\\texture\\유저인터페이스\\item\\<resname>.bmp. Quest skills are learned through NPC quests in the classic game; until those quests exist they are granted to new characters (documented simplification). Mage skills: SP, hits, cast time and after-cast delay per iRO Wiki classic (Medium-high confidence; Soul Strike / Napalm Beat delays Medium).",
+  "_provenance": "Pre-Renewal Novice skills as documented by iRO Wiki classic and the rAthena pre-re skill database (facts only). resname = client icon in data\\texture\\유저인터페이스\\item\\<resname>.bmp. Quest skills are learned through NPC quests in the classic game; until those quests exist they are granted to new characters (documented simplification). Mage skills: SP, hits, cast time and after-cast delay per iRO Wiki classic (Medium-high confidence; Soul Strike / Napalm Beat delays Medium). DK_* and SH_* skills are Project Twilight designs adapted from Ragnarok Online DS skill concepts. Their numbers are Project Twilight balance values (documented in docs/design/CLASS_DARK_KNIGHT_SHAMAN.md), not DS data.",
   "NV_BASIC": {
     "id": 1,
     "name": "Basic Skill",
@@ -62,7 +62,8 @@
       "dagger",
       "sword"
     ],
-    "desc": "Increases ATK by 4 per level with daggers and one-handed swords. Mastery ATK ignores DEF."
+    "desc": "Increases ATK by 4 per level with daggers and one-handed swords (not two-handed swords or axes). Mastery ATK ignores DEF.",
+    "branch": "Sword"
   },
   "SM_RECOVERY": {
     "id": 4,
@@ -72,7 +73,8 @@
     "max_level": 10,
     "quest": false,
     "job": "swordman",
-    "desc": "Every 10 seconds while standing still, recover 5 HP + 0.2% of Max HP per level. Healing items restore 10% more per level."
+    "desc": "Every 10 seconds while standing still, recover 5 HP + 0.2% of Max HP per level. Healing items restore 10% more per level.",
+    "branch": "Shared"
   },
   "SM_BASH": {
     "id": 5,
@@ -98,7 +100,8 @@
     "damage_pct_base": 100,
     "damage_pct_per_level": 30,
     "hit_pct_per_level": 5,
-    "desc": "A powerful strike: ATK +30% per level and HIT +5% per level against one enemy in melee range."
+    "desc": "A powerful strike: ATK +30% per level and HIT +5% per level against one enemy in melee range.",
+    "branch": "Shared"
   },
   "SM_MAGNUM": {
     "id": 7,
@@ -130,7 +133,8 @@
     },
     "after_cast_delay": 2000,
     "desc": "An explosion around you hitting every enemy within 2 cells: ATK +20% per level, HIT +10% per level. Fire element. Requires Bash level 5.",
-    "element": "fire"
+    "element": "fire",
+    "branch": "Shared"
   },
   "MG_SRECOVERY": {
     "id": 9,
@@ -140,7 +144,8 @@
     "max_level": 10,
     "quest": false,
     "job": "mage",
-    "desc": "Every 10 seconds while standing still, recover 3 SP + 0.2% of Max SP per level. Healing items restore 2% more SP per level (item part not yet applied)."
+    "desc": "Every 10 seconds while standing still, recover 3 SP + 0.2% of Max SP per level. Healing items restore 2% more SP per level (item part not yet applied).",
+    "branch": "Support"
   },
   "MG_NAPALMBEAT": {
     "id": 11,
@@ -194,7 +199,9 @@
       600,
       500
     ],
-    "desc": "Ghost-element psychic blast on a target and the enemies around it (3x3). MATK 80% + 10% per level, divided among everyone hit. Cast time 1 s."
+    "desc": "Ghost-element psychic blast on a target and the enemies around it (3x3). MATK 80% + 10% per level, divided among everyone hit. Cast time 1 s.",
+    "branch": "Ghost",
+    "fx": "burst"
   },
   "MG_SOULSTRIKE": {
     "id": 13,
@@ -250,7 +257,9 @@
     "requires": {
       "MG_NAPALMBEAT": 4
     },
-    "desc": "Ghost-element spirit bolts: 1 bolt per two levels (1-5) of 100% MATK each. +5% damage per level against Undead. Cast time 0.5 s. Requires Napalm Beat level 4."
+    "desc": "Ghost-element spirit bolts: 1 bolt per two levels (1-5) of 100% MATK each. +5% damage per level against Undead. Cast time 0.5 s. Requires Napalm Beat level 4.",
+    "branch": "Ghost",
+    "fx": "orbs"
   },
   "MG_COLDBOLT": {
     "id": 14,
@@ -313,7 +322,8 @@
       2600,
       2800
     ],
-    "desc": "Drops one water-element bolt of 100% MATK per level on the target. Cast time 0.7 s per level, reduced by DEX."
+    "desc": "Drops one water-element bolt of 100% MATK per level on the target. Cast time 0.7 s per level, reduced by DEX.",
+    "branch": "Bolts"
   },
   "MG_FIREBOLT": {
     "id": 19,
@@ -376,7 +386,8 @@
       2600,
       2800
     ],
-    "desc": "Drops one fire-element bolt of 100% MATK per level on the target. Cast time 0.7 s per level, reduced by DEX."
+    "desc": "Drops one fire-element bolt of 100% MATK per level on the target. Cast time 0.7 s per level, reduced by DEX.",
+    "branch": "Bolts"
   },
   "MG_LIGHTNINGBOLT": {
     "id": 20,
@@ -439,6 +450,1273 @@
       2600,
       2800
     ],
-    "desc": "Strikes the target with one wind-element bolt of 100% MATK per level. Cast time 0.7 s per level, reduced by DEX."
+    "desc": "Strikes the target with one wind-element bolt of 100% MATK per level. Cast time 0.7 s per level, reduced by DEX.",
+    "branch": "Bolts"
+  },
+  "SM_TWOHAND": {
+    "id": 3,
+    "name": "Two-Handed Sword Mastery",
+    "resname": "sm_twohand",
+    "type": "passive",
+    "max_level": 10,
+    "quest": false,
+    "job": "swordman",
+    "branch": "Sword",
+    "mastery_atk": 4,
+    "mastery_weapons": [
+      "two_hand_sword"
+    ],
+    "requires": {
+      "SM_SWORD": 1
+    },
+    "desc": "Increases ATK by 4 per level with two-handed swords. Mastery ATK ignores DEF. Requires Sword Mastery 1."
+  },
+  "DK_AXEMASTERY": {
+    "id": 3001,
+    "name": "Axe Mastery",
+    "resname": "dk_axemastery",
+    "type": "passive",
+    "max_level": 10,
+    "quest": false,
+    "job": "dark_knight",
+    "branch": "Axe",
+    "mastery_atk": 3,
+    "mastery_weapons": [
+      "axe",
+      "two_hand_axe"
+    ],
+    "requires": {
+      "SM_SWORD": 3,
+      "SM_TWOHAND": 3
+    },
+    "desc": "Increases ATK by 3 per level with one- and two-handed axes only. Mastery ATK ignores DEF. Requires Sword Mastery 3 and Two-Handed Sword Mastery 3."
+  },
+  "DK_CRITUP": {
+    "id": 3002,
+    "name": "Critical Rate Up",
+    "resname": "dk_critup",
+    "type": "passive",
+    "max_level": 10,
+    "quest": false,
+    "job": "dark_knight",
+    "branch": "Shared",
+    "crit_permille_per_level": 10,
+    "requires": {
+      "SM_SWORD": 5,
+      "SM_TWOHAND": 5,
+      "DK_AXEMASTERY": 5
+    },
+    "desc": "Raises critical chance by 1% per level (normal attacks only; target LUK shield still applies)."
+  },
+  "DK_AUTOCOUNTER": {
+    "id": 3003,
+    "name": "Auto Counter",
+    "resname": "dk_autocounter",
+    "type": "active",
+    "max_level": 5,
+    "quest": false,
+    "job": "dark_knight",
+    "branch": "Shared",
+    "target": "self",
+    "sp_cost": [
+      3,
+      3,
+      3,
+      3,
+      3
+    ],
+    "status": "auto_counter",
+    "duration": [
+      400,
+      800,
+      1200,
+      1600,
+      2000
+    ],
+    "after_cast_delay": 0,
+    "requires": {
+      "SM_TWOHAND": 8
+    },
+    "desc": "Brace for 0.4 s per level. The first melee normal attack (attacker range 2 or less) during the window is blocked and answered with a guaranteed critical strike. Ranged attacks and skills are not countered."
+  },
+  "DK_DARKBREATH": {
+    "id": 3004,
+    "name": "Dark Breath",
+    "resname": "dk_darkbreath",
+    "type": "active",
+    "max_level": 10,
+    "quest": false,
+    "job": "dark_knight",
+    "branch": "Dark",
+    "target": "self",
+    "sp_cost": [
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25
+    ],
+    "status": "dark_breath",
+    "duration": 60000,
+    "atk_pct": [
+      8,
+      11,
+      14,
+      17,
+      20,
+      23,
+      26,
+      29,
+      32,
+      35
+    ],
+    "drain_permille": 6,
+    "requires": {
+      "DK_CRITUP": 5
+    },
+    "desc": "Inhale darkness: physical damage +5% + 3% per level for 60 s. Drains 1 HP + 0.6% Max HP every 2 s; ends by itself before HP falls below 10% (never kills)."
+  },
+  "DK_SHADOWQUICKEN": {
+    "id": 3005,
+    "name": "Shadow Quicken",
+    "resname": "dk_shadowquicken",
+    "type": "active",
+    "max_level": 10,
+    "quest": false,
+    "job": "dark_knight",
+    "branch": "Dark",
+    "target": "self",
+    "sp_cost": [
+      20,
+      22,
+      24,
+      26,
+      28,
+      30,
+      32,
+      34,
+      36,
+      38
+    ],
+    "status": "shadow_quicken",
+    "duration": 60000,
+    "aspd_pct": [
+      3,
+      6,
+      9,
+      12,
+      15,
+      18,
+      21,
+      24,
+      27,
+      30
+    ],
+    "drain_permille": 6,
+    "requires": {
+      "DK_DARKBREATH": 3
+    },
+    "desc": "Attack delay -3% per level for 60 s (ASPD cap 190 still applies). Drains 1 HP + 0.6% Max HP every 2 s; ends before HP falls below 10%."
+  },
+  "DK_DARKWEAPON": {
+    "id": 3006,
+    "name": "Dark Weapon",
+    "resname": "dk_darkweapon",
+    "type": "active",
+    "max_level": 5,
+    "quest": false,
+    "job": "dark_knight",
+    "branch": "Dark",
+    "target": "self",
+    "sp_cost": [
+      20,
+      20,
+      20,
+      20,
+      20
+    ],
+    "status": "dark_weapon",
+    "duration": [
+      60000,
+      120000,
+      180000,
+      240000,
+      300000
+    ],
+    "weapon_element": "shadow",
+    "needs_weapon": true,
+    "desc": "Enchants your weapon with the Shadow element for 60 s per level. Ends on weapon change or death; recasting refreshes it. Needs a weapon."
+  },
+  "DK_BLOODYCRASH": {
+    "id": 3007,
+    "name": "Bloody Crash",
+    "resname": "dk_bloodycrash",
+    "type": "active",
+    "max_level": 10,
+    "quest": false,
+    "job": "dark_knight",
+    "branch": "Shared",
+    "target": "enemy",
+    "physical": true,
+    "sp_cost": [
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20
+    ],
+    "damage_pct_base": 150,
+    "damage_pct_per_level": 30,
+    "lifesteal_pct": [
+      2,
+      4,
+      6,
+      8,
+      10,
+      12,
+      14,
+      16,
+      18,
+      20
+    ],
+    "after_cast_delay": 500,
+    "desc": "A brutal strike: ATK 150% + 30% per level. Heals 2% per level of the damage actually dealt (monsters only, not on a miss)."
+  },
+  "DK_GUILLOTINE": {
+    "id": 3008,
+    "name": "Guillotine",
+    "resname": "dk_guillotine",
+    "type": "active",
+    "max_level": 10,
+    "quest": false,
+    "job": "dark_knight",
+    "branch": "Axe",
+    "target": "enemy",
+    "physical": true,
+    "weapon": [
+      "axe",
+      "two_hand_axe"
+    ],
+    "sp_cost": [
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22
+    ],
+    "damage_pct_base": 200,
+    "damage_pct_per_level": 40,
+    "inflict": {
+      "status": "stun",
+      "chance": [
+        3,
+        6,
+        9,
+        12,
+        15,
+        18,
+        21,
+        24,
+        27,
+        30
+      ]
+    },
+    "after_cast_delay": 700,
+    "requires": {
+      "DK_BLOODYCRASH": 3
+    },
+    "desc": "Axe only. A chopping blow: ATK 200% + 40% per level, 3% per level chance to Stun (5 s, resisted by VIT)."
+  },
+  "DK_GENOCIDE": {
+    "id": 3009,
+    "name": "Genocide",
+    "resname": "dk_genocide",
+    "type": "active",
+    "max_level": 10,
+    "quest": false,
+    "job": "dark_knight",
+    "branch": "Dark",
+    "target": "self_area",
+    "physical": true,
+    "element": "shadow",
+    "area": 2,
+    "sp_cost": [
+      27,
+      29,
+      31,
+      33,
+      35,
+      37,
+      39,
+      41,
+      43,
+      45
+    ],
+    "damage_pct_base": 100,
+    "damage_pct_per_level": 30,
+    "inflict": {
+      "status": "blind",
+      "chance": [
+        4,
+        8,
+        12,
+        16,
+        20,
+        24,
+        28,
+        32,
+        36,
+        40
+      ]
+    },
+    "after_cast_delay": 1000,
+    "fx": "burst",
+    "requires": {
+      "DK_GUILLOTINE": 5
+    },
+    "desc": "Shadow-element shockwave around you (5x5): ATK 100% + 30% per level, 4% per level chance to Blind (30 s)."
+  },
+  "DK_CHAOS": {
+    "id": 3010,
+    "name": "Chaos",
+    "resname": "dk_chaos",
+    "type": "active",
+    "max_level": 10,
+    "quest": false,
+    "job": "dark_knight",
+    "branch": "Dark",
+    "target": "self_area",
+    "physical": true,
+    "area": [
+      2,
+      2,
+      2,
+      2,
+      2,
+      3,
+      3,
+      3,
+      3,
+      3
+    ],
+    "sp_cost": [
+      32,
+      34,
+      36,
+      38,
+      40,
+      42,
+      44,
+      46,
+      48,
+      50
+    ],
+    "damage_pct_base": 120,
+    "damage_pct_per_level": 30,
+    "inflict": {
+      "status": "confusion",
+      "chance": [
+        4,
+        8,
+        12,
+        16,
+        20,
+        24,
+        28,
+        32,
+        36,
+        40
+      ]
+    },
+    "after_cast_delay": 1200,
+    "fx": "burst",
+    "requires": {
+      "DK_GENOCIDE": 5
+    },
+    "desc": "Weapon-element maelstrom around you (5x5, 7x7 from level 6): ATK 120% + 30% per level, 4% per level chance to Confuse (30 s)."
+  },
+  "DK_BLINDWAVE": {
+    "id": 3011,
+    "name": "Blind Wave",
+    "resname": "dk_blindwave",
+    "type": "active",
+    "max_level": 10,
+    "quest": false,
+    "job": "dark_knight",
+    "branch": "Sword",
+    "target": "enemy",
+    "physical": true,
+    "weapon": [
+      "sword",
+      "two_hand_sword"
+    ],
+    "element": "shadow",
+    "range": 7,
+    "pierce": true,
+    "sp_cost": [
+      22,
+      24,
+      26,
+      28,
+      30,
+      32,
+      34,
+      36,
+      38,
+      40
+    ],
+    "damage_pct_base": 150,
+    "damage_pct_per_level": 30,
+    "after_cast_delay": 800,
+    "fx": "wave",
+    "requires": {
+      "DK_CHAOS": 5
+    },
+    "desc": "Sword only. Hurls a Shadow blade up to 7 cells that pierces every enemy on its line: ATK 150% + 30% per level."
+  },
+  "DK_DEATHBLADE": {
+    "id": 3012,
+    "name": "Death Blade",
+    "resname": "dk_deathblade",
+    "type": "active",
+    "max_level": 10,
+    "quest": false,
+    "job": "dark_knight",
+    "branch": "Sword",
+    "target": "enemy",
+    "physical": true,
+    "weapon": [
+      "sword",
+      "two_hand_sword"
+    ],
+    "hits": [
+      2,
+      2,
+      3,
+      3,
+      3,
+      4,
+      4,
+      4,
+      5,
+      5
+    ],
+    "sp_cost": [
+      26,
+      28,
+      30,
+      32,
+      34,
+      36,
+      38,
+      40,
+      42,
+      44
+    ],
+    "damage_pct_base": 80,
+    "damage_pct_per_level": 12,
+    "after_cast_delay": 1000,
+    "requires": {
+      "SM_SWORD": 5,
+      "SM_TWOHAND": 5,
+      "DK_BLINDWAVE": 5
+    },
+    "desc": "Sword only. A flurry of 2 + level/3 slashes (5 at level 10), each ATK 80% + 12% per level and each rolled separately for hit."
+  },
+  "DK_HELLIMPACT": {
+    "id": 3013,
+    "name": "Hell Impact",
+    "resname": "dk_hellimpact",
+    "type": "active",
+    "max_level": 10,
+    "quest": false,
+    "job": "dark_knight",
+    "branch": "Axe",
+    "target": "enemy",
+    "physical": true,
+    "weapon": [
+      "axe",
+      "two_hand_axe"
+    ],
+    "splash": 2,
+    "cast_time": 1000,
+    "sp_cost": [
+      43,
+      46,
+      49,
+      52,
+      55,
+      58,
+      61,
+      64,
+      67,
+      70
+    ],
+    "damage_pct_base": 300,
+    "damage_pct_per_level": 50,
+    "after_cast_delay": 2000,
+    "fx": "impact",
+    "requires": {
+      "DK_AXEMASTERY": 5,
+      "DK_DARKWEAPON": 5,
+      "DK_GUILLOTINE": 5
+    },
+    "desc": "Axe only. After a 1 s wind-up, smash the ground under the target (5x5): ATK 300% + 50% per level in your weapon element. Moving or being hit cancels the wind-up."
+  },
+  "SH_AUTOHEAL": {
+    "id": 3101,
+    "name": "Auto Heal",
+    "resname": "sh_autoheal",
+    "type": "passive",
+    "max_level": 10,
+    "quest": false,
+    "job": "shaman",
+    "branch": "Support",
+    "desc": "Natural SP regeneration +10% per level and +1 SP per level on every regeneration tick."
+  },
+  "SH_COMFORT": {
+    "id": 3102,
+    "name": "Spiritual Comfort",
+    "resname": "sh_comfort",
+    "type": "active",
+    "max_level": 10,
+    "quest": false,
+    "job": "shaman",
+    "branch": "Support",
+    "target": "ally",
+    "effect": "heal",
+    "range": 9,
+    "sp_cost": [
+      16,
+      19,
+      22,
+      25,
+      28,
+      31,
+      34,
+      37,
+      40,
+      43
+    ],
+    "after_cast_delay": 1000,
+    "desc": "Restores HP to yourself or an ally within 9 cells: floor((BaseLv + INT) / 8) x (4 + 8 x level) (the classic Heal formula)."
+  },
+  "SH_BLESSING": {
+    "id": 3103,
+    "name": "Spiritual Blessing",
+    "resname": "sh_blessing",
+    "type": "active",
+    "max_level": 10,
+    "quest": false,
+    "job": "shaman",
+    "branch": "Support",
+    "target": "ally",
+    "effect": "sp",
+    "no_self": true,
+    "range": 9,
+    "sp_cost": [
+      12,
+      14,
+      16,
+      18,
+      20,
+      22,
+      24,
+      26,
+      28,
+      30
+    ],
+    "after_cast_delay": 1500,
+    "requires": {
+      "SH_COMFORT": 3
+    },
+    "desc": "Restores 8 SP per level + INT/2 to another player within 9 cells (cannot target yourself)."
+  },
+  "SH_PROTECTION": {
+    "id": 3104,
+    "name": "Spiritual Protection",
+    "resname": "sh_protection",
+    "type": "active",
+    "max_level": 10,
+    "quest": false,
+    "job": "shaman",
+    "branch": "Spirit buffs",
+    "target": "ally",
+    "effect": "buff",
+    "status": "protection",
+    "duration": 120000,
+    "def_bonus": [
+      2,
+      4,
+      6,
+      8,
+      10,
+      12,
+      14,
+      16,
+      18,
+      20
+    ],
+    "range": 9,
+    "sp_cost": [
+      22,
+      24,
+      26,
+      28,
+      30,
+      32,
+      34,
+      36,
+      38,
+      40
+    ],
+    "after_cast_delay": 1000,
+    "requires": {
+      "SH_BLESSING": 3
+    },
+    "desc": "Hard DEF and MDEF +2 per level on yourself or an ally for 120 s."
+  },
+  "SH_PRAYER": {
+    "id": 3105,
+    "name": "Spiritual Prayer",
+    "resname": "sh_prayer",
+    "type": "active",
+    "max_level": 5,
+    "quest": false,
+    "job": "shaman",
+    "branch": "Support",
+    "target": "dead_ally",
+    "effect": "resurrect",
+    "range": 9,
+    "cast_time": 2000,
+    "sp_cost": [
+      60,
+      60,
+      60,
+      60,
+      60
+    ],
+    "revive_pct": [
+      10,
+      30,
+      50,
+      70,
+      90
+    ],
+    "after_cast_delay": 3000,
+    "requires": {
+      "SH_AUTOHEAL": 5,
+      "SH_BLESSING": 5
+    },
+    "desc": "Revives a fallen player within 9 cells where they fell, with 10% / 30% / 50% / 70% / 90% of Max HP. Cast 2 s; cannot target the living."
+  },
+  "SH_WRATH": {
+    "id": 3106,
+    "name": "Spiritual Wrath",
+    "resname": "sh_wrath",
+    "type": "active",
+    "max_level": 10,
+    "quest": false,
+    "job": "shaman",
+    "branch": "Spirit buffs",
+    "target": "ally",
+    "effect": "buff",
+    "status": "wrath",
+    "duration": 120000,
+    "matk_pct": [
+      3,
+      6,
+      9,
+      12,
+      15,
+      18,
+      21,
+      24,
+      27,
+      30
+    ],
+    "range": 9,
+    "sp_cost": [
+      27,
+      29,
+      31,
+      33,
+      35,
+      37,
+      39,
+      41,
+      43,
+      45
+    ],
+    "after_cast_delay": 1000,
+    "requires": {
+      "SH_PROTECTION": 5
+    },
+    "desc": "MATK +3% per level on yourself or an ally for 120 s (all magic damage)."
+  },
+  "SH_MISTLETOE": {
+    "id": 3107,
+    "name": "Mistletoe",
+    "resname": "sh_mistletoe",
+    "type": "active",
+    "max_level": 10,
+    "quest": false,
+    "job": "shaman",
+    "branch": "Spirit buffs",
+    "target": "ally",
+    "effect": "buff",
+    "status": "mistletoe",
+    "duration": [
+      60000,
+      90000,
+      120000,
+      150000,
+      180000,
+      210000,
+      240000,
+      270000,
+      300000,
+      330000
+    ],
+    "weapon_element": "ghost",
+    "needs_weapon": true,
+    "range": 9,
+    "sp_cost": [
+      22,
+      24,
+      26,
+      28,
+      30,
+      32,
+      34,
+      36,
+      38,
+      40
+    ],
+    "after_cast_delay": 1000,
+    "requires": {
+      "SH_WRATH": 3
+    },
+    "desc": "Enchants your or an ally's weapon (any non-fist weapon) with the Ghost (Spirit) element for 30 s + 30 s per level."
+  },
+  "SH_RAINDANCE": {
+    "id": 3108,
+    "name": "Rain Dance",
+    "resname": "sh_raindance",
+    "type": "active",
+    "max_level": 10,
+    "quest": false,
+    "job": "shaman",
+    "branch": "Elemental",
+    "target": "self",
+    "status": "rain_dance",
+    "duration": 180000,
+    "element_bonus": {
+      "water": [
+        2,
+        4,
+        6,
+        8,
+        10,
+        12,
+        14,
+        16,
+        18,
+        20
+      ]
+    },
+    "sp_cost": [
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30
+    ],
+    "after_cast_delay": 1000,
+    "requires": {
+      "SH_AUTOHEAL": 5
+    },
+    "desc": "Your own Water-element magic deals +2% per level for 180 s."
+  },
+  "SH_SEWIND": {
+    "id": 3109,
+    "name": "Southeast Wind",
+    "resname": "sh_sewind",
+    "type": "active",
+    "max_level": 10,
+    "quest": false,
+    "job": "shaman",
+    "branch": "Elemental",
+    "target": "self",
+    "status": "se_wind",
+    "duration": 180000,
+    "element_bonus": {
+      "wind": [
+        2,
+        4,
+        6,
+        8,
+        10,
+        12,
+        14,
+        16,
+        18,
+        20
+      ]
+    },
+    "sp_cost": [
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30
+    ],
+    "after_cast_delay": 1000,
+    "requires": {
+      "SH_RAINDANCE": 3
+    },
+    "desc": "Your own Wind-element magic deals +2% per level for 180 s."
+  },
+  "SH_SUMMON": {
+    "id": 3110,
+    "name": "Summon",
+    "resname": "sh_summon",
+    "type": "active",
+    "max_level": 10,
+    "quest": false,
+    "job": "shaman",
+    "branch": "Spirits",
+    "target": "enemy",
+    "magic": true,
+    "element": "ghost",
+    "range": 9,
+    "hits": 1,
+    "damage_pct": [
+      110,
+      120,
+      130,
+      140,
+      150,
+      160,
+      170,
+      180,
+      190,
+      200
+    ],
+    "cast_time": [
+      600,
+      700,
+      800,
+      900,
+      1000,
+      1100,
+      1200,
+      1300,
+      1400,
+      1500
+    ],
+    "after_cast_delay": 800,
+    "sp_cost": [
+      10,
+      12,
+      14,
+      16,
+      18,
+      20,
+      22,
+      24,
+      26,
+      28
+    ],
+    "fx": "orbs",
+    "desc": "Calls a Ghost (Spirit) element wisp at an enemy: MATK 100% + 10% per level. Cast 0.5 s + 0.1 s per level (DEX reduces)."
+  },
+  "SH_SPIRITFIRE": {
+    "id": 3111,
+    "name": "Spirit of Fire",
+    "resname": "sh_spiritfire",
+    "type": "active",
+    "max_level": 10,
+    "quest": false,
+    "job": "shaman",
+    "branch": "Spirits",
+    "target": "enemy",
+    "magic": true,
+    "element": "fire",
+    "range": 9,
+    "hits": 1,
+    "damage_pct": [
+      140,
+      160,
+      180,
+      200,
+      220,
+      240,
+      260,
+      280,
+      300,
+      320
+    ],
+    "cast_time": [
+      1100,
+      1200,
+      1300,
+      1400,
+      1500,
+      1600,
+      1700,
+      1800,
+      1900,
+      2000
+    ],
+    "after_cast_delay": 1000,
+    "sp_cost": [
+      16,
+      18,
+      20,
+      22,
+      24,
+      26,
+      28,
+      30,
+      32,
+      34
+    ],
+    "inflict": {
+      "status": "confusion",
+      "chance": [
+        3,
+        6,
+        9,
+        12,
+        15,
+        18,
+        21,
+        24,
+        27,
+        30
+      ]
+    },
+    "fx": "orbs",
+    "requires": {
+      "SH_SUMMON": 5
+    },
+    "desc": "Fire spirit projectile: MATK 120% + 20% per level, 3% per level chance to Confuse."
+  },
+  "SH_SPIRITEARTH": {
+    "id": 3112,
+    "name": "Spirit of Earth",
+    "resname": "sh_spiritearth",
+    "type": "active",
+    "max_level": 10,
+    "quest": false,
+    "job": "shaman",
+    "branch": "Spirits",
+    "target": "enemy",
+    "magic": true,
+    "element": "earth",
+    "range": 9,
+    "hits": 1,
+    "damage_pct": [
+      130,
+      150,
+      170,
+      190,
+      210,
+      230,
+      250,
+      270,
+      290,
+      310
+    ],
+    "cast_time": [
+      1100,
+      1200,
+      1300,
+      1400,
+      1500,
+      1600,
+      1700,
+      1800,
+      1900,
+      2000
+    ],
+    "after_cast_delay": 1000,
+    "sp_cost": [
+      16,
+      18,
+      20,
+      22,
+      24,
+      26,
+      28,
+      30,
+      32,
+      34
+    ],
+    "inflict": {
+      "status": "stone",
+      "chance": [
+        2,
+        4,
+        6,
+        8,
+        10,
+        12,
+        14,
+        16,
+        18,
+        20
+      ]
+    },
+    "fx": "spikes",
+    "requires": {
+      "SH_SUMMON": 5
+    },
+    "desc": "Earth spirit erupts under the target: MATK 110% + 20% per level, 2% per level chance to Petrify (20 s)."
+  },
+  "SH_SPIRITWATER": {
+    "id": 3113,
+    "name": "Spirit of Water",
+    "resname": "sh_spiritwater",
+    "type": "active",
+    "max_level": 10,
+    "quest": false,
+    "job": "shaman",
+    "branch": "Spirits",
+    "target": "enemy",
+    "magic": true,
+    "element": "water",
+    "range": 9,
+    "splash": 1,
+    "hits": [
+      1,
+      1,
+      2,
+      2,
+      2,
+      3,
+      3,
+      3,
+      4,
+      4
+    ],
+    "damage_pct": [
+      68,
+      76,
+      84,
+      92,
+      100,
+      108,
+      116,
+      124,
+      132,
+      140
+    ],
+    "cast_time": [
+      1300,
+      1400,
+      1500,
+      1600,
+      1700,
+      1800,
+      1900,
+      2000,
+      2100,
+      2200
+    ],
+    "after_cast_delay": 1200,
+    "sp_cost": [
+      20,
+      22,
+      24,
+      26,
+      28,
+      30,
+      32,
+      34,
+      36,
+      38
+    ],
+    "inflict": {
+      "status": "silence",
+      "chance": [
+        3,
+        6,
+        9,
+        12,
+        15,
+        18,
+        21,
+        24,
+        27,
+        30
+      ]
+    },
+    "fx": "bolts",
+    "requires": {
+      "SH_SUMMON": 3,
+      "SH_RAINDANCE": 3
+    },
+    "desc": "Water spirit torrent on the target and its 3x3 area: 1 + level/3 waves of MATK 60% + 8% per level each, 3% per level chance to Silence (30 s)."
+  },
+  "SH_SPIRITWIND": {
+    "id": 3114,
+    "name": "Spirit of Wind",
+    "resname": "sh_spiritwind",
+    "type": "active",
+    "max_level": 10,
+    "quest": false,
+    "job": "shaman",
+    "branch": "Spirits",
+    "target": "enemy",
+    "magic": true,
+    "element": "wind",
+    "range": 9,
+    "hits": 1,
+    "damage_pct": [
+      130,
+      150,
+      170,
+      190,
+      210,
+      230,
+      250,
+      270,
+      290,
+      310
+    ],
+    "cast_time": [
+      1100,
+      1200,
+      1300,
+      1400,
+      1500,
+      1600,
+      1700,
+      1800,
+      1900,
+      2000
+    ],
+    "after_cast_delay": 1000,
+    "sp_cost": [
+      16,
+      18,
+      20,
+      22,
+      24,
+      26,
+      28,
+      30,
+      32,
+      34
+    ],
+    "inflict": {
+      "status": "sleep",
+      "chance": [
+        3,
+        6,
+        9,
+        12,
+        15,
+        18,
+        21,
+        24,
+        27,
+        30
+      ]
+    },
+    "fx": "orbs",
+    "requires": {
+      "SH_SUMMON": 3,
+      "SH_SEWIND": 3
+    },
+    "desc": "Wind spirit projectile: MATK 110% + 20% per level, 3% per level chance to put the target to Sleep (30 s, damage wakes)."
+  },
+  "SH_DIVINE": {
+    "id": 3115,
+    "name": "Divine Judgment",
+    "resname": "sh_divine",
+    "type": "active",
+    "max_level": 10,
+    "quest": false,
+    "job": "shaman",
+    "branch": "Ultimate",
+    "target": "enemy",
+    "magic": true,
+    "element": "ghost",
+    "range": 9,
+    "splash": 2,
+    "hits": [
+      3,
+      4,
+      4,
+      5,
+      5,
+      6,
+      6,
+      7,
+      7,
+      8
+    ],
+    "damage_pct": [
+      90,
+      100,
+      110,
+      120,
+      130,
+      140,
+      150,
+      160,
+      170,
+      180
+    ],
+    "cast_time": 3000,
+    "after_cast_delay": 3000,
+    "sp_cost": [
+      65,
+      70,
+      75,
+      80,
+      85,
+      90,
+      95,
+      100,
+      105,
+      110
+    ],
+    "fx": "judgment",
+    "requires": {
+      "SH_SPIRITFIRE": 5,
+      "SH_SPIRITEARTH": 5,
+      "SH_SPIRITWATER": 5,
+      "SH_SPIRITWIND": 5
+    },
+    "desc": "Calls down 3 + level/2 spirit strikes on the target area (5x5); each hits everything in it for MATK 80% + 10% per level (Ghost). Cast 3 s."
   }
 }

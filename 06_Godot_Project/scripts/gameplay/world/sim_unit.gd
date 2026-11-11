@@ -80,12 +80,54 @@ var cast_total := 0.0          # ms
 var cast_left := 0.0           # ms
 
 
+## Status effects: name -> {"left": ms, "level": int, ...}. See StatusRules.
+var statuses: Dictionary = {}
+var crit_bonus := 0             # permille, from Critical Rate Up
+var def_bonus := 0              # hard DEF/MDEF from Spiritual Protection
+var cloth_color := 0            # body palette (0 = default)
+
+
+func has_status(s: String) -> bool:
+	return statuses.has(s)
+
+
+func status_value(s: String, key: String, fallback: Variant = 0) -> Variant:
+	return statuses.get(s, {}).get(key, fallback)
+
+
+## Cannot move, attack, cast or use skills (stun, sleep, stone).
+func is_incapacitated() -> bool:
+	for s in statuses:
+		if bool(StatusRules.DEFS.get(s, {}).get("blocks_action", false)):
+			return true
+	return false
+
+
+## Element of normal attacks: enchantments override the (neutral) weapon.
+func weapon_element() -> String:
+	if statuses.has("dark_weapon"):
+		return "shadow"
+	if statuses.has("mistletoe"):
+		return "ghost"
+	return "neutral"
+
+
+## Defence element: Stone turns a target into Earth 1.
+func defence_element() -> Array:
+	return ["earth", 1] if statuses.has("stone") else [element, element_level]
+
+
 func is_casting() -> bool:
 	return cast_skill != ""
 
 
 func matk() -> Vector2i:
-	return ElementRulesPreRenewal.matk_range(int(stats.int))
+	var m := ElementRulesPreRenewal.matk_range(int(stats.int))
+	var pct := 100 + int(status_value("wrath", "matk_pct", 0)) + matk_item_pct
+	return Vector2i(m.x * pct / 100, m.y * pct / 100)
+
+
+var matk_item_pct := 0          # e.g. Rod MATK +15%
 
 
 ## Pre-Renewal weight limit: 2000 + STR * 30 (+ job bonus; Novice 0). High confidence.
@@ -110,11 +152,15 @@ func cell() -> Vector2i:
 
 
 func hit() -> int:
-	return level + int(stats.dex)
+	var h := level + int(stats.dex)
+	return h * StatusRules.BLIND_HIT_FLEE_PCT / 100 if statuses.has("blind") else h
 
 
 func flee() -> int:
-	return level + int(stats.agi)
+	var f := level + int(stats.agi)
+	if statuses.has("blind"):
+		f = f * StatusRules.BLIND_HIT_FLEE_PCT / 100
+	return 0 if is_incapacitated() else f
 
 
 ## Snapshot used by CombatRulesPreRenewal.resolve_attack.
@@ -123,12 +169,15 @@ func combat_profile() -> Dictionary:
 		"hit": hit(), "flee": flee(), "luk": int(stats.luk), "vit": int(stats.vit),
 		"atk_min": atk_min, "atk_max": atk_max, "def": hard_def,
 		"is_player": is_player(), "can_crit": is_player(), "size": size,
-		"int": int(stats.int), "mdef": mdef, "element": element, "element_level": element_level,
+		"int": int(stats.int), "mdef": mdef, "element": defence_element()[0], "element_level": defence_element()[1],
+		"str": int(stats.str),
 	} if not is_player() else {
 		"hit": hit(), "flee": flee(), "luk": int(stats.luk), "vit": int(stats.vit),
 		"atk_min": atk_min, "atk_max": atk_max, "def": hard_def,
 		"is_player": true, "can_crit": true, "size": size,
 		"batk": batk, "watk_min": watk_min, "watk_max": watk_max, "weapon_type": weapon_type,
 		"mastery": mastery_atk,
-		"int": int(stats.int), "mdef": mdef, "element": element, "element_level": element_level,
+		"int": int(stats.int), "mdef": mdef, "element": defence_element()[0], "element_level": defence_element()[1],
+		"str": int(stats.str), "crit_bonus": crit_bonus,
+		"atk_pct": 100 + int(status_value("dark_breath", "atk_pct", 0)),
 	}

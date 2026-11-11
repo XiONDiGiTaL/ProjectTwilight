@@ -25,6 +25,30 @@ static var _fonts: Dictionary = {}
 
 ## Condensed DIN-style system font (Bahnschrift on Windows), with fallbacks.
 ## weight: 300 light, 400 regular, 600 semibold, 700 bold. spacing: extra px per glyph.
+## Battle text font (damage numbers, MISS, CRITICAL): GRADIUS.ttf from the
+## resource pack when present (not redistributed), else the UI font.
+static func battle_font(spacing := 1, italic_skew := 0.0) -> Font:
+	var key := "battle:%d:%.2f" % [spacing, italic_skew]
+	if _fonts.has(key):
+		return _fonts[key]
+	var path := ""
+	var res: Node = Engine.get_main_loop().root.get_node_or_null("/root/RoResources") if Engine.get_main_loop() is SceneTree else null
+	if res:
+		path = res.pack_file("GRADIUS.ttf")
+	if path == "":
+		return font(700, spacing, italic_skew)
+	var ff := FontFile.new()
+	if ff.load_dynamic_font(path) != OK:
+		return font(700, spacing, italic_skew)
+	var v := FontVariation.new()
+	v.base_font = ff
+	v.spacing_glyph = spacing
+	if italic_skew != 0.0:
+		v.variation_transform = Transform2D(Vector2(1, 0), Vector2(italic_skew, 1), Vector2.ZERO)
+	_fonts[key] = v
+	return v
+
+
 static func font(weight := 400, spacing := 0, italic_skew := 0.0) -> Font:
 	var key := "%d:%d:%.2f" % [weight, spacing, italic_skew]
 	if _fonts.has(key):
