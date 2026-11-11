@@ -121,6 +121,60 @@ func notify(text: String, color := UiTheme.TEXT) -> void:
 		return true)
 
 
+## SAO-style map title card shown when entering a map.
+func map_banner(title: String, subtitle: String) -> void:
+	var box := VBoxContainer.new()
+	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	box.add_theme_constant_override("separation", 2)
+	var line_top := ColorRect.new()
+	line_top.custom_minimum_size = Vector2(380, 1)
+	line_top.color = Color(UiTheme.ACCENT, 0.7)
+	box.add_child(line_top)
+	var t := UiTheme.label(title.to_upper(), 34, UiTheme.TEXT, 300, 10, true)
+	t.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	box.add_child(t)
+	if subtitle != "":
+		var st := UiTheme.label(subtitle.to_upper(), 11, UiTheme.ACCENT, 600, 4)
+		st.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		box.add_child(st)
+	var line_bot := ColorRect.new()
+	line_bot.custom_minimum_size = Vector2(380, 1)
+	line_bot.color = Color(UiTheme.ACCENT, 0.7)
+	box.add_child(line_bot)
+	_root.add_child(box)
+	var t0 := Time.get_ticks_msec()
+	_effects.append(func() -> bool:
+		var age := (Time.get_ticks_msec() - t0) / 1000.0
+		if age > 4.0:
+			box.queue_free()
+			return false
+		box.reset_size()
+		var vp := _root.get_viewport_rect().size
+		box.position = Vector2((vp.x - box.size.x) / 2.0, vp.y * 0.3)
+		var spread := ease(clampf(age / 0.6, 0.0, 1.0), 0.3)
+		line_top.custom_minimum_size.x = 380.0 * spread
+		line_bot.custom_minimum_size.x = 380.0 * spread
+		box.modulate.a = clampf(age / 0.4, 0.0, 1.0) * clampf((4.0 - age) / 0.8, 0.0, 1.0)
+		return true)
+
+
+## Full-screen glass transition shown while changing maps.
+func transition(text: String) -> void:
+	var cover := ColorRect.new()
+	cover.color = Color(0.02, 0.03, 0.06, 0.0)
+	cover.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	cover.mouse_filter = Control.MOUSE_FILTER_STOP
+	_root.add_child(cover)
+	var l := UiTheme.label(text.to_upper() + "  …", 18, UiTheme.TEXT, 300, 6, true)
+	l.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	cover.add_child(l)
+	var t0 := Time.get_ticks_msec()
+	_effects.append(func() -> bool:
+		var age := (Time.get_ticks_msec() - t0) / 1000.0
+		cover.color.a = clampf(age / 0.35, 0.0, 1.0)
+		return is_instance_valid(cover))
+
+
 ## Shows a small name tag at a screen position (ground item hover); "" hides it.
 func hover_tag(text: String, screen_pos: Vector2) -> void:
 	_hover_tag.visible = text != ""

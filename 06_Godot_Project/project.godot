@@ -28,3 +28,18 @@ window/stretch/aspect="expand"
 [rendering]
 
 textures/canvas_textures/default_texture_filter=0
+
+[shader_globals]
+
+occlusion_center={
+"type": "vec2",
+"value": Vector2(-1000, -1000)
+}
+occlusion_radius={
+"type": "float",
+"value": 0.0
+}
+occlusion_depth={
+"type": "float",
+"value": 0.0
+}

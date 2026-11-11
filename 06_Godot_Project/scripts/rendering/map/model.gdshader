@@ -10,6 +10,12 @@ uniform vec3 light_ambient = vec3(0.3);
 uniform bool use_lighting = true;
 uniform float alpha = 1.0;
 uniform bool flip_normals = false;
+// See-through circle around the player (set every frame by the field scene).
+// Pixels near the player on screen AND closer to the camera than the player are
+// dithered away, so buildings never hide the character. Radius 0 disables it.
+global uniform vec2 occlusion_center;
+global uniform float occlusion_radius;
+global uniform float occlusion_depth;
 
 varying vec3 world_normal;
 
@@ -25,6 +31,19 @@ void fragment() {
 	vec4 t = texture(albedo_tex, UV);
 	if (t.a < 0.5) {
 		discard;
+	}
+	if (occlusion_radius > 0.0 && -VERTEX.z < occlusion_depth - 4.0) {
+		float d = distance(FRAGCOORD.xy, occlusion_center);
+		float fade = mix(0.22, 1.0, smoothstep(occlusion_radius * 0.55, occlusion_radius, d));
+		if (fade < 0.999) {
+			// 4x4 ordered dither (screen-door transparency, no sorting needed).
+			ivec2 q = ivec2(FRAGCOORD.xy) % 4;
+			int idx = q.x + q.y * 4;
+			float bayer[16] = {0.0, 8.0, 2.0, 10.0, 12.0, 4.0, 14.0, 6.0, 3.0, 11.0, 1.0, 9.0, 15.0, 7.0, 13.0, 5.0};
+			if ((bayer[idx] + 0.5) / 16.0 > fade) {
+				discard;
+			}
+		}
 	}
 	vec3 c = t.rgb;
 	if (use_lighting) {

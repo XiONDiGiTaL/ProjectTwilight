@@ -28,5 +28,8 @@ The engine never runs Gravity code; only *content* comes from the client. Two co
 ## Phase 4: First playable (offline) 🔧
 ✅ map · ✅ movement · ✅ monsters (Poring/Fabre/Lunatic) · ✅ combat · ✅ EXP and levels · ✅ combat HUD · ✅ character creation · ✅ inventory and drops · ✅ save/load · ✅ stat allocation window · ✅ equipment · ✅ NPC shop
 
-## Phases 5–8 📋
+## Phase 5: Core gameplay 🔧
+✅ Novice skills, hotkey bar, regeneration · ✅ multi-map travel (Prontera ⇄ prt_fild08) · 📋 job change and first-job skills · 📋 more maps and monsters · 📋 quests
+
+## Phases 6–8 📋
 Core gameplay → private co-op (ENet, invitation codes ✅ already) → server integration and MMO → modernisation.

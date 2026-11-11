@@ -15,6 +15,7 @@ var load_models := true
 var models_root: Node3D
 var model_stats := {"instances": 0, "unique": 0, "failed": 0}
 
+
 var _textures: Dictionary = {}
 ## The RoResources VFS node (looked up at runtime so tools and tests can use RoMap).
 var res: Node
@@ -149,6 +150,24 @@ func _add_models() -> void:
 		models_root.add_child(mi)
 		model_stats.instances += 1
 	model_stats.unique = cache.size()
+
+
+## Updates the see-through circle so models never hide `target` (the player).
+## radius_px 0 disables it (call clear_occlusion when leaving the map).
+func update_occlusion(camera: Camera3D, target: Vector3, radius_px := 150.0) -> void:
+	var mid := target + Vector3(0, 6, 0)
+	var view := camera.global_transform.affine_inverse() * mid
+	var center := camera.unproject_position(mid)
+	# FRAGCOORD is in render-target pixels; scale from viewport (canvas) coordinates.
+	var vp := get_viewport()
+	var scale := Vector2(vp.get_texture().get_size()) / vp.get_visible_rect().size
+	RenderingServer.global_shader_parameter_set("occlusion_center", center * scale)
+	RenderingServer.global_shader_parameter_set("occlusion_radius", radius_px * scale.x)
+	RenderingServer.global_shader_parameter_set("occlusion_depth", -view.z)
+
+
+static func clear_occlusion() -> void:
+	RenderingServer.global_shader_parameter_set("occlusion_radius", 0.0)
 
 
 func _add_water() -> void:

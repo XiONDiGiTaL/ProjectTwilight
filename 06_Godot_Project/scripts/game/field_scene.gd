@@ -9,7 +9,6 @@ extends Node3D
 
 @export var map_name := "prt_fild08"
 @export var start_cell := Vector2i(170, 200)
-@export var spawns := {"1002": 25, "1063": 12, "1007": 12}  # Poring, Lunatic, Fabre
 @export var sim_seed := 1
 ## Save slot; "" disables loading and saving (tests, tools).
 @export var save_slot := "slot1"
@@ -47,26 +46,36 @@ func _ready() -> void:
 	env.environment.background_color = Color(0.45, 0.6, 0.8)
 	add_child(env)
 
+	# The save decides which map we are on; read it before loading the map.
+	var saved: Dictionary = {}
+	var loaded_msg := ""
+	if save_slot != "" and SaveGame.exists(save_slot):
+		var item_db := FieldSimulation._load_json(FieldSimulation.ITEM_DB)
+		item_db.erase("_provenance")
+		var r := SaveGame.read(save_slot, item_db, ClassInsignia.classes())
+		if r.ok:
+			saved = r.character
+			if String(saved.map) != "":
+				map_name = String(saved.map)
+		else:
+			loaded_msg = "Save could not be loaded: %s" % r.error
+
 	map = RoMap.new()
 	add_child(map)
 	if not map.load_map(map_name):
 		push_error("Could not load map %s" % map_name)
 		return
 	sim = FieldSimulation.new(map.gat, sim_seed)
-	var loaded_msg := ""
-	if save_slot != "" and SaveGame.exists(save_slot):
-		var r := SaveGame.read(save_slot, sim.item_db, ClassInsignia.classes())
-		if r.ok and (r.character.map == map_name or r.character.map == ""):
-			player = sim.add_player_from_save(r.character)
-			loaded_msg = "Welcome back, %s." % player.name
-		elif not r.ok:
-			loaded_msg = "Save could not be loaded: %s" % r.error
+	if not saved.is_empty():
+		player = sim.add_player_from_save(saved)
 	if player == null:
 		player = sim.add_player("Adventurer", start_cell, {"str": 5, "agi": 5, "vit": 5, "int": 1, "dex": 5, "luk": 5})
 		player.inventory.add(501, 3, sim.item_db, player.max_weight())  # starter Red Potions
-	for mob in spawns:
-		sim.spawn_random(mob, int(spawns[mob]))
-	sim.spawn_npcs(map_name)
+	sim.setup_map(map_name)
+	for w in sim.warps:
+		var wv := WarpPortalView.new()
+		add_child(wv)
+		wv.setup(w, map)
 
 	camera = RoCamera.new()
 	camera.distance = 240.0
@@ -96,7 +105,8 @@ func _ready() -> void:
 	(views[player.id] as UnitView).update_weapon(_res)
 	hud.update_player(player, sim.next_base_exp(player), sim.next_job_exp(player), true)
 	if loaded_msg != "":
-		hud.notify(loaded_msg, UiTheme.ACCENT)
+		hud.notify(loaded_msg, UiTheme.HP_MID)
+	hud.map_banner(String(sim.map_info.get("name", map_name)), String(sim.map_info.get("subtitle", "")))
 
 
 func _build_marker() -> void:
@@ -249,12 +259,14 @@ func save_now(announce := false) -> void:
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_CLOSE_REQUEST or what == NOTIFICATION_PREDELETE:
-		if sim != null and player != null and is_inside_tree():
+		if sim != null and player != null and is_inside_tree() and not _skip_exit_save:
 			save_now()
 
 
 func _exit_tree() -> void:
-	save_now()
+	RoMap.clear_occlusion()
+	if not _skip_exit_save:
+		save_now()
 
 
 # --- Frame ---------------------------------------------------------------------
@@ -264,6 +276,8 @@ func _process(delta: float) -> void:
 		return
 	sim.tick(delta * 1000.0)
 	_consume_events()
+	if views.has(player.id):
+		map.update_occlusion(camera, (views[player.id] as Node3D).global_position)
 	for v in views.values():
 		(v as UnitView).camera_yaw = camera.yaw_deg
 	if not player.walker.is_moving():
@@ -358,6 +372,9 @@ func _consume_events() -> void:
 				if ev_view:
 					ev_view.update_weapon(_res)
 				player_changed = player_changed or ev.id == player.id
+			"warp":
+				if ev.id == player.id:
+					_travel(String(ev.to_map), ev.to_cell)
 			"npc_spawn":
 				_create_npc_view(ev.npc)
 			"npc_open":
@@ -417,6 +434,25 @@ func _create_view(u: SimUnit) -> void:
 		push_warning("No sprite for %s (%s)" % [u.name, u.sprite])
 	v.position = map.cell_pos_to_world(u.walker.position())
 	views[u.id] = v
+
+
+## Moves the player to another map: save at the destination, then reload.
+func _travel(to_map: String, to_cell: Vector2i) -> void:
+	if save_slot == "":
+		hud.notify("Map travel needs a character save slot.", UiTheme.HP_MID)
+		return
+	player.walker = GridWalker.new(to_cell)
+	player.target_id = 0
+	SaveGame.write(save_slot, SaveGame.capture(player, to_map))
+	var dest := String(sim.map_db.get(to_map, {}).get("name", to_map))
+	hud.transition("Traveling to %s" % dest)
+	set_process(false)
+	await get_tree().create_timer(0.45).timeout
+	_skip_exit_save = true
+	get_tree().change_scene_to_file("res://scenes/game/field.tscn")
+
+
+var _skip_exit_save := false
 
 
 func _create_npc_view(nid: int) -> void:

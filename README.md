@@ -49,7 +49,8 @@ Project Twilight **contains no Gravity game data**. On first launch you point it
 | NPC merchant and shop (buy/sell, Zeny) | ✅ Implemented and tested |
 | Character select and creation (classic stat hexagon, live preview) | ✅ Implemented and tested |
 | Novice skills, skill window, F1–F9 hotkey bar, sitting and regen | ✅ Implemented and tested |
-| Warps and more maps, job change, first-job skills | 📋 Next |
+| Prontera ⇄ Prontera Field travel through warp portals | ✅ Implemented and tested |
+| Job change, first-job skills, more maps and monsters | 📋 Next |
 | First offline playable (character, map, monster, combat, save) | 📋 Planned |
 | Private co-op sessions | 📋 Planned |
 | eAthena / Hercules compatibility | 🔍 Under investigation, not claimed |

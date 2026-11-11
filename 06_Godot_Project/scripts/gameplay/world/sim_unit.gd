@@ -59,6 +59,7 @@ var skill_points := 0
 var skill_delay := 0.0         # ms until another skill may be used (after-cast delay)
 var sitting := false
 var trickdead := false         # Play Dead active
+var warping := false           # stepped on a warp; the scene is changing maps
 var hp_regen_t := 0.0
 var sp_regen_t := 0.0
 ## Hotkey bar (9 slots): null or {"type": "item"|"skill", "id": int|String}. Saved per character.

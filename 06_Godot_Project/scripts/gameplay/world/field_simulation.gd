@@ -16,6 +16,7 @@ extends RefCounted
 ##   {type: "trade", id, ok, text}
 ##   {type: "skill", id, skill, text}  {type: "skill_fail", id, text}  {type: "skills", id}
 ##   {type: "posture", id}   (sitting / play dead changed)  {type: "regen", id}
+##   {type: "warp", id, to_map, to_cell: Vector2i}
 
 const MONSTER_DB := "res://data/prerenewal/monsters.json"
 const EXP_DB := "res://data/prerenewal/exp_tables.json"
@@ -28,6 +29,8 @@ const EQUIP_SLOTS := ["head_top", "head_mid", "head_low", "weapon", "shield", "b
 ## Novice base weapon delay (BTBA, seconds) per weapon type. Medium confidence.
 const NOVICE_BTBA := {"fist": 0.5, "dagger": 0.65}
 const SKILL_DB := "res://data/prerenewal/skills.json"
+const MAP_DB := "res://data/prerenewal/maps.json"
+const WARP_RADIUS := 1
 const NPC_TALK_RANGE := 2
 const NPC_TRADE_RANGE := 6
 const NOVICE_FIST_BTBA := 0.5     # seconds; Medium confidence
@@ -50,6 +53,12 @@ var ground_items: Dictionary = {}
 var _next_ground := 1
 var shop_db: Dictionary = {}
 var skill_db: Dictionary = {}
+var map_db: Dictionary = {}
+var map_name := ""
+var map_info: Dictionary = {}
+## Warp portals on this map: {cell: Vector2i, to_map, to_cell: Vector2i, label}
+var warps: Array = []
+var respawn_cell := Vector2i(-1, -1)
 ## npc id -> {id, name, sprite, cell: Vector2i, direction, shop, greeting}
 var npcs: Dictionary = {}
 var _next_npc := 1
@@ -65,6 +74,8 @@ func _init(p_gat: GatFile, seed_value: int = 1) -> void:
 	exp_tables = _load_json(EXP_DB)
 	item_db = _load_json(ITEM_DB)
 	item_db.erase("_provenance")
+	map_db = _load_json(MAP_DB)
+	map_db.erase("_doc")
 	skill_db = _load_json(SKILL_DB)
 	skill_db.erase("_provenance")
 	shop_db = _load_json(SHOP_DB)
@@ -99,6 +110,31 @@ func add_player(name: String, cell: Vector2i, stats: Dictionary) -> SimUnit:
 	u.sp = u.max_sp
 	_register(u)
 	return u
+
+
+## Populates the world for a map from maps.json: monsters, NPCs, warps, respawn point.
+func setup_map(name: String) -> void:
+	map_name = name
+	map_info = map_db.get(name, {})
+	var rp: Array = map_info.get("respawn", [])
+	if rp.size() == 2:
+		respawn_cell = pathfinder.nearest_walkable(Vector2i(int(rp[0]), int(rp[1])), 20)
+	warps.clear()
+	for w in map_info.get("warps", []):
+		warps.append({"cell": Vector2i(int(w.cell[0]), int(w.cell[1])), "to_map": String(w.to_map),
+			"to_cell": Vector2i(int(w.to_cell[0]), int(w.to_cell[1])), "label": String(w.get("label", ""))})
+	var spawns: Dictionary = map_info.get("spawns", {})
+	for mob in spawns:
+		spawn_random(String(mob), int(spawns[mob]))
+	spawn_npcs(name)
+
+
+## Warp at (or adjacent to) a cell, or {}.
+func warp_at(cell: Vector2i) -> Dictionary:
+	for w in warps:
+		if _chebyshev(cell, w.cell) <= WARP_RADIUS:
+			return w
+	return {}
 
 
 ## Spawns the shop NPCs defined for `map_name` in shops.json.
@@ -505,6 +541,11 @@ func tick(ms: float) -> void:
 		elif not u.is_player():
 			_wander(u, ms)
 		u.walker.advance(ms)
+		if u.is_player() and not u.walker.is_moving() and not u.warping:
+			var w := warp_at(u.walker.cell)
+			if not w.is_empty():
+				u.warping = true
+				events.append({"type": "warp", "id": u.id, "to_map": w.to_map, "to_cell": w.to_cell})
 	for gid in ground_items.keys():
 		var g: Dictionary = ground_items[gid]
 		g.age += ms
@@ -712,7 +753,7 @@ func _revive(u: SimUnit) -> void:
 	u.trickdead = false
 	u.hp = u.max_hp
 	if u.is_player():
-		u.walker = GridWalker.new(u.spawn_cell)
+		u.walker = GridWalker.new(respawn_cell if respawn_cell.x >= 0 else u.spawn_cell)
 	else:
 		var c := _random_cell_near(Vector2i(gat.width / 2, gat.height / 2), maxi(gat.width, gat.height)) \
 			if u.spawn_radius == 0 else _random_cell_near(u.spawn_cell, u.spawn_radius)

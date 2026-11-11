@@ -3,6 +3,13 @@
 ## [Unreleased] - 2026-11-10
 
 ### Added
+- **Multiple maps and warps** (`data/prerenewal/maps.json`): per-map display names, respawn points, monster spawns and warp portals.
+  - Prontera (town, with a Tool Dealer) connects to Prontera Field through the classic south gate; the portal cells were checked against the client's GAT walkability.
+  - Walking onto a portal saves the character at the destination, shows a glass transition screen, and loads the new map.
+  - Death respawns you at the map's respawn point.
+- **Warp portal effect:** a swirling cyan ground sigil, a light column and a destination tag (original shaders).
+- **Map title card** (SAO-style) shown on entering a map.
+- **See-through circle:** models between the camera and the player are dithered away per pixel, so buildings never hide your character in towns.
 - **Skills** (`data/prerenewal/skills.json`):
   - Basic Skill (1–9, learned with skill points; level 3 unlocks sitting).
   - First Aid (+5 HP, 3 SP, 1 s delay) and Play Dead (a toggle: monsters drop and ignore you; you can't move or attack). Both are quest skills, granted until their quests exist.
