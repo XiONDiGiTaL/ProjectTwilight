@@ -1,8 +1,23 @@
 # Changelog
 
-## [Unreleased] - 2026-11-10
+## [Unreleased] - 2026-11-11
 
 ### Added
+- **Magic and elements:**
+  - The Pre-Renewal element table (10 × 10 × 4) now applies to every attack. Magnum Break is fire.
+  - MATK, MDEF and DEX-scaled cast times are in.
+  - Moving or being hit interrupts a cast; SP is spent only when the spell goes off.
+- **Mage skills:** Fire Bolt, Cold Bolt, Lightning Bolt, Napalm Beat (3×3 splash), Soul Strike (+Undead bonus) and Increase SP Recovery. Casters walk into range (9 cells) and then cast.
+- **Element-coloured casting circles** (original procedural shaders):
+  - Rotating rune band that lights up as the cast progresses, dot ring, light pillar and rising sparkles.
+  - Each element has its own colour and motif: hexagram, crescent cross, flame petals, lightning star, octagram or wave rings.
+  - The circle flashes on release, or collapses when interrupted.
+- **Spell release effects:** bolts dropping from the sky (zig-zag for lightning), Soul Strike orbs, Napalm bursts, impact rings.
+- **Cast bar** above the caster in the glass style, in the element's colour.
+- **Player auras** (cosmetic): Class colours, Azure, Ember, Frost, Verdant, Storm, Radiant, Void, None.
+  - Chosen at character creation and cycled in the field with **U**; saved with the character.
+  - The aura dims while casting or sitting.
+
 - **UI revision toward an anime-MMO system-window style** (SAO / PSO2 / Solo Leveling inspired, original design):
   - Translucent blue glass windows with a gradient title band, bright underline, ◆ title, inset frame and boxed close button.
   - SAO-style lime HP bars with a light stripe and silver rim.

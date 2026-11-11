@@ -10,24 +10,10 @@ const OUT_SIZE := 256
 const OUT_DIR := "res://assets/ui/class_badges/"
 const SHADER := preload("res://tools/insignia/badge_render.gdshader")
 
-## Class family colours.
-const FAMILY := {
-	"novice": Color(0.36, 0.44, 0.52), "sword": Color(0.78, 0.16, 0.2), "mage": Color(0.38, 0.27, 0.85),
-	"archer": Color(0.2, 0.62, 0.27), "acolyte": Color(0.1, 0.58, 0.64), "merchant": Color(0.9, 0.47, 0.1),
-	"thief": Color(0.34, 0.17, 0.46), "taekwon": Color(0.92, 0.62, 0.12), "ninja": Color(0.52, 0.1, 0.16),
-	"gunslinger": Color(0.5, 0.33, 0.16), "super_novice": Color(0.88, 0.36, 0.62), "soul_linker": Color(0.26, 0.38, 0.88),
-}
-const CLASS_FAMILY := {
-	"novice": "novice", "high_novice": "novice", "super_novice": "super_novice",
-	"swordman": "sword", "knight": "sword", "crusader": "sword", "high_swordman": "sword", "lord_knight": "sword", "paladin": "sword",
-	"mage": "mage", "wizard": "mage", "sage": "mage", "high_mage": "mage", "high_wizard": "mage", "professor": "mage",
-	"archer": "archer", "hunter": "archer", "bard": "archer", "dancer": "archer", "high_archer": "archer",
-	"sniper": "archer", "clown": "archer", "gypsy": "archer",
-	"acolyte": "acolyte", "priest": "acolyte", "monk": "acolyte", "high_acolyte": "acolyte", "high_priest": "acolyte", "champion": "acolyte",
-	"merchant": "merchant", "blacksmith": "merchant", "alchemist": "merchant", "high_merchant": "merchant", "whitesmith": "merchant", "creator": "merchant",
-	"thief": "thief", "assassin": "thief", "rogue": "thief", "high_thief": "thief", "assassin_cross": "thief", "stalker": "thief",
-	"taekwon_kid": "taekwon", "star_gladiator": "taekwon", "ninja": "ninja", "gunslinger": "gunslinger", "soul_linker": "soul_linker",
-}
+## Family colours live in ClassInsignia (shared with the in-game auras).
+const FAMILY := ClassInsignia.FAMILY
+const CLASS_FAMILY := ClassInsignia.CLASS_FAMILY
+
 ## Tier frames: [colour, double frame, star].
 const TIER_FRAME := {
 	"novice": [Color(0.85, 0.9, 0.95, 0.75), false, false],

@@ -65,7 +65,7 @@ func set_weapon(p_spr: SprFile, p_act: ActFile) -> void:
 
 
 ## Action-name -> action group. Players and monsters number their groups differently.
-const PLAYER_ACTIONS := {"idle": 0, "walk": 1, "sit": 2, "attack": 5, "hurt": 6, "dead": 8}
+const PLAYER_ACTIONS := {"idle": 0, "walk": 1, "sit": 2, "attack": 5, "hurt": 6, "dead": 8, "cast": 12}
 const MONSTER_ACTIONS := {"idle": 0, "walk": 1, "attack": 2, "hurt": 3, "dead": 4}
 
 var actions: Dictionary = PLAYER_ACTIONS

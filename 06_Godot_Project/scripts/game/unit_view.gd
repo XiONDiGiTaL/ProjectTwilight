@@ -14,6 +14,7 @@ var camera_yaw := 0.0
 var _fade := 1.0
 var _was_dead := false
 var _feigning := false
+var aura: PlayerAura
 
 
 func build_player(res: Node, male: bool, hair_style: int, hair_color: int) -> bool:
@@ -30,6 +31,10 @@ func build_player(res: Node, male: bool, hair_style: int, hair_color: int) -> bo
 	sprite.actions = CharacterSprite.PLAYER_ACTIONS
 	add_child(sprite)
 	sprite.setup(bspr, bact, SprFile.decode(res.read(head + ".spr")), ActFile.decode(res.read(head + ".act")), pal)
+	if aura == null:
+		aura = PlayerAura.new()
+		add_child(aura)
+	aura.set_style(unit.aura, unit.job)
 	return true
 
 
@@ -89,6 +94,8 @@ func _process(delta: float) -> void:
 	position = map.cell_pos_to_world(unit.walker.position())
 	var dir := PlayerAvatar.sprite_direction(unit.walker.direction, camera_yaw)
 	if unit.dead:
+		if aura:
+			aura.visible = false
 		if not _was_dead:
 			_was_dead = true
 			sprite.play_once("dead", 0.0, true)
@@ -111,7 +118,15 @@ func _process(delta: float) -> void:
 	if _feigning:
 		_feigning = false
 		sprite.reset_action()
+	if aura:
+		aura.visible = true
+		aura.job = unit.job
+		aura.style = unit.aura if PlayerAura.is_valid(unit.aura) else "class"
+		aura.dim = 0.3 if unit.is_casting() else (0.6 if unit.sitting else 1.0)
 	if unit.sitting:
 		sprite.set_action("sit", dir)
+		return
+	if unit.is_casting():
+		sprite.set_action("cast", dir)
 		return
 	sprite.set_action("walk" if unit.walker.is_moving() else "idle", dir)

@@ -61,7 +61,7 @@ static func capture(u: SimUnit, map_name: String) -> Dictionary:
 			"hp": u.hp, "sp": u.sp, "zeny": u.zeny,
 			"inventory": u.inventory.to_array(),
 			"equipment": u.equipment.duplicate(),
-			"male": u.male, "hair_style": u.hair_style, "hair_color": u.hair_color,
+			"male": u.male, "hair_style": u.hair_style, "hair_color": u.hair_color, "aura": u.aura,
 			"skills": u.skills.duplicate(), "skill_points": u.skill_points, "hotkeys": u.hotkeys.duplicate(true),
 			"map": map_name, "cell": [u.walker.cell.x, u.walker.cell.y],
 		},
@@ -120,6 +120,8 @@ static func validate(parsed: Variant, item_db: Dictionary, classes: Dictionary) 
 	out.male = bool(c.get("male", true))
 	out.hair_style = clampi(int(c.get("hair_style", 2)), 1, 99)
 	out.hair_color = clampi(int(c.get("hair_color", 0)), 0, 99)
+	var aura := String(c.get("aura", "class"))
+	out.aura = aura if PlayerAura.is_valid(aura) else "class"
 	out.zeny = clampi(int(c.get("zeny", 0)), 0, 1000000000)
 	var inv: Variant = c.get("inventory", [])
 	out.inventory = Inventory.from_array(inv if inv is Array else [], item_db).to_array()

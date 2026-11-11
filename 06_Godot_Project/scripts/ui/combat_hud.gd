@@ -24,6 +24,13 @@ var _target_id := 0
 var _target_clear_in := 0.0
 var _effects: Array = []   # Callables returning false when finished
 var _ring_shader: Shader
+var _cast_box: VBoxContainer
+var _cast_bar: GlassBar
+var _cast_label: Label
+var _cast_anchor: Callable
+var _cast_total := 0.0     # ms
+var _cast_elapsed := 0.0   # ms
+var _cast_out := -1.0      # fade-out timer (s), -1 = not fading
 
 
 func _ready() -> void:
@@ -414,7 +421,70 @@ func _ring_pulse(world_pos: Vector3) -> void:
 		return true)
 
 
+## Cast bar above the caster's head: element-coloured, fills over the cast time.
+func cast_begin(anchor: Callable, duration_ms: float, text: String, color: Color) -> void:
+	if _cast_box == null:
+		_cast_box = VBoxContainer.new()
+		_cast_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_cast_box.add_theme_constant_override("separation", 1)
+		_cast_label = UiTheme.label("", 11, UiTheme.TEXT, 600, 2)
+		_cast_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_cast_box.add_child(_cast_label)
+		_cast_bar = GlassBar.new()
+		_cast_bar.style = GlassBar.Style.SP
+		_cast_bar.ticks = 0.0
+		_cast_bar.glow_px = 3.0
+		_cast_bar.custom_minimum_size = Vector2(120, 8)
+		_cast_box.add_child(_cast_bar)
+		_root.add_child(_cast_box)
+	_cast_anchor = anchor
+	_cast_total = maxf(duration_ms, 1.0)
+	_cast_elapsed = 0.0
+	_cast_out = -1.0
+	_cast_label.text = text.to_upper()
+	_cast_label.add_theme_color_override("font_color", color.lightened(0.45))
+	_cast_bar.set_fill_color(color.lightened(0.15))
+	_cast_bar.snap(0.0, 1.0)
+	_cast_box.modulate = Color.WHITE
+	_cast_box.visible = true
+
+
+func cast_end(ok: bool) -> void:
+	if _cast_box == null or not _cast_box.visible:
+		return
+	if ok:
+		_cast_bar.snap(1.0, 1.0)
+	else:
+		_cast_label.text = "INTERRUPTED"
+		_cast_label.add_theme_color_override("font_color", UiTheme.HP_LOW)
+	_cast_out = 0.35
+
+
+func is_casting_shown() -> bool:
+	return _cast_box != null and _cast_box.visible and _cast_out < 0.0
+
+
+func _update_cast_bar(delta: float) -> void:
+	if _cast_box == null or not _cast_box.visible or camera == null:
+		return
+	if _cast_out >= 0.0:
+		_cast_out -= delta
+		_cast_box.modulate.a = clampf(_cast_out / 0.35, 0.0, 1.0)
+		if _cast_out <= 0.0:
+			_cast_box.visible = false
+			return
+	else:
+		_cast_elapsed += delta * 1000.0
+		_cast_bar.snap(minf(_cast_elapsed / _cast_total, 1.0), 1.0)
+	var anchor: Vector3 = _cast_anchor.call() + Vector3(0, 4.0, 0)
+	if camera.is_position_behind(anchor):
+		return
+	_cast_box.reset_size()
+	_cast_box.position = camera.unproject_position(anchor) - Vector2(_cast_box.size.x / 2.0, _cast_box.size.y)
+
+
 func _process(delta: float) -> void:
+	_update_cast_bar(delta)
 	for i in range(_effects.size() - 1, -1, -1):
 		if not (_effects[i] as Callable).call():
 			_effects.remove_at(i)

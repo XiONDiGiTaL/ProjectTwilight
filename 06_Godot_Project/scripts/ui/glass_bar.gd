@@ -48,6 +48,11 @@ func _ready() -> void:
 	_push()
 
 
+## Overrides the fill colour (cast bars use the spell's element colour).
+func set_fill_color(c: Color) -> void:
+	_mat.set_shader_parameter("fill_color", c)
+
+
 func snap(value: float, maximum: float) -> void:
 	max_value = maxf(maximum, 1.0)
 	current = clampf(value, 0.0, max_value)

@@ -5,7 +5,7 @@
   "swordman": {"name": "Swordman", "tier": 1, "sprite": "검사",   "hp_a": 0.7, "hp_b": 5, "sp_factor": 2, "weight_bonus": 800, "job_table": "job_first", "max_job_level": 50,
                "btba": {"fist": 0.4, "dagger": 0.65, "sword": 0.7}, "skills": ["SM_SWORD", "SM_RECOVERY", "SM_BASH", "SM_MAGNUM"]},
   "mage":     {"name": "Mage",     "tier": 1, "sprite": "마법사", "hp_a": 0.3, "hp_b": 5, "sp_factor": 6, "weight_bonus": 200, "job_table": "job_first", "max_job_level": 50,
-               "btba": {"fist": 0.5, "dagger": 0.6, "rod": 0.7}, "skills": []},
+               "btba": {"fist": 0.5, "dagger": 0.6, "rod": 0.7}, "skills": ["MG_SRECOVERY", "MG_NAPALMBEAT", "MG_SOULSTRIKE", "MG_COLDBOLT", "MG_FIREBOLT", "MG_LIGHTNINGBOLT"]},
   "archer":   {"name": "Archer",   "tier": 1, "sprite": "궁수",   "hp_a": 0.5, "hp_b": 5, "sp_factor": 2, "weight_bonus": 600, "job_table": "job_first", "max_job_level": 50,
                "btba": {"fist": 0.5, "dagger": 0.6, "bow": 0.7}, "skills": []},
   "acolyte":  {"name": "Acolyte",  "tier": 1, "sprite": "성직자", "hp_a": 0.4, "hp_b": 5, "sp_factor": 5, "weight_bonus": 400, "job_table": "job_first", "max_job_level": 50,

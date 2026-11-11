@@ -18,6 +18,9 @@ extends RefCounted
 ##   {type: "posture", id}   (sitting / play dead changed)  {type: "regen", id}
 ##   {type: "warp", id, to_map, to_cell: Vector2i}
 ##   {type: "job_change", id, job}  {type: "skill_hit", id, skill, cell}
+##   {type: "cast_start", id, skill, element, level, target, duration}
+##   {type: "cast_end", id, skill, ok: bool}   (ok = false: interrupted)
+##   {type: "magic", id, skill, element, target, hits, cell, splash}   (spell released)
 
 const MONSTER_DB := "res://data/prerenewal/monsters.json"
 const EXP_DB := "res://data/prerenewal/exp_tables.json"
@@ -173,6 +176,7 @@ func add_player_from_save(c: Dictionary) -> SimUnit:
 	u.male = bool(c.get("male", true))
 	u.hair_style = int(c.get("hair_style", 2))
 	u.hair_color = int(c.get("hair_color", 0))
+	u.aura = String(c.get("aura", "class"))
 	u.level = int(c.level)
 	u.job_level = int(c.job_level)
 	u.base_exp = int(c.base_exp)
@@ -226,6 +230,9 @@ func add_monster(mob_id: String, cell: Vector2i, spawn_radius: int = 0) -> SimUn
 	u.atk_max = int(m.atk[1])
 	u.hard_def = int(m.def)
 	u.size = String(m.get("size", "medium"))
+	u.element = String(m.get("element", "neutral"))
+	u.element_level = int(m.get("element_level", 1))
+	u.mdef = int(m.get("mdef", 0))
 	u.attack_range = int(m.range)
 	u.attack_interval = float(m.attack_delay)
 	u.attack_motion = float(m.attack_motion)
@@ -265,6 +272,7 @@ func command_move(unit_id: int, cell: Vector2i) -> bool:
 	u.queued_skill = ""
 	u.pickup_target = 0
 	u.talk_target = 0
+	_cancel_cast(u)
 	var path := pathfinder.find_path(u.walker.planning_origin(), cell)
 	if path.is_empty():
 		return false
@@ -483,6 +491,8 @@ func command_use_skill(unit_id: int, code: String, target_id: int = 0) -> bool:
 		return true
 	if u.trickdead:
 		return _skill_fail(u, "You cannot do that while playing dead.")
+	if u.is_casting():
+		return _skill_fail(u, "You are already casting.")
 	if u.skill_delay > 0.0:
 		return _skill_fail(u, "Skill is not ready yet.")
 	var level := int(u.skills.get(code, 0))
@@ -498,6 +508,8 @@ func command_use_skill(unit_id: int, code: String, target_id: int = 0) -> bool:
 		u.target_id = t.id
 		u.queued_skill = code
 		u.sitting = false
+		if s.has("magic") and _chebyshev(u.walker.cell, t.walker.cell) <= int(s.get("range", 9)) and not u.walker.is_moving():
+			_begin_cast(u, t)
 		return true
 	u.sp -= cost
 	u.skill_delay = float(s.get("after_cast_delay", 0))
@@ -540,7 +552,106 @@ func _magnum_break(u: SimUnit, s: Dictionary, level: int) -> void:
 		var t: SimUnit = units[id]
 		if t.is_player() or t.dead or _chebyshev(u.walker.cell, t.walker.cell) > area:
 			continue
-		_apply_hit(u, t, CombatRulesPreRenewal.resolve_attack(prof, t.combat_profile(), rng))
+		_apply_hit(u, t, CombatRulesPreRenewal.resolve_attack(prof, t.combat_profile(), rng), String(s.get("element", "neutral")))
+
+
+# --- Magic (Pre-Renewal cast time, MATK, elements) ---------------------------
+
+func _skill_cost(s: Dictionary, level: int) -> int:
+	var costs: Array = s.get("sp_cost", [0])
+	return int(costs[clampi(level - 1, 0, costs.size() - 1)])
+
+
+## A per-level skill value: a number, or an array indexed by level.
+static func per_level(s: Dictionary, key: String, level: int, fallback: float = 0.0) -> float:
+	var v: Variant = s.get(key, fallback)
+	if v is Array:
+		var a: Array = v
+		return float(a[clampi(level - 1, 0, a.size() - 1)]) if not a.is_empty() else fallback
+	return float(v)
+
+
+func _begin_cast(u: SimUnit, t: SimUnit) -> void:
+	var code := u.queued_skill
+	u.queued_skill = ""
+	var s: Dictionary = skill_db.get(code, {})
+	var level := int(u.skills.get(code, 0))
+	if level <= 0 or u.sp < _skill_cost(s, level):
+		_skill_fail(u, "Not enough SP.")
+		return
+	u.walker.stop()
+	u.walker.direction = GridWalker.direction_to(u.walker.cell, t.walker.cell)
+	u.cast_skill = code
+	u.cast_level = level
+	u.cast_target = t.id
+	u.cast_total = ElementRulesPreRenewal.cast_time_ms(per_level(s, "cast_time", level), int(u.stats.dex))
+	u.cast_left = u.cast_total
+	events.append({"type": "cast_start", "id": u.id, "skill": code, "element": String(s.get("element", "neutral")),
+		"level": level, "target": t.id, "duration": u.cast_total})
+	if u.cast_total <= 0.0:
+		_advance_cast(u, 0.0)
+
+
+func _cancel_cast(u: SimUnit) -> void:
+	if not u.is_casting():
+		return
+	events.append({"type": "cast_end", "id": u.id, "skill": u.cast_skill, "ok": false})
+	u.cast_skill = ""
+	u.cast_target = 0
+
+
+func _advance_cast(u: SimUnit, ms: float) -> void:
+	var t: SimUnit = units.get(u.cast_target)
+	if t == null or t.dead or t.trickdead:
+		_cancel_cast(u)
+		u.target_id = 0
+		return
+	u.cast_left -= ms
+	if u.cast_left > 0.0:
+		return
+	var code := u.cast_skill
+	var level := u.cast_level
+	var s: Dictionary = skill_db.get(code, {})
+	u.cast_skill = ""
+	u.cast_target = 0
+	var cost := _skill_cost(s, level)
+	if u.sp < cost:   # SP is spent when the spell is released
+		events.append({"type": "cast_end", "id": u.id, "skill": code, "ok": false})
+		_skill_fail(u, "Not enough SP.")
+		return
+	u.sp -= cost
+	u.skill_delay = per_level(s, "after_cast_delay", level)
+	u.attack_cooldown = maxf(u.attack_cooldown, u.skill_delay)
+	events.append({"type": "cast_end", "id": u.id, "skill": code, "ok": true})
+	events.append({"type": "skill", "id": u.id, "skill": code, "text": String(s.name)})
+	_release_spell(u, t, s, code, level)
+
+
+## Releases a finished spell: `hits` bolts on the target (and its splash area).
+func _release_spell(u: SimUnit, t: SimUnit, s: Dictionary, code: String, level: int) -> void:
+	var element := String(s.get("element", "neutral"))
+	var hits := int(per_level(s, "hits", level, 1.0))
+	var pct := int(per_level(s, "damage_pct", level, 100.0))
+	var area := int(s.get("splash", 0))
+	events.append({"type": "magic", "id": u.id, "skill": code, "element": element, "target": t.id,
+		"hits": hits, "cell": t.walker.cell, "splash": area})
+	var victims: Array[SimUnit] = [t]
+	if area > 0:
+		for id in units:
+			var o: SimUnit = units[id]
+			if o != t and not o.is_player() and not o.dead and _chebyshev(o.walker.cell, t.walker.cell) <= area:
+				victims.append(o)
+	for v in victims:
+		var bonus := 100
+		if String(v.data.get("race", "")) == "undead" or v.element == "undead":
+			bonus += int(s.get("undead_bonus_per_level", 0)) * level
+		var total := 0
+		for h in hits:
+			total += ElementRulesPreRenewal.magic_hit(u.matk(), pct * bonus / 100, v.combat_profile(), element, rng)
+		if victims.size() > 1 and bool(s.get("split_damage", false)):
+			total = maxi(1, total / victims.size())
+		# Element already applied per hit; pass neutral vs. a neutral multiplier of 100.
+		_apply_hit(u, v, {"damage": total, "crit": false, "miss": false, "hits": hits, "element": element}, "")
 
 
 ## Sit or stand (Insert). Needs Basic Skill level 3.
@@ -633,7 +744,9 @@ func tick(ms: float) -> void:
 		u.skill_delay = maxf(0.0, u.skill_delay - ms)
 		if u.is_player():
 			_regen(u, ms)
-		if u.talk_target != 0:
+		if u.is_casting():
+			_advance_cast(u, ms)
+		elif u.talk_target != 0:
 			_pursue_talk(u)
 		elif u.pickup_target != 0:
 			_pursue_pickup(u)
@@ -671,24 +784,30 @@ func _pursue(u: SimUnit) -> void:
 	if not u.is_player() and dist > CHASE_GIVE_UP_CELLS:
 		u.target_id = 0
 		return
-	if dist <= u.attack_range and not u.walker.is_moving():
+	var reach := u.attack_range
+	var spell: Dictionary = skill_db.get(u.queued_skill, {}) if u.queued_skill != "" else {}
+	if spell.has("magic"):
+		reach = int(spell.get("range", 9))
+	if dist <= reach and not u.walker.is_moving():
 		u.walker.direction = GridWalker.direction_to(u.walker.cell, t.walker.cell)
-		if u.attack_cooldown <= 0.0:
+		if spell.has("magic"):
+			_begin_cast(u, t)
+		elif u.attack_cooldown <= 0.0:
 			_attack(u, t)
 		return
-	if dist <= u.attack_range and u.walker.is_moving():
+	if dist <= reach and u.walker.is_moving():
 		# Stop at the next cell boundary, then attack.
 		var keep: Array[Vector2i] = [u.walker.path[0]]
 		u.walker.path = keep
 		return
 	# Re-path toward the target when idle or when it has moved away from our goal.
 	var goal: Vector2i = u.walker.path[-1] if u.walker.is_moving() else u.walker.cell
-	if not u.walker.is_moving() or _chebyshev(goal, t.walker.cell) > u.attack_range:
+	if not u.walker.is_moving() or _chebyshev(goal, t.walker.cell) > reach:
 		var path := pathfinder.find_path(u.walker.planning_origin(), t.walker.cell)
 		if path.size() > 1:
 			path.remove_at(path.size() - 1)  # stand next to the target, not on it
 			u.walker.walk(path)
-		elif path.size() == 1 and _chebyshev(u.walker.planning_origin(), t.walker.cell) > u.attack_range:
+		elif path.size() == 1 and _chebyshev(u.walker.planning_origin(), t.walker.cell) > reach:
 			u.walker.walk(path)
 
 
@@ -711,6 +830,17 @@ func _regen(u: SimUnit, ms: float) -> void:
 			u.sp = mini(u.max_sp, u.sp + RegenRulesPreRenewal.sp_amount(u.max_sp, int(u.stats.int)))
 			changed = true
 	var rec := int(u.skills.get("SM_RECOVERY", 0))
+	var srec := int(u.skills.get("MG_SRECOVERY", 0))
+	if srec > 0 and rec == 0:
+		if u.walker.is_moving():
+			u.recovery_t = 0.0
+		else:
+			u.recovery_t += ms
+			if u.recovery_t >= 10000.0:
+				u.recovery_t = 0.0
+				if u.sp < u.max_sp:
+					u.sp = mini(u.max_sp, u.sp + 3 * srec + int(u.max_sp * 0.002 * srec))
+					changed = true
 	if rec > 0:
 		if u.walker.is_moving():
 			u.recovery_t = 0.0
@@ -828,12 +958,17 @@ func _attack(u: SimUnit, t: SimUnit) -> void:
 	_apply_hit(u, t, CombatRulesPreRenewal.resolve_attack(prof, t.combat_profile(), rng))
 
 
-func _apply_hit(u: SimUnit, t: SimUnit, r: Dictionary) -> void:
-	events.append({"type": "damage", "src": u.id, "dst": t.id, "amount": r.damage, "crit": r.crit, "miss": r.miss})
+func _apply_hit(u: SimUnit, t: SimUnit, r: Dictionary, element := "neutral") -> void:
+	if not r.miss and element != "":
+		r.damage = ElementRulesPreRenewal.apply(r.damage, element, t.element, t.element_level)
+	events.append({"type": "damage", "src": u.id, "dst": t.id, "amount": r.damage, "crit": r.crit, "miss": r.miss,
+		"hits": int(r.get("hits", 1)), "element": String(r.get("element", element))})
 	if r.miss:
 		_provoke(t, u)
 		return
 	t.hp = maxi(0, t.hp - r.damage)
+	if r.damage > 0 and t.is_casting() and not bool(skill_db.get(t.cast_skill, {}).get("uninterruptible", false)):
+		_cancel_cast(t)
 	t.damaged_by[u.id] = int(t.damaged_by.get(u.id, 0)) + r.damage
 	if t.hp <= 0:
 		_kill(t, u)

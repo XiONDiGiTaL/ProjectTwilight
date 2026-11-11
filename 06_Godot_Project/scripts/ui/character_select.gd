@@ -26,6 +26,8 @@ var _hair_color := 0
 var _sex_buttons: Array[Button] = []
 var _style_label: Label
 var _color_row: HBoxContainer
+var _aura_row: HFlowContainer
+var _aura := "class"
 var _hexagon: StatHexagon
 var _error: Label
 var _confirm_layer: Control
@@ -75,7 +77,7 @@ func _ready() -> void:
 	_detail_box.add_theme_constant_override("separation", 8)
 	stack.add_child(_detail_box)
 	_create_box = VBoxContainer.new()
-	_create_box.add_theme_constant_override("separation", 8)
+	_create_box.add_theme_constant_override("separation", 6)
 	stack.add_child(_create_box)
 	_build_create_form()
 
@@ -253,11 +255,28 @@ func _build_create_form() -> void:
 		b.pressed.connect(func(): _hair_color = c; _refresh_look())
 		_color_row.add_child(b)
 
+	_create_box.add_child(UiTheme.label("AURA", 11, UiTheme.ACCENT, 600, 3))
+	_aura_row = HFlowContainer.new()
+	_aura_row.add_theme_constant_override("h_separation", 6)
+	_aura_row.add_theme_constant_override("v_separation", 6)
+	_create_box.add_child(_aura_row)
+	for id in PlayerAura.ORDER:
+		var b := Button.new()
+		b.text = String(PlayerAura.STYLES[id].name).to_upper()
+		b.toggle_mode = true
+		b.tooltip_text = "Cosmetic aura (change it in the field with U)."
+		UiTheme.style_button(b, false, false, 11)
+		var cols := PlayerAura.colors_for(id, "novice")
+		if id != "none":
+			b.add_theme_color_override("font_color", (cols[1] as Color).lightened(0.35))
+		b.pressed.connect(func(): _aura = id; _refresh_look())
+		_aura_row.add_child(b)
+
 	var stats_row := HBoxContainer.new()
 	_create_box.add_child(stats_row)
 	_hexagon = StatHexagon.new()
-	_hexagon.custom_minimum_size = Vector2(250, 220)
 	stats_row.add_child(_hexagon)
+	_hexagon.custom_minimum_size = Vector2(250, 196)   # after _ready, which sets its default
 	var help := UiTheme.label("Click a stat to raise it.\nIts opposite lowers, keeping\neach pair at 10 (classic\nPre-Renewal creation).\n\nAll 48 starting points are\nspent by the hexagon.", 11, UiTheme.TEXT_DIM, 400)
 	help.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	stats_row.add_child(help)
@@ -309,6 +328,8 @@ func _refresh_look() -> void:
 	_style_label.text = str(_hair_style)
 	for i in _color_row.get_child_count():
 		(_color_row.get_child(i) as Button).button_pressed = i == _hair_color
+	for i in _aura_row.get_child_count():
+		(_aura_row.get_child(i) as Button).button_pressed = PlayerAura.ORDER[i] == _aura
 	_preview.set_look(_male, _hair_style, _hair_color)
 
 
@@ -331,6 +352,7 @@ func _create() -> void:
 		return
 	var ch := CharacterRules.new_character(name, _male, _hair_style, _hair_color, _hexagon.stats)
 	ch.cell = [ch.cell.x, ch.cell.y]
+	ch.aura = _aura
 	var data := {"format": SaveGame.FORMAT, "version": SaveGame.VERSION,
 		"saved_at": int(Time.get_unix_time_from_system()), "character": ch}
 	var werr := SaveGame.write(slot, data)

@@ -107,7 +107,25 @@ Implementation: `field_simulation.gd`, `scripts/gameplay/skills/regen_rules_prer
 | Sword Mastery | +4 ATK per level with daggers and one-handed swords, added after DEF | High |
 | Increase HP Recovery | 5 × lv + 0.2% × lv of Max HP every 10 s while still; +10% × lv to healing items | Medium-high |
 | Bash | ATK × (100 + 30 × lv)%, HIT × (100 + 5 × lv)%; 8 SP (lv 1–5), 15 SP (lv 6–10); cannot crit | High |
-| Magnum Break | ATK × (100 + 20 × lv)%, HIT × (100 + 10 × lv)% in a 5×5 area; 30 SP; requires Bash 5 | High (fire element, knockback and HP cost are not yet applied) |
+| Magnum Break | ATK × (100 + 20 × lv)%, HIT × (100 + 10 × lv)% in a 5×5 area, fire element; 30 SP; requires Bash 5 | High (knockback and HP cost are not yet applied) |
+
+## Magic and elements
+
+Implementation: `scripts/gameplay/combat/element_rules_prerenewal.gd`, cast handling in `field_simulation.gd`. Tests: `tests/unit/test_magic.gd`.
+
+| Rule | Value | Confidence |
+|---|---|---|
+| Element table | 10 attack elements × 10 defence elements × defence levels 1–4 (iRO Wiki classic / rAthena pre-re attr_fix) | Medium, cross-check pending |
+| Negative modifiers | The original heals the target; this build clamps the damage to 0 | Simplification |
+| Physical attacks | Weapon element (neutral for now) vs. monster element; Magnum Break is fire | High |
+| MATK | min INT + ⌊INT/7⌋², max INT + ⌊INT/5⌋² | High |
+| Magic damage | rand(MATK) × skill% × (100 − hard MDEF)% − soft MDEF (INT + VIT/2), at least 1, then × element; never misses | Medium-high |
+| Cast time | base × (1 − DEX/150); instant at 150 DEX | High |
+| Interruption | Moving or taking damage cancels the cast; SP is only spent when the spell goes off | High |
+| Fire / Cold / Lightning Bolt | lv bolts of 100% MATK; 12 + 2 × lv SP; cast 0.7 s × lv; delay 0.8 + 0.2 × lv s; range 9 | Medium-high |
+| Napalm Beat | Ghost; (80 + 10 × lv)% MATK in 3×3, split among targets; cast 1 s; delay 1.0 → 0.5 s | Medium |
+| Soul Strike | Ghost; ⌈lv/2⌉ bolts of 100% MATK; +5% × lv vs. Undead; cast 0.5 s; requires Napalm Beat 4 | Medium (delays) |
+| Increase SP Recovery | 3 × lv + 0.2% × lv of Max SP every 10 s while still | Medium (item bonus not yet applied) |
 
 ## Movement
 
@@ -124,7 +142,7 @@ Implementation: `scripts/gameplay/world/grid_pathfinder.gd`, `grid_walker.gd`. T
 
 ## Still to research
 
-Experience tables, job-based HP/SP, ASPD, cast time and after-cast delay, DEF/MDEF (hard and soft), the element table, size modifiers, the refine table, monster data, skills and drop rates.
+Experience tables, ASPD cross-check, DEF/MDEF cross-check, the element table cross-check, the refine table, monster data, skills and drop rates.
 
 Each one will be added with its source, cross-checked between the rAthena pre-re database and Hercules. Any disagreement will be listed under *Discrepancies*.
 

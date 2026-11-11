@@ -5,7 +5,7 @@ extends Node3D
 ##
 ## Controls: left-click monster = attack, item = pick up, ground = walk.
 ## I / Alt+E = inventory, Alt+A / S = status, Q / Alt+Q = equipment, K / Alt+S = skills,
-## F1-F9 = hotkey bar, Insert = sit / stand, F12 = save now.
+## F1-F9 = hotkey bar, Insert = sit / stand, U = cycle aura, F12 = save now.
 
 @export var map_name := "prt_fild08"
 @export var start_cell := Vector2i(170, 200)
@@ -31,6 +31,7 @@ var walker: GridWalker:            # kept for tools/tests that inspect the playe
 var _target_marker: MeshInstance3D
 var _res: Node
 var _autosave_in := AUTOSAVE_SEC
+var _casts: Dictionary = {}        # unit id -> CastingCircle
 
 
 func _ready() -> void:
@@ -155,6 +156,8 @@ func _unhandled_input(e: InputEvent) -> void:
 				save_now(true)
 			KEY_Q:
 				hud.equipment_window.toggle()
+			KEY_U:
+				cycle_aura()
 		return
 	if not (e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT):
 		return
@@ -191,6 +194,13 @@ func monster_at_screen(p: Vector2) -> int:
 			best_d = d
 			best = id
 	return best
+
+
+## Cycles the player's cosmetic aura (saved with the character).
+func cycle_aura() -> void:
+	player.aura = PlayerAura.next_style(player.aura)
+	hud.notify("Aura:  %s" % PlayerAura.STYLES[player.aura].name, UiTheme.ACCENT)
+	save_now()
 
 
 ## Uses hotkey slot `i`: a skill or a usable item from the inventory.
@@ -404,6 +414,42 @@ func _consume_events() -> void:
 					hud.level_up(jv.global_position if jv else Vector3.ZERO, "JOB CHANGE", "You are now a %s" % jname)
 					save_now()
 				player_changed = true
+			"cast_start":
+				var cv: UnitView = views.get(ev.id)
+				if cv:
+					var circle := CastingCircle.make(String(ev.element), int(ev.level), float(ev.duration) / 1000.0)
+					add_child(circle)
+					circle.global_position = cv.global_position
+					if _casts.has(ev.id) and is_instance_valid(_casts[ev.id]):
+						(_casts[ev.id] as CastingCircle).interrupt()
+					_casts[ev.id] = circle
+					if ev.id == player.id:
+						var sname := String(sim.skill_db.get(ev.skill, {}).get("name", ev.skill))
+						hud.cast_begin(cv.head_position, float(ev.duration), "%s  Lv %d" % [sname, ev.level], ElementPalette.glow(String(ev.element)))
+			"cast_end":
+				var circle_v: CastingCircle = _casts.get(ev.id)
+				if circle_v and is_instance_valid(circle_v):
+					if ev.ok:
+						circle_v.release()
+					else:
+						circle_v.interrupt()
+				_casts.erase(ev.id)
+				if ev.id == player.id:
+					hud.cast_end(bool(ev.ok))
+					if not ev.ok:
+						hud.notify("Casting interrupted.", UiTheme.HP_MID)
+				player_changed = player_changed or ev.id == player.id
+			"magic":
+				var tv: UnitView = views.get(ev.target)
+				var caster: UnitView = views.get(ev.id)
+				if tv:
+					match String(ev.skill):
+						"MG_SOULSTRIKE":
+							SpellFx.orbs(self, caster.global_position if caster else tv.global_position, tv.global_position, String(ev.element), int(ev.hits))
+						"MG_NAPALMBEAT":
+							SpellFx.burst(self, tv.global_position, String(ev.element), int(ev.splash))
+						_:
+							SpellFx.bolts(self, tv.global_position, String(ev.element), int(ev.hits))
 			"skill_hit":
 				var sv: UnitView = views.get(ev.id)
 				if sv:
