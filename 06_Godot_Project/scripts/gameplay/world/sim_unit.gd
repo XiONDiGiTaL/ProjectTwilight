@@ -85,6 +85,10 @@ var statuses: Dictionary = {}
 var crit_bonus := 0             # permille, from Critical Rate Up
 var def_bonus := 0              # hard DEF/MDEF from Spiritual Protection
 var cloth_color := 0            # body palette (0 = default)
+## NPC script variables (rAthena permanent character variables; saved).
+var script_vars: Dictionary = {}
+## Rental options set by NPC scripts: falcon / cart / peco (saved; cosmetic for now).
+var options: Dictionary = {}
 
 
 func has_status(s: String) -> bool:

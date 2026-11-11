@@ -3,6 +3,14 @@
 ## [Unreleased] - 2026-11-11
 
 ### Added
+- **NPC scripting:** an original interpreter for the rAthena script language (`scripts/npc/`). It covers dialogs, menus, labels, functions, arrays, persistent variables and character commands; see `docs/NPC_SCRIPTS.md`.
+  - rAthena's healer, warper, job master, platinum skills, stylist, rental and reset NPCs load from `Resources/rathena` when present. They are GPL and never committed.
+  - Project Twilight's own versions are the fallback: a free healer in 18 towns, a warper with fast travel to towns, fields and dungeons, and the Prontera south-gate services (Job Master with Dark Knight and Shaman, Platinum Skills, Stylist, Rental, Reset).
+  - NPC sprites resolve through the client's `npcidentity.lub` / `jobname.lub`, read by a new Lua 5.1 bytecode table reader.
+  - Warps work to any map in the player's client.
+- **Dialog:** long menus scroll, there is a cancel button, and a number input for the stylist.
+- **Saves** keep script variables and rental options.
+- **`Play-ProjectTwilight.bat`** launcher and a `tests/smoke_play.gd` end-to-end smoke test (menu → character → field → combat → save → fast travel).
 - **Second jobs: Dark Knight (from Swordman) and Shaman (from Acolyte, female only).**
   - Both have full skill trees (13 + 15 skills, plus Two-Handed Sword Mastery for Swordman), adapted from Ragnarok Online DS concepts. See `docs/design/CLASS_DARK_KNIGHT_SHAMAN.md`.
   - The Job Guide offers second jobs at first-job Job Level 40.

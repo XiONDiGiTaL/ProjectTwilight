@@ -1,0 +1,135 @@
+//===== Project Twilight NPC script =========================
+//= Prontera south-gate services: Job Master (incl. Dark Knight and
+//= Shaman), Platinum Skills, Stylist, Rental and Reset. Original Project Twilight scripts in
+//= rAthena script format (Apache-2.0). Always loaded.
+//============================================================
+
+// ---------------- Platinum Skills ----------------------------
+prontera,142,47,4	script	Platinum Skills#tw	4_M_SAGE_C,{
+	mes "[Platinum Skills]";
+	mes "I teach the quest skills of your path, free of charge.";
+	next;
+	if (select("Teach me:Not now") == 2)
+		close;
+	skill "NV_FIRSTAID", 1, SKILL_PERM;
+	skill "NV_TRICKDEAD", 1, SKILL_PERM;
+	mes "[Platinum Skills]";
+	mes "There you go. Quest skills that this world has not learned yet will come in later versions.";
+	close;
+}
+
+// ---------------- Job Master ---------------------------------
+prontera,158,47,4	script	Job Master#tw	4_M_JOB_KNIGHT1,{
+	mes "[Job Master]";
+	if (Class == Job_Novice) {
+		if (JobLevel < 10 || getskilllv("NV_BASIC") < 9) {
+			mes "Reach Job Level 10 and Basic Skill level 9 first.";
+			close;
+		}
+		mes "Which guild will you join?";
+		next;
+		setarray .@job[1], Job_Swordman, Job_Mage, Job_Archer, Job_Acolyte, Job_Merchant, Job_Thief;
+		.@c = select("Swordman:Mage:Archer:Acolyte:Merchant:Thief:Not now");
+		if (.@c == 7)
+			close;
+		jobchange .@job[.@c];
+		mes "[Job Master]";
+		mes "Congratulations, " + jobname(.@job[.@c]) + "!";
+		close;
+	}
+	if (Class == Job_Swordman || Class == Job_Acolyte) {
+		if (JobLevel < 40) {
+			mes "Come back at Job Level 40 (you are " + JobLevel + ").";
+			close;
+		}
+		if (Class == Job_Swordman) {
+			if (select("Become a Dark Knight:Not now") == 2)
+				close;
+			jobchange Job_Dark_Knight;
+		} else {
+			if (Sex == SEX_MALE) {
+				mes "The Shaman path is open to women only.";
+				close;
+			}
+			if (select("Become a Shaman:Not now") == 2)
+				close;
+			jobchange Job_Shaman;
+		}
+		mes "[Job Master]";
+		mes "Your new path begins.";
+		close;
+	}
+	mes "I have nothing more to teach you for now.";
+	close;
+}
+
+// ---------------- Stylist -------------------------------------
+prontera,162,47,4	script	Stylist#tw	4_M_BARBER,{
+	mes "[Stylist]";
+	mes "What shall we change today?";
+	next;
+	.@s = select("Hair style:Hair colour:Cloth dye:Never mind");
+	if (.@s == 4)
+		close;
+	setarray .@look[1], LOOK_HAIR, LOOK_HAIR_COLOR, LOOK_CLOTHES_COLOR;
+	setarray .@max[1], getbattleflag("max_hair_style"), getbattleflag("max_hair_color"), getbattleflag("max_cloth_color");
+	setarray .@min[1], 1, 0, 0;
+	.@orig = getlook(.@look[.@s]);
+	.@cur = .@orig;
+	while (1) {
+		mes "[Stylist]";
+		mes "Style ^0055FF" + .@cur + "^000000 of " + .@max[.@s] + ".";
+		switch (select("Next:Previous:Jump to...:Keep this:Revert")) {
+		case 1:
+			.@cur = (.@cur >= .@max[.@s]) ? .@min[.@s] : .@cur + 1;
+			break;
+		case 2:
+			.@cur = (.@cur <= .@min[.@s]) ? .@max[.@s] : .@cur - 1;
+			break;
+		case 3:
+			input .@cur, .@min[.@s], .@max[.@s];
+			break;
+		case 4:
+			close;
+		case 5:
+			setlook .@look[.@s], .@orig;
+			close;
+		}
+		setlook .@look[.@s], .@cur;
+	}
+}
+
+// ---------------- Rental (falcon / cart / peco) ---------------
+prontera,166,47,4	script	Rental#tw	4_M_ZONDAOYAJI,{
+	mes "[Rental]";
+	if (getskilllv("HT_FALCON") && !checkfalcon()) {
+		setfalcon;
+		mes "Here is your falcon.";
+	} else if (getskilllv("MC_PUSHCART") && !checkcart()) {
+		setcart;
+		mes "Here is your cart.";
+	} else if (getskilllv("KN_RIDING") && !checkriding()) {
+		setriding;
+		mes "Here is your Peco Peco.";
+	} else {
+		mes "I rent falcons (Falconry Mastery), carts (Pushcart) and Peco Pecos (Riding).";
+		mes "You do not have any of those skills yet.";
+	}
+	close;
+}
+
+// ---------------- Reset ---------------------------------------
+prontera,138,47,4	script	Reset Master#tw	4_F_TELEPORTER,{
+	mes "[Reset Master]";
+	mes "I can return your skill or status points, free of charge.";
+	next;
+	switch (select("Reset skills:Reset stats:Both:Cancel")) {
+	case 1: resetskill; break;
+	case 2: resetstatus; break;
+	case 3: resetskill; resetstatus; break;
+	case 4: close;
+	}
+	mes "[Reset Master]";
+	mes "Done. Spend your points wisely.";
+	close;
+}

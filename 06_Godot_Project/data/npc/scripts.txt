@@ -1,0 +1,17 @@
+// NPC scripts loaded by the game (RaWorld). One entry per line.
+//   res://...   Project Twilight scripts in this repository
+//   pack:...    a file inside the resource pack (Resources/, never committed),
+//               e.g. rAthena's npc folder cloned to Resources/rathena
+//   a || b      load the first alternative that exists
+// rAthena scripts are GPL-3.0 and stay in the player's own resource pack; the
+// interpreter reads them at runtime like the client's data files.
+
+pack:rathena/npc/other/Global_Functions.txt
+pack:rathena/npc/custom/healer.txt || res://data/npc/twilight/healer.txt
+pack:rathena/npc/custom/warper.txt || res://data/npc/twilight/warper.txt
+pack:rathena/npc/custom/jobmaster.txt
+pack:rathena/npc/custom/platinum_skills.txt
+pack:rathena/npc/custom/stylist.txt
+pack:rathena/npc/custom/breeder.txt
+pack:rathena/npc/custom/resetnpc.txt
+res://data/npc/twilight/prontera_services.txt

@@ -132,6 +132,21 @@ Full brief: Swordman → **Dark Knight**, female Acolyte → **Shaman**, with fu
 - [ ] Knight, Crusader, Priest and Monk.
 - [ ] A network transport for co-op and dedicated servers. The authority logic is ready in `FieldSimulation`.
 
+## Task: NPC scripts (owner brief, 2026-11-11) — done
+
+- [x] The game is playable from the main scene; `tests/smoke_play.gd` checks the full flow.
+- [x] rAthena script interpreter (`scripts/npc/`), loader (`data/npc/scripts.txt`) and the rAthena `npc` folder in `Resources/rathena` (sparse clone, never committed).
+- [x] Healer, warper, job master, platinum skills, stylist, rental and reset NPCs: rAthena versions plus original fallbacks.
+- [x] NPC sprites from the client's npcidentity / jobname `.lub` files.
+
+### Follow-ups (open)
+
+- [ ] Open rAthena `shop` NPCs in the shop window.
+- [ ] `OnTouch` areas and NPC timers.
+- [ ] Load rAthena `npc/warps` so every map gets its portals; map spawns from `npc/pre-re/mobs`.
+- [ ] Draw falcon, cart and Peco; add Falconry, Pushcart and Riding to the classes that need them.
+- [ ] Export presets: include `data/**/*.txt` in exported builds.
+
 ## Backlog after this task
 
 - Archer, Merchant and Thief first-job skills, and Acolyte skills (Heal, Blessing, Holy Light).

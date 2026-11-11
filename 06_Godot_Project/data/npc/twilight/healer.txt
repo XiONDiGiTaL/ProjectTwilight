@@ -1,0 +1,33 @@
+//===== Project Twilight NPC script =========================
+//= Free healer in every town. Original Project Twilight scripts in
+//= rAthena script format (Apache-2.0). They load only when the
+//= matching rAthena custom script is not in the resource pack
+//= (see data/npc/scripts.txt).
+//============================================================
+
+// ---------------- Healer (free, every town) ----------------
+-	script	Twilight Healer	-1,{
+	specialeffect2 EF_HEAL2;
+	percentheal 100,100;
+	message strcharinfo(0), "The healer's light restores you.";
+	end;
+}
+prontera,150,47,4	duplicate(Twilight Healer)	Healer#tw_prt	4_F_SISTER
+prontera,162,193,4	duplicate(Twilight Healer)	Healer#tw_prt2	4_F_SISTER
+izlude,125,118,4	duplicate(Twilight Healer)	Healer#tw_izl	4_F_SISTER
+geffen,115,72,6	duplicate(Twilight Healer)	Healer#tw_gef	4_F_SISTER
+payon,179,106,4	duplicate(Twilight Healer)	Healer#tw_pay	4_F_SISTER
+morocc,153,97,6	duplicate(Twilight Healer)	Healer#tw_mor	4_F_SISTER
+alberta,25,240,6	duplicate(Twilight Healer)	Healer#tw_alb	4_F_SISTER
+aldebaran,135,118,6	duplicate(Twilight Healer)	Healer#tw_alde	4_F_SISTER
+yuno,164,45,4	duplicate(Twilight Healer)	Healer#tw_yuno	4_F_SISTER
+comodo,184,158,6	duplicate(Twilight Healer)	Healer#tw_com	4_F_SISTER
+umbala,105,148,3	duplicate(Twilight Healer)	Healer#tw_umb	4_F_SISTER
+lighthalzen,152,100,6	duplicate(Twilight Healer)	Healer#tw_lhz	4_F_SISTER
+einbroch,57,202,6	duplicate(Twilight Healer)	Healer#tw_einbr	4_F_SISTER
+hugel,89,150,6	duplicate(Twilight Healer)	Healer#tw_hug	4_F_SISTER
+rachel,125,116,6	duplicate(Twilight Healer)	Healer#tw_rac	4_F_SISTER
+amatsu,200,79,4	duplicate(Twilight Healer)	Healer#tw_ama	4_F_SISTER
+louyang,226,103,4	duplicate(Twilight Healer)	Healer#tw_lou	4_F_SISTER
+niflheim,212,182,5	duplicate(Twilight Healer)	Healer#tw_nif	4_F_SISTER
+

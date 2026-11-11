@@ -1,0 +1,62 @@
+//===== Project Twilight NPC script =========================
+//= Warper (fast travel), in the main towns. Original Project Twilight scripts in
+//= rAthena script format (Apache-2.0). They load only when the
+//= matching rAthena custom script is not in the resource pack
+//= (see data/npc/scripts.txt).
+//============================================================
+
+// ---------------- Warper (fast travel) ----------------------
+-	script	Twilight Warper	-1,{
+	mes "[Warper]";
+	mes "Where would you like to go?";
+	if (lastwarp$ != "")
+		mes "Your last trip: ^0055FF" + lastwarp$ + "^000000.";
+	next;
+	switch (select("Last destination:Towns:Fields:Dungeons")) {
+	case 1:
+		if (lastwarp$ == "") {
+			mes "[Warper]";
+			mes "You have not travelled with me yet.";
+			close;
+		}
+		warp lastwarp$, lastwarpx, lastwarpy;
+		end;
+	case 2:
+		setarray .@name$[0], "Prontera", "Izlude", "Geffen", "Payon", "Morocc", "Alberta", "Aldebaran", "Juno", "Comodo", "Umbala", "Lighthalzen", "Einbroch", "Hugel", "Rachel", "Amatsu", "Louyang", "Niflheim";
+		setarray .@map$[0], "prontera", "izlude", "geffen", "payon", "morocc", "alberta", "aldebaran", "yuno", "comodo", "umbala", "lighthalzen", "einbroch", "hugel", "rachel", "amatsu", "louyang", "niflheim";
+		setarray .@x[0], 155, 128, 119, 179, 156, 28, 140, 157, 209, 89, 158, 64, 96, 130, 198, 217, 202;
+		setarray .@y[0], 183, 114, 59, 100, 93, 234, 131, 51, 143, 157, 92, 200, 145, 110, 84, 100, 174;
+		break;
+	case 3:
+		setarray .@name$[0], "Prontera Field (South Gate)", "Prontera Field (East)", "Geffen Field", "Payon Forest", "Sograt Desert";
+		setarray .@map$[0], "prt_fild08", "prt_fild05", "gef_fild07", "pay_fild08", "moc_fild12";
+		setarray .@x[0], 170, 380, 192, 34, 35;
+		setarray .@y[0], 375, 194, 162, 373, 375;
+		break;
+	case 4:
+		setarray .@name$[0], "Prontera Culverts", "Ant Hell", "Payon Cave", "Geffen Tower", "Orc Dungeon", "Byalan Island";
+		setarray .@map$[0], "prt_sewb1", "anthell01", "pay_dun00", "gef_dun00", "orcsdun01", "iz_dun00";
+		setarray .@x[0], 131, 35, 21, 104, 32, 168;
+		setarray .@y[0], 247, 262, 183, 99, 170, 168;
+		break;
+	}
+	.@menu$ = "";
+	for (.@i = 0; .@i < getarraysize(.@name$); .@i++)
+		.@menu$ += .@name$[.@i] + ":";
+	.@c = select(.@menu$) - 1;
+	set lastwarp$, .@map$[.@c];
+	set lastwarpx, .@x[.@c];
+	set lastwarpy, .@y[.@c];
+	warp .@map$[.@c], .@x[.@c], .@y[.@c];
+	end;
+}
+prontera,146,47,4	duplicate(Twilight Warper)	Warper#tw_prt	4_F_KAFRA1
+prontera,155,187,4	duplicate(Twilight Warper)	Warper#tw_prt2	4_F_KAFRA1
+izlude,130,118,4	duplicate(Twilight Warper)	Warper#tw_izl	4_F_KAFRA1
+geffen,120,66,4	duplicate(Twilight Warper)	Warper#tw_gef	4_F_KAFRA1
+payon,174,104,4	duplicate(Twilight Warper)	Warper#tw_pay	4_F_KAFRA1
+morocc,159,97,4	duplicate(Twilight Warper)	Warper#tw_mor	4_F_KAFRA1
+alberta,31,240,4	duplicate(Twilight Warper)	Warper#tw_alb	4_F_KAFRA1
+aldebaran,139,123,4	duplicate(Twilight Warper)	Warper#tw_alde	4_F_KAFRA1
+yuno,158,47,4	duplicate(Twilight Warper)	Warper#tw_yuno	4_F_KAFRA1
+

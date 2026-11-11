@@ -104,7 +104,48 @@ git clone https://github.com/XiONDiGiTaL/ProjectTwilight.git
    [resources]
    client_path="D:/Games/RagnarokOnline"
    ```
-3. Choose **PLAY**, create a character, then fight Porings, Lunatics and Fabres on prt_fild08. Left-click to walk, attack or pick up loot; press **I** for the inventory, **S** for status, **Q** for equipment, **K** for skills, **F1–F9** for hotkeys, **Insert** to sit and **F12** to save. Click the Field Merchant to buy and sell. Progress also saves automatically. to walk around as a Novice, or open **Map Viewer** to fly around any classic map, or **Sprite Viewer** to browse animated sprites from your client.
+3. Choose **PLAY**, create a character, and you start on prt_fild08 south of Prontera. On Windows you can also double-click `Play-ProjectTwilight.bat` (set the `GODOT` environment variable to your Godot executable if `godot` is not on your PATH).
+
+**Controls**
+
+| Key | Action |
+|---|---|
+| Left-click | Walk, attack, pick up loot or talk to NPCs |
+| I | Inventory |
+| S | Status |
+| Q | Equipment |
+| K | Skills |
+| F1–F9 | Hotkeys |
+| Insert | Sit |
+| U | Cycle aura |
+| F12 | Save (progress also saves automatically) |
+
+**Where to go**
+
+- Walk north through the gate into Prontera.
+- **Job Guide / Job Master:** first and second jobs, including Dark Knight and Shaman.
+- **Healer:** free full heal.
+- **Warper:** fast travel to any town, field or dungeon in your client.
+- **Stylist:** hair style, hair colour and cloth dye.
+- Also: **Platinum Skills**, **Rental** and **Reset**.
+
+The main menu also has a **Map Viewer** (fly around any classic map) and a **Sprite Viewer** (browse animated sprites from your client).
+
+### Optional resource pack and rAthena NPCs
+
+Put optional files in `Resources/` next to the Godot project. That folder is never committed:
+- **Packs:** palette and sprite packs (`*.grf`, loose `sprite/` trees).
+- **Font:** `GRADIUS.ttf` for battle text.
+- **Shaman:** `Shaman.jpg` for the Shaman body.
+
+The game also runs rAthena NPC scripts with its own interpreter (`scripts/npc/`). To use rAthena's healer, warper, job master, platinum skills, stylist, rental and reset NPCs, fetch just rAthena's `npc` folder into the pack:
+
+```bash
+git clone --depth 1 --filter=blob:none --sparse https://github.com/rathena/rathena.git Resources/rathena
+git -C Resources/rathena sparse-checkout set npc
+```
+
+`06_Godot_Project/data/npc/scripts.txt` lists which scripts load. Without the rAthena folder, Project Twilight's own equivalents in `data/npc/twilight/` are used. See `docs/NPC_SCRIPTS.md`.
 
 ### Tests
 

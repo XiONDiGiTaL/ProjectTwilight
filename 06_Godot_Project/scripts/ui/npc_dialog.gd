@@ -31,19 +31,76 @@ func _ready() -> void:
 	visible = false
 
 
-## Shows a page of dialogue. choices: Array of button labels.
-func show_page(speaker: String, text: String, choices: Array) -> void:
+## Shows a page of dialogue. choices: Array of button labels. Short choice
+## lists sit in a row; long ones (menus, warper lists) become a scrolling
+## column. cancellable adds a CANCEL button that emits -1.
+func show_page(speaker: String, text: String, choices: Array, cancellable := false) -> void:
 	_name.text = speaker.to_upper()
 	_text.text = text
+	_text.visible = text != ""
+	_clear_choices()
+	var vertical := choices.size() > 4
+	var holder: Container
+	if vertical:
+		var scroll := ScrollContainer.new()
+		scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+		scroll.custom_minimum_size = Vector2(560, mini(choices.size(), 8) * 34)
+		var list := VBoxContainer.new()
+		list.add_theme_constant_override("separation", 4)
+		list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		scroll.add_child(list)
+		_choices.add_child(scroll)
+		holder = list
+	else:
+		holder = _choices
+	for i in choices.size():
+		var label := String(choices[i]).strip_edges().trim_prefix("~").strip_edges()   # rAthena " ~ " bullets
+		var b := Button.new()
+		b.text = label.to_upper() if label != "" else "—"
+		b.visible = label != ""           # empty rAthena options are hidden but keep their index
+		b.alignment = HORIZONTAL_ALIGNMENT_LEFT if vertical else HORIZONTAL_ALIGNMENT_CENTER
+		UiTheme.style_button(b, i == 0 and not vertical, false, 12)
+		b.pressed.connect(func(): chosen.emit(i))
+		holder.add_child(b)
+	if cancellable:
+		var c := Button.new()
+		c.text = "CANCEL"
+		UiTheme.style_button(c, false, false, 12)
+		c.pressed.connect(func(): chosen.emit(-1))
+		_choices.add_child(c)
+	_show()
+
+
+signal number_entered(value: int)
+
+
+## Numeric input (rAthena "input"): a spin box plus OK.
+func ask_number(speaker: String, text: String, lo: int, hi: int) -> void:
+	_name.text = speaker.to_upper()
+	_text.text = text
+	_text.visible = text != ""
+	_clear_choices()
+	var spin := SpinBox.new()
+	spin.min_value = lo
+	spin.max_value = hi
+	spin.value = lo
+	spin.custom_minimum_size = Vector2(140, 0)
+	_choices.add_child(spin)
+	var ok := Button.new()
+	ok.text = "OK"
+	UiTheme.style_button(ok, true, false, 12)
+	ok.pressed.connect(func(): number_entered.emit(int(spin.value)))
+	_choices.add_child(ok)
+	_show()
+
+
+func _clear_choices() -> void:
 	for c in _choices.get_children():
 		_choices.remove_child(c)
 		c.queue_free()
-	for i in choices.size():
-		var b := Button.new()
-		b.text = String(choices[i]).to_upper()
-		UiTheme.style_button(b, i == 0, false, 12)
-		b.pressed.connect(func(): chosen.emit(i))
-		_choices.add_child(b)
+
+
+func _show() -> void:
 	visible = true
 	reset_size()
 	var vp := get_viewport_rect().size

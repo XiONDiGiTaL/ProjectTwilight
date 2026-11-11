@@ -181,6 +181,8 @@ func add_player_from_save(c: Dictionary) -> SimUnit:
 	u.hair_color = int(c.get("hair_color", 0))
 	u.aura = String(c.get("aura", "class"))
 	u.cloth_color = int(c.get("cloth_color", 0))
+	u.script_vars = c.get("script_vars", {})
+	u.options = c.get("options", {})
 	u.level = int(c.level)
 	u.job_level = int(c.job_level)
 	u.base_exp = int(c.base_exp)
@@ -469,9 +471,9 @@ func command_learn_skill(unit_id: int, code: String) -> bool:
 func command_job_change(unit_id: int, job: String) -> bool:
 	var u: SimUnit = units.get(unit_id)
 	var j: Dictionary = job_db.get(job, {})
-	if u == null or u.dead or j.is_empty() or not (int(j.get("tier", 0)) in [1, 2]):
+	if u == null or u.dead or j.is_empty() or not (int(j.get("tier", 0)) in [1, 2] or _forcing_job):
 		return false
-	var reason := job_change_unmet(u, job)
+	var reason := "" if _forcing_job else job_change_unmet(u, job)
 	if reason != "":
 		return _skill_fail(u, reason)
 	var keep_points := u.skill_points if int(j.tier) == 2 else 0   # Pre-Renewal: unspent points carry over
@@ -1006,6 +1008,101 @@ static func heal_amount_for(base_level: int, int_: int, level: int) -> int:
 
 func heal_amount(u: SimUnit, level: int) -> int:
 	return heal_amount_for(u.level, int(u.stats.int), level)
+
+
+# --- NPC script hooks (rAthena-format scripts, see scripts/npc/) ----------------
+# Scripts decide eligibility themselves; these apply the result with the
+# simulation's own rules and events, so a host / server stays authoritative.
+
+var _forcing_job := false
+
+
+func script_heal(u: SimUnit, hp: int, sp: int) -> void:
+	if u.dead:
+		return
+	var h := mini(u.max_hp - u.hp, maxi(0, hp))
+	var p := mini(u.max_sp - u.sp, maxi(0, sp))
+	u.hp += h
+	u.sp += p
+	if h > 0:
+		events.append({"type": "heal", "id": u.id, "amount": h})
+	if p > 0:
+		events.append({"type": "sp_heal", "id": u.id, "amount": p})
+	events.append({"type": "regen", "id": u.id})
+
+
+## jobchange from a script (requirements already checked by the script).
+func script_job_change(u: SimUnit, job: String) -> bool:
+	_forcing_job = true
+	var ok := command_job_change(u.id, job)
+	_forcing_job = false
+	return ok
+
+
+## skill "CODE", level: grants (or raises) a skill without spending points.
+func script_grant_skill(u: SimUnit, code: String, level: int) -> bool:
+	if not skill_db.has(code):
+		return false
+	u.skills[code] = maxi(int(u.skills.get(code, 0)), clampi(level, 1, int(skill_db[code].max_level)))
+	_recalc_player(u)
+	events.append({"type": "skills", "id": u.id})
+	return true
+
+
+## resetskill: refunds every non-quest skill level as skill points.
+func script_reset_skills(u: SimUnit) -> void:
+	var refund := 0
+	for code in u.skills:
+		if not skill_db.get(code, {}).get("quest", false):
+			refund += int(u.skills[code])
+			u.skills[code] = 0
+	u.skill_points += refund
+	u.statuses.clear()
+	_recalc_player(u)
+	events.append({"type": "skills", "id": u.id})
+
+
+## resetstatus: every stat back to 1, raise costs refunded as status points.
+func script_reset_stats(u: SimUnit) -> void:
+	u.status_points += _stat_cost(u.stats)
+	for k in STAT_NAMES:
+		u.stats[k] = 1
+	_recalc_player(u)
+	u.hp = mini(u.hp, u.max_hp)
+	u.sp = mini(u.sp, u.max_sp)
+	events.append({"type": "stats", "id": u.id})
+
+
+func script_get_item(u: SimUnit, item_id: int, amount: int) -> bool:
+	if not item_db.has(str(item_id)) or amount <= 0:
+		return false
+	var ok := u.inventory.add(item_id, amount, item_db, u.max_weight() - u.equipment_weight(item_db))
+	events.append({"type": "inventory", "id": u.id})
+	return ok
+
+
+func script_del_item(u: SimUnit, item_id: int, amount: int) -> bool:
+	if u.inventory.count(item_id) < amount:
+		return false
+	var left := amount
+	for i in range(u.inventory.entries.size() - 1, -1, -1):
+		if left <= 0:
+			break
+		if int(u.inventory.entries[i].id) == item_id:
+			left -= u.inventory.remove_at(i, left)
+	events.append({"type": "inventory", "id": u.id})
+	return true
+
+
+## Adds a script NPC to this map (spawned by the field from RaWorld).
+func add_script_npc(def: Dictionary, sprite: String) -> int:
+	var nid := _next_npc
+	_next_npc += 1
+	npcs[nid] = {"id": nid, "name": String(def.display), "sprite": sprite, "kind": "script",
+		"cell": Vector2i(int(def.x), int(def.y)), "direction": int(def.dir), "shop": "", "greeting": "",
+		"script": String(def.name)}
+	events.append({"type": "npc_spawn", "npc": nid})
+	return nid
 
 
 ## Sit or stand (Insert). Needs Basic Skill level 3.

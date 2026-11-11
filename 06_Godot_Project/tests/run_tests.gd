@@ -11,7 +11,11 @@ var _skipped := 0
 var _current := ""
 
 
-func _init() -> void:
+func _initialize() -> void:
+	_run_all.call_deferred()
+
+
+func _run_all() -> void:
 	var suites := [
 		preload("res://tests/unit/test_cp949.gd"),
 		preload("res://tests/unit/test_spr_act.gd"),
@@ -29,6 +33,7 @@ func _init() -> void:
 		preload("res://tests/unit/test_skills.gd"),
 		preload("res://tests/unit/test_warps.gd"),
 		preload("res://tests/unit/test_jobs.gd"),
+		preload("res://tests/unit/test_npc_scripts.gd"),
 		preload("res://tests/integration/test_client_grf.gd"),
 		preload("res://tests/integration/test_client_maps.gd"),
 	]
@@ -39,7 +44,7 @@ func _init() -> void:
 			if not name.begins_with("test_"):
 				continue
 			_current = "%s.%s" % [s.resource_path.get_file().get_basename(), name]
-			var result = suite.call(name, self)
+			var result = await suite.call(name, self)   # suites may be async (NPC scripts)
 			if result is String and result.begins_with("SKIP"):
 				_skipped += 1
 				print("  SKIP  %s  (%s)" % [_current, result])

@@ -61,11 +61,42 @@ static func capture(u: SimUnit, map_name: String) -> Dictionary:
 			"hp": u.hp, "sp": u.sp, "zeny": u.zeny,
 			"inventory": u.inventory.to_array(),
 			"equipment": u.equipment.duplicate(),
-			"male": u.male, "hair_style": u.hair_style, "hair_color": u.hair_color, "aura": u.aura, "cloth_color": u.cloth_color,
+			"male": u.male, "hair_style": u.hair_style, "hair_color": u.hair_color, "aura": u.aura, "cloth_color": u.cloth_color, "script_vars": _vars_out(u.script_vars), "options": u.options.duplicate(),
 			"skills": u.skills.duplicate(), "skill_points": u.skill_points, "hotkeys": u.hotkeys.duplicate(true),
 			"map": map_name, "cell": [u.walker.cell.x, u.walker.cell.y],
 		},
 	}
+
+
+## Script variable arrays have int indexes; JSON needs string keys.
+static func _vars_out(v: Dictionary) -> Dictionary:
+	var out := {}
+	for k in v:
+		var arr := {}
+		for i in v[k]:
+			arr[str(i)] = v[k][i]
+		out[String(k)] = arr
+	return out
+
+
+static func _vars_in(v: Variant) -> Dictionary:
+	var out := {}
+	if not (v is Dictionary):
+		return out
+	for k in v:
+		if not (v[k] is Dictionary) or String(k).length() > 32:
+			continue
+		var arr := {}
+		for i in v[k]:
+			var val: Variant = v[k][i]
+			if val is float:
+				val = int(val)
+			if (val is int or val is String) and String(i).is_valid_int() and arr.size() < 128:
+				arr[int(i)] = val if not (val is String) else String(val).left(255)
+		out[String(k)] = arr
+		if out.size() >= 512:
+			break
+	return out
 
 
 static func write(slot: String, data: Dictionary) -> Error:
@@ -121,6 +152,14 @@ static func validate(parsed: Variant, item_db: Dictionary, classes: Dictionary) 
 	out.hair_style = clampi(int(c.get("hair_style", 2)), 1, 99)
 	out.hair_color = clampi(int(c.get("hair_color", 0)), 0, 131)
 	out.cloth_color = clampi(int(c.get("cloth_color", 0)), 0, 699)
+	out.script_vars = _vars_in(c.get("script_vars", {}))
+	var opts := {}
+	var raw_opts: Variant = c.get("options", {})
+	if raw_opts is Dictionary:
+		for k in ["falcon", "cart", "peco"]:
+			if raw_opts.has(k):
+				opts[k] = bool(raw_opts[k])
+	out.options = opts
 	var aura := String(c.get("aura", "class"))
 	out.aura = aura if PlayerAura.is_valid(aura) else "class"
 	out.zeny = clampi(int(c.get("zeny", 0)), 0, 1000000000)

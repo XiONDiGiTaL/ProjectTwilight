@@ -72,7 +72,14 @@ func _ready() -> void:
 	if player == null:
 		player = sim.add_player("Adventurer", start_cell, {"str": 5, "agi": 5, "vit": 5, "int": 1, "dex": 5, "luk": 5})
 		player.inventory.add(501, 3, sim.item_db, player.max_weight())  # starter Red Potions
+	# Arrivals from scripts / unknown maps may land on a blocked cell.
+	if not sim.pathfinder.is_walkable(player.walker.cell):
+		var c := player.walker.cell
+		if c.x <= 0 or c.y <= 0 or c.x >= map.gat.width or c.y >= map.gat.height:
+			c = Vector2i(map.gat.width / 2, map.gat.height / 2)
+		player.walker = GridWalker.new(sim.pathfinder.nearest_walkable(c, 60))
 	sim.setup_map(map_name)
+	_spawn_script_npcs()
 	for w in sim.warps:
 		var wv := WarpPortalView.new()
 		add_child(wv)
@@ -425,7 +432,9 @@ func _consume_events() -> void:
 			"npc_open":
 				if ev.id == player.id:
 					var npc: Dictionary = sim.npcs[ev.npc]
-					if String(npc.get("kind", "shop")) == "job_guide":
+					if String(npc.get("kind", "shop")) == "script":
+						_run_npc_script(npc)
+					elif String(npc.get("kind", "shop")) == "job_guide":
 						_job_dialog_start(npc)
 					else:
 						var shop_def: Dictionary = sim.shop_db.get(npc.shop, {})
@@ -686,6 +695,101 @@ func _travel(to_map: String, to_cell: Vector2i) -> void:
 
 
 var _skip_exit_save := false
+
+
+# --- NPC scripts (rAthena format, scripts/npc/) ------------------------------------
+
+## Parsed once per game session and kept across map changes.
+static var npc_world: RaWorld
+var _npc_running := false
+
+
+static func ensure_npc_world(res: Node) -> RaWorld:
+	if npc_world == null:
+		npc_world = RaWorld.new()
+		npc_world.load_all(res)
+		for e in npc_world.errors:
+			push_warning("NPC script: " + String(e))
+		print("NPC scripts: %d files, %d NPCs, %d functions, %d errors" % [npc_world.loaded_files.size(),
+			npc_world.npcs.size(), npc_world.functions.size(), npc_world.errors.size()])
+	return npc_world
+
+
+func _spawn_script_npcs() -> void:
+	var world := ensure_npc_world(_res)
+	for def in world.npcs_on(map_name):
+		var sprite := NpcIdentity.sprite_for(_res, String(def.sprite))
+		if sprite == "":
+			continue   # invisible NPCs (-1, 111, 139) are event / touch scripts
+		var nid := sim.add_script_npc(def, sprite)
+		if not bool(def.get("_inited", false)):
+			def._inited = true
+			var init := RaInterpreter.new(world, RaHost.new(), sim, player, def)
+			init.run("OnInit")
+	# Floating NPCs (e.g. the shared Healer body) run OnInit once too.
+	for name in world.npcs:
+		var d: Dictionary = world.npcs[name]
+		if String(d.map) == "" and d.body != null and not bool(d.get("_inited", false)):
+			d._inited = true
+			RaInterpreter.new(world, RaHost.new(), sim, player, d).run("OnInit")
+
+
+func _run_npc_script(npc: Dictionary) -> void:
+	if _npc_running:
+		return
+	var world := ensure_npc_world(_res)
+	var def := world.find_npc(String(npc.script))
+	if def.is_empty():
+		return
+	_npc_running = true
+	var host := FieldNpcHost.new(self)
+	var vm := RaInterpreter.new(world, host, sim, player, def)
+	await vm.run()
+	if not vm.unsupported.is_empty():
+		print("NPC %s used unsupported commands: %s" % [def.name, vm.unsupported])
+	if vm.error != "":
+		hud.notify("Script error: " + vm.error, UiTheme.HP_MID)
+	_npc_running = false
+	hud.update_player(player, sim.next_base_exp(player), sim.next_job_exp(player))
+	hud.inventory.refresh()
+	hud.skill_window.refresh()
+	hud.status_window.refresh()
+
+
+## warp "<map>",x,y from a script. Validates the map against the client.
+func script_warp(to_map: String, x: int, y: int) -> void:
+	var m := to_map
+	if m == "SavePoint" or m == "Save":
+		m = "prontera"
+		x = 156
+		y = 191
+	if m == "Random":
+		m = map_name
+		x = 0
+		y = 0
+	if not _res.exists("data/%s.gat" % m):
+		hud.notify("%s is not in your client's data." % m, UiTheme.HP_MID)
+		return
+	if m == map_name:
+		var c := Vector2i(x, y)
+		if x <= 0 or y <= 0:
+			c = sim.pathfinder.nearest_walkable(Vector2i(map.gat.width / 2, map.gat.height / 2), 60)
+		player.walker = GridWalker.new(sim.pathfinder.nearest_walkable(c, 20))
+		return
+	_travel(m, Vector2i(x, y))
+
+
+func script_effect(kind: String) -> void:
+	var v: UnitView = views.get(player.id)
+	if v:
+		SpellFx.burst(self, v.global_position, "holy" if kind == "heal" else "neutral", 0)
+
+
+func script_appearance_changed() -> void:
+	var v: UnitView = views.get(player.id)
+	if v:
+		v.rebuild_player(_res)
+	hud.update_player(player, sim.next_base_exp(player), sim.next_job_exp(player))
 
 
 func _create_npc_view(nid: int) -> void:
