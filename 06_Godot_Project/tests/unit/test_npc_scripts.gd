@@ -192,6 +192,83 @@ func test_rathena_custom_scripts(_t) -> Variant:
 	return true if vm.error == "" else "rental: " + vm.error
 
 
+func test_implode_builds_menu_text(_t) -> Variant:
+	var src := "-\tscript\tImplode\t-1,{\n\tsetarray .@m$[0], \"One\", \"Two\", \"Three\";\n\tmes implode(.@m$, \":\");\n\tclose;\n}\n"
+	var r: Array = await _run(src, "Implode")
+	var host: RaHost = r[0]
+	var vm: RaInterpreter = r[1]
+	if vm.error != "":
+		return vm.error
+	return true if host.transcript.has("One:Two:Three") else "implode: %s" % [host.transcript]
+
+
+func test_openstorage_command_opens_storage(_t) -> Variant:
+	var src := "prontera,10,10,0\tscript\tKafra Test\t4_F_KAFRA1,{\n" + \
+		"\tmes \"[Kafra]\";\n\tnext;\n\tif (select(\"Save:Use Storage\") == 2) {\n" + \
+		"\t\tclose2;\n\t\topenstorage;\n\t}\n\tend;\n}\n"
+	var sim := FieldSimulation.new(_gat(), 8)
+	var p := _player(sim)
+	var world := RaWorld.new()
+	world.load_text(src, "test")
+	world._resolve_duplicates()
+	var def := world.find_npc("Kafra Test")
+	var nid := sim.add_script_npc(def, "4_f_kafra1")
+	var host := RaHost.new()
+	host.answers = [2]
+	var vm := RaInterpreter.new(world, host, sim, p, def)
+	await vm.run()
+	if vm.error != "":
+		return vm.error
+	if host.storages != [true]:
+		return "openstorage not recorded: %s" % [host.storages]
+	if p.open_storage != nid:
+		return "the simulation has no storage open"
+	p.inventory.add(501, 2, sim.item_db, p.max_weight())
+	return true if sim.command_storage_deposit(p.id, 0, 1) else "deposit failed after openstorage"
+
+
+func test_rathena_kafra_npcs(_t) -> Variant:
+	var pack := Settings_path()
+	if pack == "" or not FileAccess.file_exists(pack.path_join("rathena/npc/kafras/kafras.txt")):
+		return "SKIP rAthena kafras not in the resource pack"
+	var world := RaWorld.new()
+	for f in ["other/Global_Functions.txt", "kafras/functions_kafras.txt", "kafras/kafras.txt"]:
+		var path := pack.path_join("rathena/npc/" + f)
+		if FileAccess.file_exists(path):
+			world.load_text(FileAccess.get_file_as_string(path), f)
+	world._resolve_duplicates()
+	if not world.errors.is_empty():
+		return "rAthena Kafra parse errors: %s" % [world.errors.slice(0, 3)]
+	var def: Dictionary = {}
+	for k in world.npcs:
+		var d: Dictionary = world.npcs[k]
+		if String(d.map) == "prontera" and String(d.name).contains("kaf_prontera2"):
+			def = d
+			break
+	if def.is_empty():
+		return "Prontera Kafra (kaf_prontera2) not found"
+	var sim := FieldSimulation.new(_gat(400, 400), 9)
+	var p := _player(sim)
+	p.walker = GridWalker.new(Vector2i(int(def.x), int(def.y)))
+	p.level = 10
+	p.skills.NV_BASIC = 6
+	p.zeny = 500
+	var nid := sim.add_script_npc(def, "4_f_kafra1")
+	var host := RaHost.new()
+	host.answers = [2]   # Save, Use Storage, ...
+	var vm := RaInterpreter.new(world, host, sim, p, def)
+	await vm.run()
+	if vm.error != "":
+		return "rAthena Kafra: " + vm.error
+	if host.storages.is_empty() or not host.storages[-1]:
+		return "rAthena Kafra did not open storage: %s / %s" % [host.transcript.slice(0, 10), vm.unsupported]
+	if p.open_storage != nid:
+		return "rAthena Kafra storage is not open in the simulation"
+	if p.zeny != 460:
+		return "rAthena Kafra fee not charged (zeny %d)" % p.zeny
+	return true
+
+
 static func Settings_path() -> String:
 	var st: Node = (Engine.get_main_loop() as SceneTree).root.get_node_or_null("Settings")
 	return st.resource_pack_path() if st else ""

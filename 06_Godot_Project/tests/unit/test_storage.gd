@@ -76,11 +76,13 @@ func test_requires_an_open_kafra_in_range(_t) -> Variant:
 	return true
 
 
-func test_only_kafra_npcs_open_storage(_t) -> Variant:
+func test_script_npcs_can_open_storage(_t) -> Variant:
 	var sim := _field()
 	var p := sim.add_player("Keeper", Vector2i(50, 50), FLAT)
-	var guide := sim.add_script_npc({"name": "Guide#tw", "display": "Guide", "x": 50, "y": 51, "dir": 0}, "4_m_01")
-	return true if not sim.command_open_storage(p.id, guide) else "a plain script NPC is not a Kafra"
+	var guide := sim.add_script_npc({"name": "Kafra Script#tw", "display": "Kafra", "x": 50, "y": 51, "dir": 0}, "4_f_kafra1")
+	if not sim.command_open_storage(p.id, guide):
+		return "an rAthena Kafra script NPC must be able to open storage"
+	return true if not sim.command_open_storage(p.id, 9999) else "an unknown NPC must not open storage"
 
 
 func test_capacity_limits(_t) -> Variant:
@@ -127,6 +129,29 @@ func test_older_saves_load_without_storage(_t) -> Variant:
 	if not valid.ok:
 		return "a v5 save should still load"
 	return true if (valid.character.storage as Array).is_empty() else "v5 saves start with empty storage"
+
+
+func test_configurable_kafra_fee(_t) -> Variant:
+	var rules := RuleConfig.new()
+	rules.kafra_fee = 150
+	var sim := FieldSimulation.new(_gat(), 23, rules)
+	sim.map_name = "prontera"
+	sim.map_info = sim.map_db.get("prontera", {})
+	var p := sim.add_player("Payer", Vector2i(50, 50), FLAT)
+	var kafra := sim.add_kafra_npc(Vector2i(50, 52))
+	p.zeny = 100
+	if sim.command_open_storage(p.id, kafra):
+		return "storage must refuse a player who cannot pay the fee"
+	p.zeny = 500
+	if not sim.command_open_storage(p.id, kafra):
+		return "storage should open for a player who can pay"
+	return true if p.zeny == 350 else "fee not charged: %d zeny left" % p.zeny
+
+
+func test_kafra_fee_reads_from_config(_t) -> Variant:
+	var r := RuleConfig.new()
+	r._read_kv("kafra_fee: 250", "test.cfg")
+	return true if r.kafra_fee == 250 else "kafra_fee not read: %d" % r.kafra_fee
 
 
 func test_prontera_has_a_kafra(_t) -> Variant:

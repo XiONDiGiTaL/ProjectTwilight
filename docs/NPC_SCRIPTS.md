@@ -35,6 +35,7 @@ git -C Resources/rathena sparse-checkout set npc
 | Stylist (hair style, hair colour, cloth dye) | `npc/custom/stylist.txt` | Prontera south gate |
 | Rental (falcon, cart, Peco) | `npc/custom/breeder.txt` | Prontera south gate |
 | Skill and stat reset | `npc/custom/resetnpc.txt` | Prontera south gate |
+| Kafra save / storage / teleport | `npc/kafras/kafras.txt` (with `functions_kafras.txt`) | `maps.json` Kafra in Prontera |
 
 **Sprites:** NPC sprite ids (`909`) and names (`4_F_KAFRA1`) are resolved through the player's own client tables, `npcidentity.lub` and `jobname.lub`. They are read by `Lua51Chunk`, a small Lua 5.1 bytecode table reader. Invisible ids (`-1`, `111`, `139`) are not drawn.
 
@@ -45,12 +46,12 @@ git -C Resources/rathena sparse-checkout set npc
 | Area | Supported |
 |---|---|
 | Top level | `script` NPCs (map-placed, floating `-`, OnTouch area), `duplicate(...)`, `function script`, `warp` and `shop` lines (parsed), `/* */` and `//` comments |
-| Statements | `if / else`, `for`, `while`, `do … while`, `switch / case / default`, `break`, `continue`, labels, `goto`, `callsub`, `return`, local `function Name {}` with forward declarations, `end` |
+| Statements | `if / else`, `for`, `while`, `do … while`, `switch / case / default`, `break`, `continue`, labels, `goto`, `callsub`, `return`, local `function Name {}` with forward declarations, `close3`, `end` |
 | Expressions | Integers, strings, `+ - * / %`, comparisons, `&& \|\| !`, bit operators, `?:`, assignments (`= += -= …`), `++` / `--`, arrays `name[i]` |
 | Variables | `.@` (script), `.` (NPC), `@` (character, temporary), plain (character, **saved with the character**), `$` (global, saved in `user://npc_globals.json`), `$@` (global temporary), `#` / `##` (saved as character variables offline) |
 | Dialog | `mes`, `next`, `close`, `close2`, `select`, `prompt`, `menu` (with labels and `-`), `input` (numbers) |
 | Character | `Zeny`, `BaseLevel`, `JobLevel`, `Class`, `BaseClass`, `BaseJob`, `Sex`, `SkillPoint`, `StatusPoint`, `Hp`, `MaxHp`, `Sp`, `MaxSp`, `Weight`, `MaxWeight` |
-| Commands | `percentheal`, `heal`, `warp`, `jobchange`, `jobname`, `eaclass`, `roclass`, `skill`, `getskilllv`, `resetskill`, `resetstatus`, `getitem`, `delitem`, `countitem`, `getlook`, `setlook`, `getbattleflag`, `set`, `setarray`, `cleararray`, `deletearray`, `getarraysize`, `getelementofarray`, `getarg`, `getargcount`, `callfunc`, `rand`, `strcharinfo`, `sprintf`, `getstrlen`, `gettimetick`, `message`, `dispbottom`, `announce`, `specialeffect(2)`, falcon / cart / Peco checks and setters |
+| Commands | `percentheal`, `heal`, `warp`, `jobchange`, `jobname`, `eaclass`, `roclass`, `skill`, `getskilllv`, `resetskill`, `resetstatus`, `getitem`, `delitem`, `countitem`, `openstorage`, `implode`, `getlook`, `setlook`, `getbattleflag`, `set`, `setarray`, `cleararray`, `deletearray`, `getarraysize`, `getelementofarray`, `getarg`, `getargcount`, `callfunc`, `rand`, `strcharinfo`, `sprintf`, `getstrlen`, `gettimetick`, `message`, `dispbottom`, `announce`, `specialeffect(2)`, falcon / cart / Peco checks and setters |
 | Effects | `checkre()` is 0 (Pre-Renewal). Visual-only commands (`emotion`, `cutin`, `soundeffect`, …) do nothing. |
 
 Unsupported commands do nothing and are listed in the console, e.g. `NPC Warper used unsupported commands: …`. Third- and fourth-class constants resolve to a value no Pre-Renewal class has, so rAthena's job master offers only the classic paths that exist in this build.
@@ -61,8 +62,13 @@ Unsupported commands do nothing and are listed in the console, e.g. `NPC Warper 
 - **Hosts:** `RaHost` is the headless host (tests, server); `FieldNpcHost` drives the glass dialog.
 - **Not built yet:** the network transport.
 
+## Kafra storage
+
+`openstorage` (and its `storage` alias) opens the same glass storage window as Twilight's own Kafra. The official rAthena Kafra scripts are loaded from the resource pack, so their menus (save, storage, teleport, pushcart) work; their storage fee is the per-NPC argument in `kafras.txt` (40 zeny in Prontera), charged by the script itself. Twilight's own Kafra uses `kafra_fee` from `data/config.json` / `user://server.cfg` (0 = free). Both paths go through `command_open_storage`, so range, slots, weight and the open-storage state stay server-validated.
+
 ## Known limits
 
 - **Rental:** falcons, carts and Peco Pecos are stored as character options but not drawn yet. No class in this build has Falconry, Pushcart or Riding.
 - **Shops:** `shop` lines are parsed but not opened yet. The Project Twilight shops in `shops.json` are used instead.
+- **Guild Kafra:** `guildopenstorage` is not supported (returns 0), so the guild-storage menu option does nothing yet.
 - **Not yet handled:** NPC timers, `OnTouch` areas, `waitingroom` and `query_sql`.

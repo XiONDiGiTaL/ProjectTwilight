@@ -56,6 +56,7 @@ Project Twilight **contains no Gravity game data**. On first launch you point it
 | Data-folder mount: GRF archives without a client executable | ✅ Implemented and tested |
 | Server rates, autoloot and `@commands` | ✅ Implemented and tested |
 | Kafra storage (300 slots, persisted with the character) | ✅ Implemented and tested |
+| rAthena Kafra NPCs opening the storage window (`openstorage`) | ✅ Implemented and tested |
 | Job change to all six first jobs; Swordman skill tree | ✅ Implemented and tested |
 | Other first-job skill trees, magic and elements, more maps and monsters | 📋 Next |
 | First offline playable (character, map, monster, combat, save) | 📋 Planned |
@@ -133,7 +134,7 @@ git clone https://github.com/XiONDiGiTaL/ProjectTwilight.git
 - Portals connect every map (rAthena warp lists); Prontera's south gate leads to Prontera Field.
 - **Job Guide / Job Master:** first and second jobs, including Dark Knight and Shaman.
 - **Healer:** free full heal.
-- **Kafra:** item storage in Prontera, west of the hub landing point.
+- **Kafra:** item storage in Prontera, west of the hub landing point. The official rAthena Kafra NPCs (save, storage, teleport, pushcart) also work and open the same window; their fee is the one written in `kafras.txt`. Twilight's own Kafra uses `kafra_fee` in `data/config.json` or `user://server.cfg` (0 = free).
 - **Warper:** fast travel to any town, field or dungeon in your client.
 - **Stylist:** hair style, hair colour and cloth dye.
 - **Commands:** press **Enter** — `@go prontera`, `@heal`, `@rates`, `@mobinfo poring`, `@autoloot on`, `@save`, `@help`.

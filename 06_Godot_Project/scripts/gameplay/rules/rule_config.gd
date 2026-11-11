@@ -20,6 +20,9 @@ var job_exp_rate := 100
 var drop_rate := 100
 var autoloot := false
 var max_level := 99
+## Zeny charged once when a Twilight Kafra storage is opened; 0 = free.
+## rAthena's own Kafra scripts charge their own fee argument instead.
+var kafra_fee := 0
 ## Files that contributed values, for @rates / diagnostics.
 var sources: Array = []
 
@@ -31,6 +34,7 @@ const KEYS := {
 	"drop_rate": "drop_rate", "item_rate_common": "drop_rate",
 	"autoloot": "autoloot", "mob_autoloot": "autoloot",
 	"max_level": "max_level", "max_base_level": "max_level",
+	"kafra_fee": "kafra_fee", "storage_fee": "kafra_fee",
 }
 
 
@@ -108,6 +112,8 @@ func _apply(key: String, value: Variant, source: String) -> bool:
 			drop_rate = clampi(_as_int(value, drop_rate), 0, 10000)
 		"max_level":
 			max_level = clampi(_as_int(value, max_level), 1, 999)
+		"kafra_fee":
+			kafra_fee = clampi(_as_int(value, kafra_fee), 0, 1000000)
 	if not sources.has(source):
 		sources.append(source)
 	return true
@@ -134,3 +140,4 @@ func _clamp() -> void:
 	job_exp_rate = clampi(job_exp_rate, 0, 10000)
 	drop_rate = clampi(drop_rate, 0, 10000)
 	max_level = clampi(max_level, 1, 999)
+	kafra_fee = clampi(kafra_fee, 0, 1000000)

@@ -84,6 +84,12 @@ func appearance_changed() -> void:
 	field.script_appearance_changed()
 
 
+func storage_opened(ok: bool) -> void:
+	super.storage_opened(ok)
+	if ok:
+		field.show_script_storage()
+
+
 
 func _speaker() -> String:
 	return current_speaker

@@ -433,6 +433,10 @@ func _command(name: String, args: Array) -> Variant:
 			await host.close_dialog()
 			_dialog_open = false
 			return null
+		"close3":
+			await host.close_dialog()
+			_dialog_open = false
+			return null
 		"end":
 			return {"sig": "end"}
 		"menu":
@@ -532,6 +536,18 @@ func _call(name: String, args: Array) -> Variant:
 			return (await _eval(args[1])) if args.size() > 1 else 0
 		"getargcount":
 			return (_frames[-1].args as Array).size()
+		"implode":
+			var r6: Array = await _ref(args[0])
+			var glue := _str(await _eval(args[1])) if args.size() > 1 else ""
+			var vn := String(r6[0])
+			var sv6 := _enter(int(r6[1]))
+			var parts: Array = []
+			if vn != "":
+				var arr6: Dictionary = _store(vn).get(vn, {})
+				for k in _array_size(vn):
+					parts.append(_str(arr6.get(k, "")))
+			_leave(sv6)
+			return glue.join(parts)
 		"callfunc":
 			var fname := _str(await _eval(args[0]))
 			if world.functions.has(fname):
@@ -627,6 +643,8 @@ func _builtin_function(fname: String, arg_nodes: Array) -> Variant:
 	match fname:
 		"F_InsertComma":
 			return _comma(_num(a[0]) if not a.is_empty() else 0)
+		"F_CanOpenStorage":
+			return 0 if player.job == "novice" and int(player.skills.get("NV_BASIC", 0)) < 6 else 1
 	_unsupported("callfunc " + fname)
 	return 0
 
@@ -668,8 +686,6 @@ func _builtin(name: String, a: Array) -> Variant:
 			return _str(a[0]).substr(_num(a[1]), _num(a[2]) - _num(a[1]) + 1)
 		"sprintf":
 			return _sprintf(_str(a[0]), a.slice(1))
-		"implode":
-			return ""
 		"gettimetick":
 			return int(Time.get_unix_time_from_system()) if _num(a[0]) == 2 else Time.get_ticks_msec()
 		"gettime":
@@ -692,6 +708,10 @@ func _builtin(name: String, a: Array) -> Variant:
 			return 0
 		"getgmlevel", "getgroupid", "getnpcid", "getmapusers", "getwaitingroomstate", "query_sql", "checkvending", "checkchatting":
 			return 0
+		"guildopenstorage", "vip_status", "logmes":
+			return 0
+		"getguildname":
+			return ""
 		"playerattached", "isloggedin":
 			return 1
 		"checkweight":
@@ -701,6 +721,11 @@ func _builtin(name: String, a: Array) -> Variant:
 		# Dialog-free feedback --------------------------------------------
 		"message", "dispbottom":
 			host.notify(RaHost.plain(_str(a[a.size() - 1] if name == "message" else a[0])))
+			return 0
+		"openstorage", "storage":
+			var nid2: int = sim.script_npc_id(String(npc.get("name", "")), player.walker.cell)
+			var opened2 := nid2 != 0 and sim.command_open_storage(player.id, nid2, false)
+			host.storage_opened(opened2)
 			return 0
 		"announce", "mapannounce":
 			host.notify(RaHost.plain(_str(a[0] if name == "announce" else a[1])))

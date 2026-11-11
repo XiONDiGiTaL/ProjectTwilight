@@ -9,6 +9,7 @@ extends RefCounted
 var transcript: Array = []      # every mes line, notice and choice, in order
 var answers: Array = []         # scripted answers for select / menu / input
 var warps: Array = []           # [map, x, y] requested by warp
+var storages: Array = []        # storage opens requested by scripts (true = opened)
 var effects: Array = []
 var closed := false
 var aborted := false        # the player cancelled a menu: the script stops
@@ -64,6 +65,11 @@ func warp(map: String, x: int, y: int) -> void:
 
 func effect(name: String) -> void:
 	effects.append(name)
+
+
+## A script ran openstorage; the field host shows the storage window.
+func storage_opened(ok: bool) -> void:
+	storages.append(ok)
 
 
 ## The player's look changed (setlook / jobchange): rebuild the sprite.

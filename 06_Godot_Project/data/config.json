@@ -1,8 +1,9 @@
 {
-  "_doc": "Server rule defaults. Override them in user://server.cfg (key: value) or point RuleConfig at an rAthena/Hercules conf/battle tree. Values are percentages: 100 is the Pre-Renewal baseline.",
+  "_doc": "Server rule defaults. Override them in user://server.cfg (key: value) or point RuleConfig at an rAthena/Hercules conf/battle tree. Values are percentages: 100 is the Pre-Renewal baseline. kafra_fee is zeny per Twilight Kafra storage use (0 = free); rAthena Kafra scripts use their own fee argument.",
   "exp_rate": 100,
   "job_exp_rate": 100,
   "drop_rate": 100,
   "autoloot": false,
-  "max_level": 99
+  "max_level": 99,
+  "kafra_fee": 0
 }

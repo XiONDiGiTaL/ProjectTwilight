@@ -833,6 +833,15 @@ func _run_npc_script(npc: Dictionary) -> void:
 	hud.status_window.refresh()
 
 
+## An rAthena Kafra script ran `openstorage`: show the glass storage window.
+func show_script_storage() -> void:
+	var npc := sim._open_storage_of(player)
+	if npc.is_empty():
+		return
+	hud.dialog.close()
+	hud.storage.open(String(npc.name), player, sim.item_db)
+
+
 ## warp "<map>",x,y from a script. Validates the map against the client.
 func script_warp(to_map: String, x: int, y: int) -> void:
 	var m := to_map

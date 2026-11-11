@@ -14,6 +14,10 @@ pack:rathena/npc/custom/platinum_skills.txt
 pack:rathena/npc/custom/stylist.txt
 pack:rathena/npc/custom/breeder.txt
 pack:rathena/npc/custom/resetnpc.txt
+// Kafra NPCs: their scripts call openstorage, which opens the glass storage
+// window. Their storage fee is the per-NPC argument in kafras.txt.
+pack:rathena/npc/kafras/functions_kafras.txt
+pack:rathena/npc/kafras/kafras.txt
 res://data/npc/twilight/prontera_services.txt
 
 // Warp portals for every map (rAthena include lists; Pre-Renewal overrides last).

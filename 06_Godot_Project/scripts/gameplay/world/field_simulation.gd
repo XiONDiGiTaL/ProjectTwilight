@@ -462,18 +462,28 @@ func command_sell(unit_id: int, index: int, amount: int) -> bool:
 # --- Kafra storage -----------------------------------------------------------
 
 ## Marks a Kafra's storage as open for a player. Range-checked.
-func command_open_storage(unit_id: int, npc_id: int) -> bool:
+## `charge_fee` applies rules.kafra_fee; rAthena Kafra scripts pass false
+## because they already charge the fee written in their own script.
+func command_open_storage(unit_id: int, npc_id: int, charge_fee := true) -> bool:
 	var u: SimUnit = units.get(unit_id)
 	if u == null or u.dead or not npcs.has(npc_id):
 		return false
 	var npc: Dictionary = npcs[npc_id]
-	if String(npc.get("kind", "")) != "kafra":
+	var kind := String(npc.get("kind", ""))
+	# A script NPC may open storage when its own script runs openstorage.
+	if kind != "kafra" and kind != "script":
 		return false
 	if _chebyshev(u.walker.cell, npc.cell) > NPC_TRADE_RANGE:
 		return _storage(u, false, "You are too far from the Kafra.")
+	var fee := maxi(0, rules.kafra_fee) if charge_fee else 0
+	if fee > 0:
+		if u.zeny < fee:
+			return _storage(u, false, "You need %d zeny to use storage." % fee)
+		u.zeny -= fee
+		events.append({"type": "inventory", "id": u.id})
 	u.open_storage = npc_id
 	u.open_shop = 0
-	return true
+	return _storage(u, true, "Storage opened" + ("  -%d z" % fee if fee > 0 else ""))
 
 
 func close_storage(unit_id: int) -> void:
@@ -489,6 +499,21 @@ func _open_storage_of(u: SimUnit) -> Dictionary:
 	if _chebyshev(u.walker.cell, npc.cell) > NPC_TRADE_RANGE:
 		return {}
 	return npc
+
+
+## Simulation NPC placed for an rAthena script (nearest copy near the player).
+func script_npc_id(script_name: String, near: Vector2i) -> int:
+	var best := 0
+	var best_d := 1 << 30
+	for nid in npcs:
+		var n: Dictionary = npcs[nid]
+		if String(n.get("script", "")) != script_name:
+			continue
+		var d := _chebyshev(near, n.cell)
+		if d < best_d:
+			best_d = d
+			best = nid
+	return best
 
 
 ## Moves inventory entry `index` into the open Kafra storage.

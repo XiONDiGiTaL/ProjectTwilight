@@ -195,8 +195,8 @@ Owner brief: the game should run from the essential `.grf` data in a folder, wit
 
 ### Follow-ups (open)
 
-- [ ] Kafra storage fee and the rAthena `storage` script command (so rAthena's own Kafra NPCs open ours).
-- [ ] Guild storage and a storage search / sort.
+- [x] rAthena Kafra NPCs: `openstorage` (+ `storage` alias), `close3`, `implode` and `F_CanOpenStorage` are implemented; `kafras.txt` + `functions_kafras.txt` load by default. Their scripted fee is charged (40z in Prontera); Twilight's Kafra uses `kafra_fee` (0 by default). Tested against the real Prontera Kafra.
+- [ ] Guild storage (`guildopenstorage`) and a storage search / sort.
 - [ ] `@storage` for VIP-style remote access behind a rule flag.
 
 ## Where the three play modes stand (2026-11-11)
