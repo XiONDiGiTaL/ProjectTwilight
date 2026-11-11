@@ -10,6 +10,7 @@ var transcript: Array = []      # every mes line, notice and choice, in order
 var answers: Array = []         # scripted answers for select / menu / input
 var warps: Array = []           # [map, x, y] requested by warp
 var storages: Array = []        # storage opens requested by scripts (true = opened)
+var guild_storages: Array = []  # guildopenstorage results (true = opened, false = busy / refused)
 var effects: Array = []
 var closed := false
 var aborted := false        # the player cancelled a menu: the script stops
@@ -70,6 +71,11 @@ func effect(name: String) -> void:
 ## A script ran openstorage; the field host shows the storage window.
 func storage_opened(ok: bool) -> void:
 	storages.append(ok)
+
+
+## A script ran guildopenstorage; the field host shows the guild window.
+func guild_storage_opened(ok: bool) -> void:
+	guild_storages.append(ok)
 
 
 ## The player's look changed (setlook / jobchange): rebuild the sprite.

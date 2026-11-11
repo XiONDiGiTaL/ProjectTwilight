@@ -6,9 +6,13 @@ extends GlassWindow
 
 signal deposit_requested(index: int, amount: int)
 signal withdraw_requested(index: int, amount: int)
+signal guild_deposit_requested(index: int, amount: int)
+signal guild_withdraw_requested(index: int, amount: int)
 signal storage_closed
 
 var item_db: Dictionary = {}
+var guild_mode := false
+var guild: Inventory
 var _unit: SimUnit
 var _storing := false
 var _selected := -1
@@ -111,11 +115,27 @@ func _tab(text: String, store: bool) -> Button:
 
 
 func open(npc_name: String, u: SimUnit, db: Dictionary) -> void:
+	guild_mode = false
+	guild = null
+	_tab_store.text = "STORAGE"
 	(_title_bar.get_child(0) as Label).text = "STORAGE  ·  " + npc_name.to_upper()
 	_unit = u
 	item_db = db
 	_selected = -1
 	_set_mode(false)
+	toggle(true)
+	refresh()
+
+
+func open_guild(guild_name: String, u: SimUnit, bag: Inventory, db: Dictionary) -> void:
+	guild_mode = true
+	guild = bag
+	_tab_store.text = "GUILD"
+	(_title_bar.get_child(0) as Label).text = "GUILD STORAGE  ·  " + guild_name.to_upper()
+	_unit = u
+	item_db = db
+	_selected = -1
+	_set_mode(true)
 	toggle(true)
 	refresh()
 
@@ -130,7 +150,11 @@ func _set_mode(store: bool) -> void:
 
 
 func _bag() -> Inventory:
-	return _unit.storage if _storing else _unit.inventory
+	if not _storing:
+		return _unit.inventory
+	if guild_mode and guild != null:
+		return guild
+	return _unit.storage
 
 
 func refresh() -> void:
@@ -150,9 +174,14 @@ func refresh() -> void:
 		row.custom_minimum_size = Vector2(360, 32)
 		row.picked.connect(_select)
 		_list.add_child(row)
-	_capacity.text = "CARRIED  %d / %d        STORAGE  %d / %d" % [
-		_unit.inventory.entries.size(), _unit.inventory.max_entries,
-		_unit.storage.entries.size(), _unit.storage.max_entries]
+	if guild_mode and guild != null:
+		_capacity.text = "CARRIED  %d / %d        GUILD  %d / %d" % [
+			_unit.inventory.entries.size(), _unit.inventory.max_entries,
+			guild.entries.size(), guild.max_entries]
+	else:
+		_capacity.text = "CARRIED  %d / %d        STORAGE  %d / %d" % [
+			_unit.inventory.entries.size(), _unit.inventory.max_entries,
+			_unit.storage.entries.size(), _unit.storage.max_entries]
 	_update_action()
 
 
@@ -183,7 +212,12 @@ func _on_action() -> void:
 	if _selected < 0:
 		return
 	var amount := int(_qty.value)
-	if _storing:
+	if guild_mode:
+		if _storing:
+			guild_withdraw_requested.emit(_selected, amount)
+		else:
+			guild_deposit_requested.emit(_selected, amount)
+	elif _storing:
 		withdraw_requested.emit(_selected, amount)
 	else:
 		deposit_requested.emit(_selected, amount)

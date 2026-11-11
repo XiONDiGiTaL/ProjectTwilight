@@ -18,6 +18,9 @@ const HELP_LINES := [
 	"@autoloot [on|off] take drops straight into your bag",
 	"@mobinfo <name>    monster level, HP, EXP",
 	"@who               players on this map",
+	"@guild             your guild and guild storage",
+	"@guild create <name>  found or join a guild",
+	"@guild leave       leave your guild",
 	"@exp               your EXP progress",
 	"@job               your class and job level",
 	"@where             current map and cell",
@@ -89,6 +92,29 @@ static func execute(sim: FieldSimulation, u: SimUnit, line: String) -> Dictionar
 			return _mobinfo(sim, " ".join(args))
 		"who":
 			return _ok(_who(sim))
+		"guild":
+			if u.guild_id == "" and args.is_empty():
+				return _ok("You are not in a guild. Use @guild create <name>.")
+			if args.is_empty():
+				var g: Dictionary = sim.guilds.get_guild(u.guild_id)
+				var members := 0
+				var stored := 0
+				if not g.is_empty():
+					members = (g.members as Array).size()
+					stored = (g.get("storage") as Inventory).entries.size()
+				return _ok("Guild: %s   Members: %d   Storage: %d / %d" % [u.guild_name, members, stored, SimUnit.STORAGE_SLOTS])
+			var sub := String(args[0]).to_lower()
+			if sub == "create":
+				if args.size() < 2:
+					return _err("Usage: @guild create <name>")
+				if not sim.command_create_guild(u.id, " ".join(args.slice(1))):
+					return _err("You are already in a guild, or that name is too short.")
+				return _ok("Guild %s founded. Its storage opens at a guild Kafra." % u.guild_name)
+			if sub == "leave":
+				if not sim.command_leave_guild(u.id):
+					return _err("You are not in a guild.")
+				return _ok("You left your guild.")
+			return _err("Usage: @guild [create <name>|leave]")
 		"exp":
 			return _ok("%d / %d base   %d / %d job" % [u.base_exp, sim.next_base_exp(u), u.job_exp, sim.next_job_exp(u)])
 		"job":

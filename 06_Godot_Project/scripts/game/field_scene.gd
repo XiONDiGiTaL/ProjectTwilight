@@ -110,7 +110,11 @@ func _ready() -> void:
 	hud.shop.shop_closed.connect(func(): sim.close_shop(player.id))
 	hud.storage.deposit_requested.connect(func(i, n): sim.command_storage_deposit(player.id, i, n))
 	hud.storage.withdraw_requested.connect(func(i, n): sim.command_storage_withdraw(player.id, i, n))
-	hud.storage.storage_closed.connect(func(): sim.close_storage(player.id))
+	hud.storage.guild_deposit_requested.connect(func(i, n): sim.command_guild_deposit(player.id, i, n))
+	hud.storage.guild_withdraw_requested.connect(func(i, n): sim.command_guild_withdraw(player.id, i, n))
+	hud.storage.storage_closed.connect(func():
+		sim.close_storage(player.id)
+		sim.close_guild_storage(player.id))
 	hud.skill_window.available = sim.available_skills
 	hud.skill_window.requirements = sim.skill_requirements_unmet
 	hud.skill_window.bind_unit(player, sim.skill_db)
@@ -385,9 +389,14 @@ func _process(delta: float) -> void:
 	if hud.shop.visible and sim._open_shop_of(player).is_empty():
 		hud.shop.toggle(false)
 		hud.notify("You walked away from the shop.", UiTheme.TEXT_DIM)
-	if hud.storage.visible and sim._open_storage_of(player).is_empty():
-		hud.storage.toggle(false)
-		hud.notify("You walked away from the Kafra.", UiTheme.TEXT_DIM)
+	if hud.storage.visible:
+		if hud.storage.guild_mode:
+			if sim._open_guild_storage_of(player).is_empty():
+				hud.storage.toggle(false)
+				hud.notify("You walked away from the guild storage.", UiTheme.TEXT_DIM)
+		elif sim._open_storage_of(player).is_empty():
+			hud.storage.toggle(false)
+			hud.notify("You walked away from the Kafra.", UiTheme.TEXT_DIM)
 	_autosave_in -= delta
 	if _autosave_in <= 0.0:
 		_autosave_in = AUTOSAVE_SEC
@@ -584,6 +593,12 @@ func _consume_events() -> void:
 				if ev.id == player.id:
 					hud.notify(ev.text, UiTheme.TEXT if ev.ok else UiTheme.HP_MID)
 					hud.storage.refresh()
+					inventory_changed = true
+			"guild", "guild_storage":
+				if ev.id == player.id:
+					hud.notify(ev.text, UiTheme.TEXT if ev.ok else UiTheme.HP_MID)
+					if ev.type == "guild_storage":
+						hud.storage.refresh()
 					inventory_changed = true
 			"trade":
 				if ev.id == player.id:
@@ -840,6 +855,15 @@ func show_script_storage() -> void:
 		return
 	hud.dialog.close()
 	hud.storage.open(String(npc.name), player, sim.item_db)
+
+
+## A guild Kafra script ran `guildopenstorage`: show the shared bag.
+func show_guild_storage() -> void:
+	var g := sim._open_guild_storage_of(player)
+	if g.is_empty():
+		return
+	hud.dialog.close()
+	hud.storage.open_guild(String(g.name), player, g.get("storage"), sim.item_db)
 
 
 ## warp "<map>",x,y from a script. Validates the map against the client.

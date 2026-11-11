@@ -13,7 +13,7 @@ extends RefCounted
 ## half-written save.
 
 const FORMAT := "project-twilight-save"
-const VERSION := 6  # v2 equipment, v3 appearance, v4 skills + hotkeys, v5 aura + cloth dye + second jobs, v6 Kafra storage; older files still load
+const VERSION := 7  # v2 equipment, v3 appearance, v4 skills + hotkeys, v5 aura + cloth dye + second jobs, v6 Kafra storage, v7 guild membership; older files still load
 ## Save folder; tests point this at a temporary folder.
 static var save_dir := "user://saves/"
 const STAT_NAMES := ["str", "agi", "vit", "int", "dex", "luk"]
@@ -64,6 +64,7 @@ static func capture(u: SimUnit, map_name: String) -> Dictionary:
 			"equipment": u.equipment.duplicate(),
 			"male": u.male, "hair_style": u.hair_style, "hair_color": u.hair_color, "aura": u.aura, "cloth_color": u.cloth_color, "script_vars": _vars_out(u.script_vars), "options": u.options.duplicate(), "save_map": u.save_map, "save_cell": [u.save_cell.x, u.save_cell.y],
 			"skills": u.skills.duplicate(), "skill_points": u.skill_points, "hotkeys": u.hotkeys.duplicate(true),
+			"guild_id": u.guild_id, "guild_name": u.guild_name,
 			"map": map_name, "cell": [u.walker.cell.x, u.walker.cell.y],
 		},
 	}
@@ -161,6 +162,10 @@ static func validate(parsed: Variant, item_db: Dictionary, classes: Dictionary) 
 			if raw_opts.has(k):
 				opts[k] = bool(raw_opts[k])
 	out.options = opts
+	out.guild_id = String(c.get("guild_id", "")).left(24)
+	out.guild_name = String(c.get("guild_name", "")).left(24)
+	if out.guild_id == "":
+		out.guild_name = ""
 	var sm := String(c.get("save_map", SimUnit.HUB_MAP))
 	out.save_map = sm if sm.is_valid_filename() and sm.length() <= 32 and sm != "" else SimUnit.HUB_MAP
 	var sc: Variant = c.get("save_cell", [SimUnit.HUB_CELL.x, SimUnit.HUB_CELL.y])

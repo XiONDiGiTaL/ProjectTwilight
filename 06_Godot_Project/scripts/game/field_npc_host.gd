@@ -90,6 +90,12 @@ func storage_opened(ok: bool) -> void:
 		field.show_script_storage()
 
 
+func guild_storage_opened(ok: bool) -> void:
+	super.guild_storage_opened(ok)
+	if ok:
+		field.show_guild_storage()
+
+
 
 func _speaker() -> String:
 	return current_speaker

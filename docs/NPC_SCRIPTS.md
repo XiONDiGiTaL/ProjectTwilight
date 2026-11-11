@@ -51,7 +51,7 @@ git -C Resources/rathena sparse-checkout set npc
 | Variables | `.@` (script), `.` (NPC), `@` (character, temporary), plain (character, **saved with the character**), `$` (global, saved in `user://npc_globals.json`), `$@` (global temporary), `#` / `##` (saved as character variables offline) |
 | Dialog | `mes`, `next`, `close`, `close2`, `select`, `prompt`, `menu` (with labels and `-`), `input` (numbers) |
 | Character | `Zeny`, `BaseLevel`, `JobLevel`, `Class`, `BaseClass`, `BaseJob`, `Sex`, `SkillPoint`, `StatusPoint`, `Hp`, `MaxHp`, `Sp`, `MaxSp`, `Weight`, `MaxWeight` |
-| Commands | `percentheal`, `heal`, `warp`, `jobchange`, `jobname`, `eaclass`, `roclass`, `skill`, `getskilllv`, `resetskill`, `resetstatus`, `getitem`, `delitem`, `countitem`, `openstorage`, `implode`, `getlook`, `setlook`, `getbattleflag`, `set`, `setarray`, `cleararray`, `deletearray`, `getarraysize`, `getelementofarray`, `getarg`, `getargcount`, `callfunc`, `rand`, `strcharinfo`, `sprintf`, `getstrlen`, `gettimetick`, `message`, `dispbottom`, `announce`, `specialeffect(2)`, falcon / cart / Peco checks and setters |
+| Commands | `percentheal`, `heal`, `warp`, `jobchange`, `jobname`, `eaclass`, `roclass`, `skill`, `getskilllv`, `resetskill`, `resetstatus`, `getitem`, `delitem`, `countitem`, `openstorage`, `guildopenstorage`, `implode`, `getguildname`, `getlook`, `setlook`, `getbattleflag`, `set`, `setarray`, `cleararray`, `deletearray`, `getarraysize`, `getelementofarray`, `getarg`, `getargcount`, `callfunc`, `rand`, `strcharinfo`, `sprintf`, `getstrlen`, `gettimetick`, `message`, `dispbottom`, `announce`, `specialeffect(2)`, falcon / cart / Peco checks and setters |
 | Effects | `checkre()` is 0 (Pre-Renewal). Visual-only commands (`emotion`, `cutin`, `soundeffect`, …) do nothing. |
 
 Unsupported commands do nothing and are listed in the console, e.g. `NPC Warper used unsupported commands: …`. Third- and fourth-class constants resolve to a value no Pre-Renewal class has, so rAthena's job master offers only the classic paths that exist in this build.
@@ -66,9 +66,11 @@ Unsupported commands do nothing and are listed in the console, e.g. `NPC Warper 
 
 `openstorage` (and its `storage` alias) opens the same glass storage window as Twilight's own Kafra. The official rAthena Kafra scripts are loaded from the resource pack, so their menus (save, storage, teleport, pushcart) work; their storage fee is the per-NPC argument in `kafras.txt` (40 zeny in Prontera), charged by the script itself. Twilight's own Kafra uses `kafra_fee` from `data/config.json` / `user://server.cfg` (0 = free). Both paths go through `command_open_storage`, so range, slots, weight and the open-storage state stay server-validated.
 
+`guildopenstorage` uses `command_open_guild_storage` and opens one shared bag for every member of the player's guild. It returns 1 while another member has it open (the rAthena contract), and 0 on success. Moves go through `command_guild_deposit` / `command_guild_withdraw`, which validate the open state, range, counts, slots and the withdrawing member's carried weight, then persist the guild bag.
+
 ## Known limits
 
 - **Rental:** falcons, carts and Peco Pecos are stored as character options but not drawn yet. No class in this build has Falconry, Pushcart or Riding.
 - **Shops:** `shop` lines are parsed but not opened yet. The Project Twilight shops in `shops.json` are used instead.
-- **Guild Kafra:** `guildopenstorage` is not supported (returns 0), so the guild-storage menu option does nothing yet.
+- **Guild Kafra:** `guildopenstorage` opens the shared guild storage (one member at a time). Membership comes from `@guild create <name>` / `@guild leave`; guilds and their bag live in `user://guilds.json`.
 - **Not yet handled:** NPC timers, `OnTouch` areas, `waitingroom` and `query_sql`.

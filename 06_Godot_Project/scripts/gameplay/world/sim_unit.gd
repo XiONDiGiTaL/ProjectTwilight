@@ -47,6 +47,12 @@ const STORAGE_SLOTS := 300   # classic Kafra storage (Medium confidence)
 var storage := Inventory.new()
 ## NPC id whose Kafra storage is open (server-side check for storage moves).
 var open_storage := 0
+## Guild membership. The storage bag itself lives in GuildStore (shared).
+var guild_id := ""
+var guild_name := ""
+## Guild storage is open at this NPC (one member may use it at a time).
+var open_guild_storage := ""
+var open_guild_npc := 0
 var zeny := 0
 var pickup_target := 0         # ground item id being walked to
 var talk_target := 0           # NPC id being walked to

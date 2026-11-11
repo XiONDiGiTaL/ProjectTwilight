@@ -708,10 +708,15 @@ func _builtin(name: String, a: Array) -> Variant:
 			return 0
 		"getgmlevel", "getgroupid", "getnpcid", "getmapusers", "getwaitingroomstate", "query_sql", "checkvending", "checkchatting":
 			return 0
-		"guildopenstorage", "vip_status", "logmes":
+		"guildopenstorage":
+			var gnid: int = sim.script_npc_id(String(npc.get("name", "")), player.walker.cell)
+			var gok := gnid != 0 and sim.command_open_guild_storage(player.id, gnid)
+			host.guild_storage_opened(gok)
+			return 0 if gok else 1
+		"vip_status", "logmes":
 			return 0
 		"getguildname":
-			return ""
+			return player.guild_name
 		"playerattached", "isloggedin":
 			return 1
 		"checkweight":

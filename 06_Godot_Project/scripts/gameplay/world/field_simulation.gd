@@ -64,6 +64,8 @@ var item_db: Dictionary = {}
 var ground_items: Dictionary = {}
 var _next_ground := 1
 var shop_db: Dictionary = {}
+## Shared guilds and their storage (persisted outside character saves).
+var guilds: GuildStore
 var skill_db: Dictionary = {}
 var map_db: Dictionary = {}
 var job_db: Dictionary = {}
@@ -81,7 +83,7 @@ var _next_npc := 1
 var _next_id := 1
 
 
-func _init(p_gat: GatFile, seed_value: int = 1, p_rules: RuleConfig = null) -> void:
+func _init(p_gat: GatFile, seed_value: int = 1, p_rules: RuleConfig = null, guild_path := "") -> void:
 	gat = p_gat
 	pathfinder = GridPathfinder.new(gat)
 	rng.seed = seed_value
@@ -106,6 +108,7 @@ func _init(p_gat: GatFile, seed_value: int = 1, p_rules: RuleConfig = null) -> v
 		for v in shop_db[sid].get("items", []):
 			ids.append(int(v))
 		shop_db[sid].items = ids
+	guilds = GuildStore.new(guild_path if guild_path != "" else GuildStore.PATH, item_db)
 
 
 static func _load_json(path: String) -> Dictionary:
@@ -217,6 +220,11 @@ func add_player_from_save(c: Dictionary) -> SimUnit:
 	u.save_map = String(c.get("save_map", SimUnit.HUB_MAP))
 	u.save_cell = Vector2i(int(c.get("save_cell", [SimUnit.HUB_CELL.x, SimUnit.HUB_CELL.y])[0]), int(c.get("save_cell", [SimUnit.HUB_CELL.x, SimUnit.HUB_CELL.y])[1]))
 	u.options = c.get("options", {})
+	u.guild_id = String(c.get("guild_id", ""))
+	u.guild_name = String(c.get("guild_name", ""))
+	if u.guild_id != "" and u.guild_name != "":
+		var g: Dictionary = guilds.join(u.guild_name, u.name)
+		u.guild_id = String(g.get("id", u.guild_id))
 	u.level = int(c.level)
 	u.job_level = int(c.job_level)
 	u.base_exp = int(c.base_exp)
@@ -549,6 +557,120 @@ func command_storage_withdraw(unit_id: int, index: int, amount: int) -> bool:
 func _storage(u: SimUnit, ok: bool, text: String) -> bool:
 	if u:
 		events.append({"type": "storage", "id": u.id, "ok": ok, "text": text})
+	return ok
+
+
+# --- Guilds and guild storage ------------------------------------------------
+
+## Founds a guild, or joins the existing guild with that name.
+func command_create_guild(unit_id: int, guild_name: String) -> bool:
+	var u: SimUnit = units.get(unit_id)
+	var clean := guild_name.strip_edges().left(24)
+	if u == null or not u.is_player() or u.guild_id != "" or clean.length() < 2:
+		return false
+	var g: Dictionary = guilds.join(clean, u.name)
+	if g.is_empty():
+		return false
+	u.guild_id = String(g.id)
+	u.guild_name = String(g.name)
+	events.append({"type": "guild", "id": u.id, "ok": true, "text": "Guild  %s" % u.guild_name})
+	return true
+
+
+func command_leave_guild(unit_id: int) -> bool:
+	var u: SimUnit = units.get(unit_id)
+	if u == null or u.guild_id == "":
+		return false
+	guilds.leave(u.guild_id, u.name)
+	u.open_guild_storage = ""
+	u.open_guild_npc = 0
+	u.guild_id = ""
+	u.guild_name = ""
+	events.append({"type": "guild", "id": u.id, "ok": true, "text": "You left your guild."})
+	return true
+
+
+## Opens the shared guild storage. Only one member may use it at a time.
+func command_open_guild_storage(unit_id: int, npc_id: int) -> bool:
+	var u: SimUnit = units.get(unit_id)
+	if u == null or u.dead or not npcs.has(npc_id):
+		return false
+	var npc: Dictionary = npcs[npc_id]
+	var kind := String(npc.get("kind", ""))
+	if kind != "kafra" and kind != "script":
+		return false
+	if u.guild_id == "" or guilds.get_guild(u.guild_id).is_empty():
+		return _guild_storage(u, false, "You are not in a guild.")
+	if _chebyshev(u.walker.cell, npc.cell) > NPC_TRADE_RANGE:
+		return _guild_storage(u, false, "You are too far from the guild storage.")
+	for other_id in units:
+		var other: SimUnit = units[other_id]
+		if other.id != u.id and not other.dead and other.open_guild_storage == u.guild_id:
+			return _guild_storage(u, false, "Another guild member is using the guild storage.")
+	u.open_guild_storage = u.guild_id
+	u.open_guild_npc = npc_id
+	u.open_storage = 0
+	u.open_shop = 0
+	return _guild_storage(u, true, "Guild storage opened")
+
+
+func close_guild_storage(unit_id: int) -> void:
+	var u: SimUnit = units.get(unit_id)
+	if u:
+		u.open_guild_storage = ""
+		u.open_guild_npc = 0
+
+
+func _open_guild_storage_of(u: SimUnit) -> Dictionary:
+	if u == null or u.dead or u.guild_id == "" or u.open_guild_storage != u.guild_id:
+		return {}
+	if not npcs.has(u.open_guild_npc):
+		return {}
+	var npc: Dictionary = npcs[u.open_guild_npc]
+	if _chebyshev(u.walker.cell, npc.cell) > NPC_TRADE_RANGE:
+		return {}
+	return guilds.get_guild(u.guild_id)
+
+
+func command_guild_deposit(unit_id: int, index: int, amount: int) -> bool:
+	var u: SimUnit = units.get(unit_id)
+	var g := _open_guild_storage_of(u)
+	if g.is_empty() or index < 0 or index >= u.inventory.entries.size() or amount <= 0:
+		return false
+	var bag: Inventory = g.get("storage")
+	var e: Dictionary = u.inventory.entries[index]
+	if int(e.amount) < amount:
+		return _guild_storage(u, false, "You do not have that many.")
+	if not bag.add(int(e.id), amount, item_db, STORAGE_MAX_WEIGHT):
+		return _guild_storage(u, false, "Guild storage is full.")
+	u.inventory.remove_at(index, amount)
+	guilds.save()
+	events.append({"type": "inventory", "id": u.id})
+	return _guild_storage(u, true, "Stored  %s  ×%d  in the guild storage" % [String(item_db.get(str(int(e.id)), {}).get("name", "item")), amount])
+
+
+func command_guild_withdraw(unit_id: int, index: int, amount: int) -> bool:
+	var u: SimUnit = units.get(unit_id)
+	var g := _open_guild_storage_of(u)
+	if g.is_empty() or amount <= 0:
+		return false
+	var bag: Inventory = g.get("storage")
+	if index < 0 or index >= bag.entries.size():
+		return false
+	var e: Dictionary = bag.entries[index]
+	if int(e.amount) < amount:
+		return _guild_storage(u, false, "There are not that many in the guild storage.")
+	if not u.inventory.add(int(e.id), amount, item_db, u.max_weight() - u.equipment_weight(item_db)):
+		return _guild_storage(u, false, "You cannot carry that much.")
+	bag.remove_at(index, amount)
+	guilds.save()
+	events.append({"type": "inventory", "id": u.id})
+	return _guild_storage(u, true, "Withdrew  %s  ×%d  from the guild storage" % [String(item_db.get(str(int(e.id)), {}).get("name", "item")), amount])
+
+
+func _guild_storage(u: SimUnit, ok: bool, text: String) -> bool:
+	if u:
+		events.append({"type": "guild_storage", "id": u.id, "ok": ok, "text": text})
 	return ok
 
 
