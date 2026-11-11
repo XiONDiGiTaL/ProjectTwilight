@@ -180,6 +180,7 @@ func add_player_from_save(c: Dictionary) -> SimUnit:
 	u.hair_style = int(c.get("hair_style", 2))
 	u.hair_color = int(c.get("hair_color", 0))
 	u.aura = String(c.get("aura", "class"))
+	u.cloth_color = int(c.get("cloth_color", 0))
 	u.level = int(c.level)
 	u.job_level = int(c.job_level)
 	u.base_exp = int(c.base_exp)
@@ -895,7 +896,7 @@ func _tick_statuses(u: SimUnit, ms: float) -> void:
 			while float(e.drain_t) >= StatusRules.DRAIN_INTERVAL_MS and u.statuses.has(st):
 				e.drain_t = float(e.drain_t) - StatusRules.DRAIN_INTERVAL_MS
 				var amount := StatusRules.drain_amount(u.max_hp, int(e.drain_permille))
-				if u.hp - amount < u.max_hp * StatusRules.DRAIN_FLOOR_PCT / 100:
+				if u.hp - amount <= u.max_hp * StatusRules.DRAIN_FLOOR_PCT / 100:
 					_clear_status(u, st)   # critically low: the buff ends instead of draining further
 					_skill_fail(u, "%s fades: your HP is too low." % StatusRules.display_name(st))
 				else:

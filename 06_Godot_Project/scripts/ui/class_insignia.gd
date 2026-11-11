@@ -28,6 +28,7 @@ const FAMILY := {
 	"archer": Color(0.2, 0.62, 0.27), "acolyte": Color(0.1, 0.58, 0.64), "merchant": Color(0.9, 0.47, 0.1),
 	"thief": Color(0.34, 0.17, 0.46), "taekwon": Color(0.92, 0.62, 0.12), "ninja": Color(0.52, 0.1, 0.16),
 	"gunslinger": Color(0.5, 0.33, 0.16), "super_novice": Color(0.88, 0.36, 0.62), "soul_linker": Color(0.26, 0.38, 0.88),
+	"dark_knight": Color(0.42, 0.08, 0.24), "shaman": Color(0.1, 0.5, 0.46),
 }
 const CLASS_FAMILY := {
 	"novice": "novice", "high_novice": "novice", "super_novice": "super_novice",
@@ -38,6 +39,7 @@ const CLASS_FAMILY := {
 	"acolyte": "acolyte", "priest": "acolyte", "monk": "acolyte", "high_acolyte": "acolyte", "high_priest": "acolyte", "champion": "acolyte",
 	"merchant": "merchant", "blacksmith": "merchant", "alchemist": "merchant", "high_merchant": "merchant", "whitesmith": "merchant", "creator": "merchant",
 	"thief": "thief", "assassin": "thief", "rogue": "thief", "high_thief": "thief", "assassin_cross": "thief", "stalker": "thief",
+	"dark_knight": "dark_knight", "shaman": "shaman",
 	"taekwon_kid": "taekwon", "star_gladiator": "taekwon", "ninja": "ninja", "gunslinger": "gunslinger", "soul_linker": "soul_linker",
 }
 

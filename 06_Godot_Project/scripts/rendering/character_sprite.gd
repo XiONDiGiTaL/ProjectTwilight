@@ -19,6 +19,7 @@ var body_act: ActFile
 var head_spr: SprFile
 var head_act: ActFile
 var hair_palette := PackedByteArray()
+var body_palette := PackedByteArray()   # cloth dye (empty = sprite's own)
 
 var group := Group.IDLE
 var direction := 0  # sprite-space direction (already adjusted for camera yaw)
@@ -40,7 +41,8 @@ func _init() -> void:
 
 
 func setup(p_body_spr: SprFile, p_body_act: ActFile, p_head_spr: SprFile = null,
-		p_head_act: ActFile = null, p_hair_palette := PackedByteArray()) -> void:
+		p_head_act: ActFile = null, p_hair_palette := PackedByteArray(), p_body_palette := PackedByteArray()) -> void:
+	body_palette = p_body_palette
 	body_spr = p_body_spr
 	body_act = p_body_act
 	head_spr = p_head_spr
@@ -182,7 +184,7 @@ func _refresh() -> void:
 func _compose(act_idx: int, f: int) -> Dictionary:
 	var parts: Array = []  # [Image, Vector2i top_left (feet-relative)]
 	var body_frame: Dictionary = body_act.actions[act_idx].frames[f]
-	_collect(parts, body_spr, body_frame, Vector2i.ZERO, PackedByteArray())
+	_collect(parts, body_spr, body_frame, Vector2i.ZERO, body_palette)
 	if head_spr and head_act and act_idx < head_act.actions.size():
 		var head_frames: Array = head_act.actions[act_idx].frames
 		if not head_frames.is_empty():

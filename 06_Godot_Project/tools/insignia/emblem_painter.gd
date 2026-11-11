@@ -174,6 +174,33 @@ func _e_monk() -> void:
 	_beads(Vector2(0, 0.05), 0.95, 18)
 	_fist(Vector2(0, 0.05), 0.85)
 
+func _e_dark_knight() -> void:
+	_sword(Vector2(0, 0), -0.75, 2.2)
+	# Crossed war axe: haft plus a crescent blade.
+	var haft_a := Vector2(-0.75, 0.85)
+	var haft_b := Vector2(0.62, -0.72)
+	_capsule(haft_a, haft_b, 0.055)
+	var blade := PackedVector2Array()
+	for i in 13:
+		var t := -1.0 + i / 6.0
+		blade.append(Vector2(0.6, -0.72) + Vector2(0.38 * cos(t), 0.38 * sin(t)).rotated(-0.75))
+	blade.append(Vector2(0.62, -0.72))
+	_poly(blade)
+	# Horned crest.
+	_poly(PackedVector2Array([Vector2(-0.34, -0.55), Vector2(-0.6, -1.08), Vector2(-0.2, -0.68)]))
+	_poly(PackedVector2Array([Vector2(0.34, -0.55), Vector2(0.6, -1.08), Vector2(0.2, -0.68)]))
+	_gem(Vector2(0, -0.62), 0.13, RUBY)
+
+
+func _e_shaman() -> void:
+	_ring(Vector2(0, 0.05), 0.88, 0.05)
+	_staff(Vector2(0, 0.1), 2.0, 0.0)
+	var cols := [RUBY, ICE, Color(0.45, 0.85, 0.35), GOLD_RIBBON]
+	for i in 4:
+		var ang := PI * 0.25 + i * PI * 0.5
+		_gem(Vector2(cos(ang), sin(ang)) * 0.62 + Vector2(0, 0.05), 0.14, cols[i])
+
+
 func _e_lord_knight() -> void:
 	_lance(Vector2(0, 0), 0.75, 2.4, true)
 	_sword(Vector2(0, 0), -0.75, 2.3, true)

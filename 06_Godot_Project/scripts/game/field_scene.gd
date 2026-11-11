@@ -196,6 +196,31 @@ func monster_at_screen(p: Vector2) -> int:
 	return best
 
 
+## Skill / spell visuals by the skill's "fx" key (skills.json).
+func _play_fx(fx: String, from: Vector3, to: Vector3, element: String, hits: int, area: int) -> void:
+	match fx:
+		"orbs":
+			SpellFx.orbs(self, from, to, element, hits)
+		"burst", "spikes":
+			SpellFx.burst(self, to, element, area)
+		"impact":
+			SpellFx.burst(self, to, element, area)
+			SpellFx.burst(self, to, element, area + 1)
+			SpellFx.bolts(self, to, element, 1)
+		"wave":
+			SpellFx.orbs(self, from, to, element, 3)
+		"judgment":
+			for i in hits:
+				SpellFx.bolts(self, to + Vector3(randf_range(-10, 10), 0, randf_range(-10, 10)), element, 1)
+			SpellFx.burst(self, to, element, area)
+		"support", "aura":
+			SpellFx.burst(self, to, element, 0)
+		"slash":
+			SpellFx.burst(self, to, element, 0)
+		_:
+			SpellFx.bolts(self, to, element, hits)
+
+
 ## Cycles the player's cosmetic aura (saved with the character).
 func cycle_aura() -> void:
 	player.aura = PlayerAura.next_style(player.aura)
@@ -443,13 +468,43 @@ func _consume_events() -> void:
 				var tv: UnitView = views.get(ev.target)
 				var caster: UnitView = views.get(ev.id)
 				if tv:
-					match String(ev.skill):
-						"MG_SOULSTRIKE":
-							SpellFx.orbs(self, caster.global_position if caster else tv.global_position, tv.global_position, String(ev.element), int(ev.hits))
-						"MG_NAPALMBEAT":
-							SpellFx.burst(self, tv.global_position, String(ev.element), int(ev.splash))
-						_:
-							SpellFx.bolts(self, tv.global_position, String(ev.element), int(ev.hits))
+					_play_fx(String(ev.get("fx", "bolts")), caster.global_position if caster else tv.global_position,
+						tv.global_position, String(ev.element), int(ev.hits), int(ev.splash))
+			"skill_fx":
+				var from_v: UnitView = views.get(ev.id)
+				var to_pos := map.cell_to_world(ev.cell.x, ev.cell.y)
+				var tid := int(ev.get("target", 0))
+				if tid != 0 and views.has(tid):
+					to_pos = (views[tid] as UnitView).global_position
+				_play_fx(String(ev.fx), from_v.global_position if from_v else to_pos, to_pos, String(ev.element), int(ev.hits), int(ev.area))
+				if from_v and from_v.sprite and String(ev.fx) != "support" and String(ev.fx) != "aura":
+					from_v.sprite.play_once("attack", 450.0)
+			"status":
+				var stv: UnitView = views.get(ev.id)
+				if stv:
+					var stname := StatusRules.display_name(String(ev.status))
+					if ev.on:
+						var deb := StatusRules.is_debuff(String(ev.status))
+						hud.numbers.spawn(stv.head_position(), stname.to_upper(), DamageNumbers.Kind.MISS)
+						if ev.id == player.id:
+							hud.notify(("%s!" if deb else "%s") % stname, UiTheme.HP_MID if deb else UiTheme.ACCENT)
+					elif ev.id == player.id:
+						hud.notify("%s wore off." % stname, UiTheme.TEXT_DIM)
+					stv.set_status_tint(sim.units[ev.id])
+				player_changed = player_changed or ev.id == player.id
+			"counter":
+				var ctv: UnitView = views.get(ev.id)
+				if ctv:
+					hud.numbers.spawn(ctv.head_position(), "COUNTER", DamageNumbers.Kind.MISS)
+			"sp_heal":
+				var spv: UnitView = views.get(ev.id)
+				if spv:
+					hud.numbers.spawn(spv.head_position(), "+%d SP" % ev.amount, DamageNumbers.Kind.NORMAL)
+				player_changed = player_changed or ev.id == player.id
+			"resurrect":
+				if ev.id == player.id:
+					hud.notify("You have been revived.", UiTheme.HP_HIGH)
+				player_changed = player_changed or ev.id == player.id
 			"skill_hit":
 				var sv: UnitView = views.get(ev.id)
 				if sv:
@@ -482,10 +537,8 @@ func _on_damage(ev: Dictionary) -> void:
 		hud.numbers.spawn(at, "MISS", DamageNumbers.Kind.MISS)
 	elif dst.is_player():
 		hud.numbers.spawn(at, str(ev.amount), DamageNumbers.Kind.TAKEN)
-	elif ev.crit:
-		hud.numbers.spawn(at, str(ev.amount), DamageNumbers.Kind.CRIT)
 	else:
-		hud.numbers.spawn(at, str(ev.amount), DamageNumbers.Kind.NORMAL)
+		hud.numbers.spawn_combo(at, int(ev.amount), int(ev.get("hits", 1)), bool(ev.crit))
 	if not ev.miss and not dst.dead and dv.sprite:
 		dv.sprite.play_once("hurt", 280.0)
 	# Monster HP bars appear once a player attacks them and stay until death.
@@ -516,8 +569,50 @@ var _dialog_state := ""
 var _dialog_job := ""
 
 
+## Classic second jobs per first job; only those in jobs.json are playable yet.
+const SECOND_JOBS := {
+	"swordman": ["knight", "crusader", "dark_knight"], "acolyte": ["priest", "monk", "shaman"],
+	"mage": ["wizard", "sage"], "archer": ["hunter", "bard", "dancer"],
+	"merchant": ["blacksmith", "alchemist"], "thief": ["assassin", "rogue"],
+}
+var _dialog_choices: Array = []
+
+
+func _second_job_dialog(npc: Dictionary) -> void:
+	var options: Array = SECOND_JOBS.get(player.job, [])
+	var ready: Array = []
+	var later: Array = []
+	for j in options:
+		if sim.job_db.has(j):
+			ready.append(j)
+		else:
+			later.append(String(ClassInsignia.classes().get(j, {}).get("name", j.capitalize())))
+	var need := 40
+	if not ready.is_empty():
+		need = int(sim.job_db[ready[0]].get("min_parent_job_level", 40))
+	var jn := String(sim.job_db.get(player.job, {}).get("name", player.job))
+	var text := "A %s seeking a greater path. At Job Level %d you may advance (you are Job Level %d)." % [jn, need, player.job_level]
+	if not later.is_empty():
+		text += "\n\nNot yet open in this build: %s." % ", ".join(later)
+	if ready.is_empty():
+		_dialog_state = "done"
+		hud.dialog.show_page(npc.name, text, ["Close"])
+		return
+	_dialog_state = "choose2"
+	_dialog_choices = ready
+	var labels: Array = []
+	for j in ready:
+		var reason := sim.job_change_unmet(player, j)
+		labels.append(String(sim.job_db[j].name) + ("" if reason == "" else "  (locked)"))
+	labels.append("Not yet")
+	hud.dialog.show_page(npc.name, text, labels)
+
+
 func _job_dialog_start(npc: Dictionary) -> void:
 	_dialog_npc = npc
+	if int(sim.job_db.get(player.job, {}).get("tier", 0)) == 1:
+		_second_job_dialog(npc)
+		return
 	if player.job != "novice":
 		var jn := String(sim.job_db.get(player.job, {}).get("name", player.job))
 		_dialog_state = "done"
@@ -548,6 +643,22 @@ func _on_dialog_choice(i: int) -> void:
 			var jn := String(sim.job_db.get(_dialog_job, {}).get("name", _dialog_job))
 			var note := "" if not (sim.job_db.get(_dialog_job, {}).get("skills", []) as Array).is_empty() else "\n\n(Its guild skills are still being prepared in this build.)"
 			hud.dialog.show_page(_dialog_npc.name, "Become a %s? This choice is permanent.%s" % [jn, note], ["Become a %s" % jn, "Go back"])
+		"choose2":
+			if i >= _dialog_choices.size():
+				hud.dialog.close()
+				return
+			_dialog_job = _dialog_choices[i]
+			var reason := sim.job_change_unmet(player, _dialog_job)
+			var jdef: Dictionary = sim.job_db[_dialog_job]
+			if reason != "":
+				_dialog_state = "back"
+				hud.dialog.show_page(_dialog_npc.name, "%s\n\n%s" % [String(jdef.name), reason], ["Go back"])
+				return
+			_dialog_state = "confirm"
+			hud.dialog.show_page(_dialog_npc.name, "Become a %s? Your %s skills stay with you and unspent skill points carry over. This choice is permanent." % [String(jdef.name), String(sim.job_db.get(player.job, {}).get("name", ""))],
+				["Become a %s" % String(jdef.name), "Go back"])
+		"back":
+			_job_dialog_start(_dialog_npc)
 		"confirm":
 			if i == 0:
 				sim.command_job_change(player.id, _dialog_job)

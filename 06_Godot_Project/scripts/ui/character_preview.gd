@@ -36,8 +36,8 @@ func _init() -> void:
 
 
 ## Loads the look from the mounted client. job_sprite e.g. "초보자".
-func set_look(male: bool, hair_style: int, hair_color: int, job_sprite := "초보자") -> void:
-	var key := "%s:%d:%d:%s" % [male, hair_style, hair_color, job_sprite]
+func set_look(male: bool, hair_style: int, hair_color: int, job_sprite := "초보자", cloth := 0, job := "") -> void:
+	var key := "%s:%d:%d:%s:%d:%s" % [male, hair_style, hair_color, job_sprite, cloth, job]
 	if key == _key:
 		return
 	_key = key
@@ -45,11 +45,11 @@ func set_look(male: bool, hair_style: int, hair_color: int, job_sprite := "초�
 	if res == null or not res.is_mounted:
 		return
 	var sex := "남" if male else "여"
-	var body := BODY_DIR + "%s/%s_%s" % [sex, job_sprite, sex]
 	var head := HEAD_DIR + "%s/%d_%s" % [sex, hair_style, sex]
 	var pal: PackedByteArray = res.read("data/palette/머리/머리%d_%s_%d.pal" % [hair_style, sex, hair_color]) if hair_color > 0 else PackedByteArray()
-	_sprite.setup(SprFile.decode(res.read(body + ".spr")), ActFile.decode(res.read(body + ".act")),
-		SprFile.decode(res.read(head + ".spr")), ActFile.decode(res.read(head + ".act")), pal)
+	var look := PlayerSprites.body_for(res, PlayerSprites.jobs(), job, job_sprite, male)
+	_sprite.setup(look.spr, look.act, SprFile.decode(res.read(head + ".spr")), ActFile.decode(res.read(head + ".act")), pal,
+		PlayerSprites.cloth_palette(res, String(look.sprite), male, cloth) if look.source != "sheet" else PackedByteArray())
 
 
 ## True if the client has a head sprite for this style.

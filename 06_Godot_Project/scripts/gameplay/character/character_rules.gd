@@ -76,6 +76,6 @@ static func new_character(name: String, male: bool, hair_style: int, hair_color:
 		"hp": 0, "sp": 0, "zeny": 0,  # 0 = start at full HP / SP
 		"inventory": [{"id": 501, "amount": 3}],
 		"equipment": {"weapon": 1201, "body": 2301},  # classic Novice starting gear
-		"male": male, "hair_style": hair_style, "hair_color": hair_color, "aura": "class",
+		"male": male, "hair_style": hair_style, "hair_color": hair_color, "aura": "class", "cloth_color": 0,
 		"map": START_MAP, "cell": START_CELL,
 	}
