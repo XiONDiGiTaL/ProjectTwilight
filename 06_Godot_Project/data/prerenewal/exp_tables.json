@@ -1,0 +1,5 @@
+{
+  "_provenance": "Pre-Renewal experience to reach the next level (index 0 = level 1 -> 2). Normal (non-transcendent) base table and Novice job table, as documented by iRO Wiki classic and the rAthena pre-re exp tables. Only the first levels are entered so far; extend with the full tables after cross-checking. Confidence: Medium.",
+  "base_normal": [9, 16, 25, 36, 77, 112, 153, 200, 253, 320, 385, 490, 585, 700, 830],
+  "job_novice": [10, 18, 28, 40, 91, 151, 205, 268, 340]
+}

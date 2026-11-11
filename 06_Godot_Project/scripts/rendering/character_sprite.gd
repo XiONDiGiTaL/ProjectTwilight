@@ -51,13 +51,61 @@ func setup(p_body_spr: SprFile, p_body_act: ActFile, p_head_spr: SprFile = null,
 	_refresh()
 
 
+## Action-name -> action group. Players and monsters number their groups differently.
+const PLAYER_ACTIONS := {"idle": 0, "walk": 1, "sit": 2, "attack": 5, "hurt": 6, "dead": 8}
+const MONSTER_ACTIONS := {"idle": 0, "walk": 1, "attack": 2, "hurt": 3, "dead": 4}
+
+var actions: Dictionary = PLAYER_ACTIONS
+var _base_group := Group.IDLE
+var _once_group := -1       # group playing once (attack/hurt), -1 = none
+var _once_ms := 0.0         # total duration of the one-shot
+var _hold_last := false     # keep the final frame (death)
+
+
 ## Changes the action group and/or direction; restarts the animation on group change.
 func set_state(p_group: int, p_direction: int) -> void:
-	if p_group != group:
+	_base_group = p_group
+	if _once_group < 0 and not _hold_last and p_group != group:
 		group = p_group
 		_frame = 0
 		_elapsed = 0.0
 	direction = p_direction & 7
+
+
+## Sets the looping base action by name ("idle", "walk").
+func set_action(action: String, p_direction: int) -> void:
+	set_state(actions.get(action, 0), p_direction)
+
+
+## Plays an action once over `duration_ms` (0 = native ACT timing), then returns
+## to the base action. With hold = true the last frame stays (death).
+func play_once(action: String, duration_ms: float = 0.0, hold := false) -> void:
+	if not actions.has(action) or body_act == null:
+		return
+	_once_group = actions[action]
+	group = _once_group
+	_frame = 0
+	_elapsed = 0.0
+	_hold_last = hold
+	var frames: int = body_act.actions[_action_index()].frames.size()
+	var native: float = maxf(body_act.actions[_action_index()].interval, 10.0) * frames
+	_once_ms = duration_ms if duration_ms > 0.0 else native
+
+
+## Returns to normal looping (e.g. when a dead unit respawns).
+func reset_action() -> void:
+	_once_group = -1
+	_hold_last = false
+	group = _base_group
+	_frame = 0
+	_elapsed = 0.0
+
+
+## Height of the sprite's top above the feet, in world units (for HP bars).
+func top_height() -> float:
+	if texture == null or not _cache.has(_shown_key):
+		return 8.0
+	return float((_cache[_shown_key].origin as Vector2i).y) * pixel_size
 
 
 func _process(delta: float) -> void:
@@ -65,14 +113,28 @@ func _process(delta: float) -> void:
 		return
 	var act_idx := _action_index()
 	var frames: Array = body_act.actions[act_idx].frames
-	if group == Group.IDLE or group == Group.SIT:
+	var n := frames.size()
+	if _once_group >= 0:
+		_elapsed += delta * 1000.0
+		var t := _elapsed / maxf(_once_ms, 1.0)
+		if t >= 1.0:
+			if _hold_last:
+				_frame = n - 1
+			else:
+				_once_group = -1
+				group = _base_group
+				_frame = 0
+				_elapsed = 0.0
+		else:
+			_frame = mini(int(t * n), n - 1)
+	elif group == Group.IDLE or group == Group.SIT:
 		_frame = 0  # idle frames 0-2 are head turns, not an animation
-	elif frames.size() > 1:
+	elif n > 1:
 		var interval: float = maxf(body_act.actions[act_idx].interval, 10.0) / 1000.0
 		_elapsed += delta
 		while _elapsed >= interval:
 			_elapsed -= interval
-			_frame = (_frame + 1) % frames.size()
+			_frame = (_frame + 1) % n
 	_refresh()
 
 
@@ -135,10 +197,15 @@ func _collect(parts: Array, spr: SprFile, frame: Dictionary, shift: Vector2i, pa
 	for layer in frame.layers:
 		if layer.sprite < 0:
 			continue
+		var tint: Color = layer.color
+		if tint.a <= 0.01:
+			continue  # fully faded layer (e.g. the end of a death splash)
 		var src := spr.image_for(layer.sprite, layer.type, pal)
 		if src == null:
 			continue
 		var img := src.duplicate() as Image
+		if not tint.is_equal_approx(Color.WHITE):
+			_tint(img, tint)
 		if layer.mirror:
 			img.flip_x()
 		var sc: Vector2 = layer.scale
@@ -146,3 +213,18 @@ func _collect(parts: Array, spr: SprFile, frame: Dictionary, shift: Vector2i, pa
 			img.resize(maxi(1, roundi(img.get_width() * sc.x)), maxi(1, roundi(img.get_height() * sc.y)), Image.INTERPOLATE_NEAREST)
 		var tl: Vector2i = layer.pos + shift - Vector2i(img.get_width() / 2, img.get_height() / 2)
 		parts.append([img, tl])
+
+
+## Multiplies every pixel by the ACT layer colour (RGBA), as the client does.
+static func _tint(img: Image, c: Color) -> void:
+	var px := img.get_data()
+	var r := c.r8
+	var g := c.g8
+	var b := c.b8
+	var a := c.a8
+	for i in range(0, px.size(), 4):
+		px[i] = px[i] * r / 255
+		px[i + 1] = px[i + 1] * g / 255
+		px[i + 2] = px[i + 2] * b / 255
+		px[i + 3] = px[i + 3] * a / 255
+	img.set_data(img.get_width(), img.get_height(), false, Image.FORMAT_RGBA8, px)
