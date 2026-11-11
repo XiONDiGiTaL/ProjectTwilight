@@ -60,6 +60,54 @@ Implementation: `scripts/resources/formats/act_file.gd`
 - **Trailer:** u32 event count followed by 40-byte names for ≥ 0x201. For ≥ 0x202, an f32 per action giving the frame interval in **25 ms units**.
 - Character and monster actions come in groups of 8 directions: `action = group * 8 + direction`. Poring has 72 actions (9 groups) and the Novice body has 104 (13 groups).
 
+## Map formats: overview
+
+Versions observed in the reference client: GAT 1.2 (908) and 1.3 (223); GND 1.7 (897), 1.8 (13) and 1.9 (194); RSW 1.9 (2), 2.1 (815), 2.2 (57), 2.3 (2), 2.4 (7), 2.5 (25), 2.6 (110) and 2.7 (113).
+
+All 3,366 map files decode completely, including every RSW object table (integration test `test_all_maps_decode`).
+
+## GAT altitude/attribute grid (Confirmed for 1.2 and 1.3)
+
+Implementation: `scripts/resources/formats/gat_file.gd`
+
+- Header: `"GRAT"`, u8 major, u8 minor, u32 width, u32 height.
+- Cells: width × height records of 20 bytes each: f32 heights for the SW, SE, NW and NE corners, then a u32 type.
+- Types: 0 = walkable, 1 = blocked, 3 = walkable water, 5 = blocked but snipeable. Heights grow **downward** (negative = higher).
+- GAT is exactly twice GND's resolution (prontera: 312×392 GAT vs 156×196 GND, which is tested). One GAT cell is 5 world units.
+
+## GND ground mesh (Confirmed for 1.7, 1.8 and 1.9)
+
+Implementation: `scripts/resources/formats/gnd_file.gd`. Rendering: `scripts/rendering/map/ground_mesh_builder.gd`.
+
+- **Header:** `"GRGN"`, u8 major, u8 minor, u32 width, u32 height, f32 zoom (cube size; 10), u32 texture count, u32 name length (80), then the texture names (CP949, relative to `data\texture\`).
+- **Lightmaps:** u32 count, u32 px (8), u32 py (8), u32 cells (1). Each lightmap is px×py×4 bytes: 64 shadow-intensity bytes followed by 64 RGB colour triplets.
+- **Surfaces:** u32 count, then **40 bytes** each: f32 u[4], f32 v[4], i16 texture, u16 lightmap, then u8 **B, G, R, A** tile colour. *(Correction to a common assumption of 56 bytes; confirmed because the cube section then ends exactly at end-of-file.)*
+- **Cubes:** width × height records of 28 bytes: f32 heights for SW, SE, NW and NE, then i32 top, i32 front (wall to the cube at y+1) and i32 right (wall to the cube at x+1). −1 means none.
+- **1.8 and later**, after the cubes: water as f32 level, i32 type, f32 wave height, f32 wave speed, f32 wave pitch, i32 animation speed, i32 split_w, i32 split_h. Then **1.8** stores split_w×split_h f32 levels, while **1.9** stores split_w×split_h full 24-byte water records. The byte counts match exactly (36 and 56 trailing bytes on the samples).
+
+### Rendering model (High confidence, visually verified on prontera, prt_fild08 and izlude)
+
+- Colour is computed as `texture × tile colour × clamp(ambient × opacity + diffuse × N·L) × shadow + lightmap RGB`, evaluated in sRGB space and converted to linear on output.
+- Ground normals are **smoothed** per grid vertex, by averaging the up-to-four adjacent top faces. Flat shading shows obvious facets on slopes.
+- Lightmap tiles have a 1-texel border, so the UVs sample texels 1–7 of each 8×8 tile.
+- Godot mapping: x → x, height → −h, cell y → −z (north = −Z).
+
+## RSW world descriptor (Confirmed for the object table, all versions present)
+
+Implementation: `scripts/resources/formats/rsw_file.gd`
+
+- **Header:** `"GRSW"`, u8 major, u8 minor. **2.2 and later** add a u8 build number; **2.5 and later** add another u32 (unknown). These are confirmed by the offsets of the `.gnd` name.
+- **Strings:** char[40] each for the ini, gnd, gat and source names.
+- **Water** (versions **below 2.6** only; from 2.6 water lives in GND 1.8+): f32 level, i32 type, f32 wave height, f32 wave speed, f32 wave pitch, i32 animation speed.
+- **Light:** i32 longitude, i32 latitude, f32 diffuse[3], f32 ambient[3], f32 opacity. Then the ground bounds as i32 × 4.
+- **2.7 and later:** u32 n followed by n×4 bytes (n = 16 in every map; purpose unknown).
+- **Objects:** u32 count, then per object an i32 type followed by its record:
+  - **1 = model:** char[40] name, i32 animation type, f32 animation speed, i32 block type, [extra u8], char[80] file, char[80] node, f32 position[3], rotation[3], scale[3], [**2.7: trailing f32**, observed −1.0]. The extra u8 is present in all 2.7 files and in 2.6 from build 162, plus builds 8 and 18. Those last two are probably the u8 build counter wrapping past 255 (Medium confidence).
+  - **2 = light:** 108 bytes.
+  - **3 = sound:** 192 bytes.
+  - **4 = effect:** 116 bytes.
+- **Light direction:** longitude/latitude are converted to a vector. With a latitude of 45 the top-face N·L is the same whatever the longitude convention. The exact sign convention is Medium confidence.
+
 ## Next to document
 
-GAT (cell attributes and heights; magic `GRAT` confirmed), GND (ground mesh and lightmaps), RSW (world objects, water, lights), RSM/RSM2 (models), STR (effects), PAL (1,024-byte palettes for hair and clothes), IMF, and Lua/LUB tables.
+RSM/RSM2 (models; needed for buildings and trees), STR (effects), PAL (1,024-byte palettes for hair and clothes), IMF, and Lua/LUB tables.

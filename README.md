@@ -37,7 +37,8 @@ Project Twilight **contains no Gravity game data**. On first launch you point it
 | Animated sprite rendering and Sprite Viewer tool | ✅ Implemented |
 | Pre-Renewal stat formulas (core) | 🔧 In development |
 | Co-op invitation codes | ✅ Implemented and tested · networking 📋 planned |
-| Map decoding and isometric rendering (GAT/GND/RSW/RSM) | 📋 Next |
+| Map decoding (GAT/GND/RSW) and ground rendering | ✅ Implemented and tested |
+| Map models (RSM/RSM2: buildings, trees) | 📋 Next |
 | First offline playable (character, map, monster, combat, save) | 📋 Planned |
 | Private co-op sessions | 📋 Planned |
 | eAthena / Hercules compatibility | 🔍 Under investigation, not claimed |
@@ -81,7 +82,7 @@ git clone https://github.com/XiONDiGiTaL/ProjectTwilight.git
    [resources]
    client_path="D:/Games/RagnarokOnline"
    ```
-3. Open **Sprite Viewer** to browse animated sprites from your client.
+3. Open **Map Viewer** to fly around any classic map, or **Sprite Viewer** to browse animated sprites from your client.
 
 ### Tests
 

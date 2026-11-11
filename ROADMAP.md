@@ -14,8 +14,8 @@ Workspace, tools, client, Eternal Love package and Shattered Marches audited. Se
 2. ✅ Sprite decoding (SPR) with palettes
 3. ✅ Sprite previewing (Sprite Viewer tool)
 4. ✅ Animation playback (ACT, ActSprite)
-5. 📋 Map decoding (GAT, GND, RSW) ← **next**
-6. 📋 Isometric map rendering (ground plus lightmaps, then RSM models)
+5. ✅ Map decoding (GAT, GND, RSW; all 3,366 client map files)
+6. 🔧 Isometric map rendering: ✅ ground, lightmaps, water plane, camera · 📋 RSM/RSM2 models ← **next** · 📋 animated water
 7. 📋 Character composition (body + head via ACT anchors, hair palettes)
 8. 📋 Cell-based movement on GAT walkability
 9. 📋 Versioned local save/load

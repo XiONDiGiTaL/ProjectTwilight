@@ -2,6 +2,7 @@ extends Control
 ## Title screen. Built in code so it stays readable in diffs.
 
 const SPRITE_VIEWER := "res://scenes/tools/sprite_viewer.tscn"
+const MAP_VIEWER := "res://scenes/tools/map_viewer.tscn"
 
 var _status: Label
 var _path_edit: LineEdit
@@ -47,6 +48,7 @@ func _ready() -> void:
 
 	_add_button(col, "Single Player (in development)", func(): _status.text = "The offline world is the next milestone.", true)
 	_add_button(col, "Private Co-op (planned)", Callable(), true)
+	_add_button(col, "Map Viewer", func(): get_tree().change_scene_to_file(MAP_VIEWER))
 	_add_button(col, "Sprite Viewer", func(): get_tree().change_scene_to_file(SPRITE_VIEWER))
 	_add_button(col, "Quit", func(): get_tree().quit())
 

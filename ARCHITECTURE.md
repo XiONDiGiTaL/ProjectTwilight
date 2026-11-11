@@ -13,8 +13,8 @@
 ```text
 scripts/
   core/            Settings (autoload)
-  resources/       RoResources VFS (autoload), grf/, formats/ (spr, act; gat/gnd/rsw/rsm next), text/ (cp949)
-  rendering/       ActSprite (SPR/ACT composer); map renderer next
+  resources/       RoResources VFS (autoload), grf/, formats/ (spr, act, gat, gnd, rsw, textures), text/ (cp949)
+  rendering/       ActSprite (SPR/ACT composer), RoCamera, map/ (RoMap, ground mesh builder, ground shader)
   gameplay/        progression/ (stat rules); combat/, items/, world/ next
   networking/      InvitationCode; transport/session/sync next
   ui/              main menu

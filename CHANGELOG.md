@@ -3,6 +3,11 @@
 ## [Unreleased] - 2026-11-10
 
 ### Added
+- GAT, GND (1.7/1.8/1.9) and RSW (1.9 to 2.7) decoders. All 3,366 map files in the reference client parse completely.
+- Ground renderer: per-texture mesh surfaces, lightmap atlas, smoothed normals, classic sRGB lighting shader, and a water plane.
+- `RoMap` node with cell/world conversion, `RoCamera` isometric camera, and a Map Viewer tool (added to the main menu).
+- BMP/TGA/JPG/PNG texture loader with magenta colour keying.
+- Map unit tests (synthetic fixtures) and an all-maps client integration test.
 - Environment and repository audit (`PROJECT_AUDIT.md`).
 - Godot 4.8 project in `06_Godot_Project`.
 - GRF archive reader supporting versions 0x200 and 0x300, with a CP949 filename codec.
