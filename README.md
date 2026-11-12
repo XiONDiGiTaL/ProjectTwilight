@@ -91,7 +91,7 @@ Project Twilight's HUD uses its own **Twilight Glass** design language, a sleek 
 - slanted glowing resource bars
 - condensed, letter-spaced typography
 - every gameplay window drags from its title-bar grip, snaps to screen edges and neighbouring windows, and remembers its position; a subtle edge highlight confirms a viewport-border snap, and double-clicking the title bar resets it
-- overhead name tags use a restrained 70% default scale, adjustable from 50–125% in **SETTINGS** (title screen, **Esc**, or the HUD button) with a **RESET** action back to 70%; the same scale covers NPCs, CPU players, warp labels and monster hover names, and Settings remembers where you dragged it
+- overhead name tags use a restrained 70% default scale, adjustable from 50–125% in **SETTINGS** (title screen, **Esc**, or the HUD button) with a **RESET** action back to 70%; the same scale covers NPCs, CPU players, warp labels and monster hover names, and the title-screen and in-game Settings windows each remember their own dragged position
 
 Classic information stays where veterans expect it: the status window is top-left. It fades when you aren't using it, wakes up when your HP or SP changes, and can be collapsed.
 

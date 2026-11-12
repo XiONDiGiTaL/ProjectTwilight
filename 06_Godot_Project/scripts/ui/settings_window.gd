@@ -4,13 +4,18 @@ extends GlassWindow
 ## The overhead-name slider updates every live name tag through Settings'
 ## change signal, so the result is visible before closing the window.
 
+const MENU_STORAGE_KEY := "settings_menu"
+const GAME_STORAGE_KEY := "settings_game"
+
 var slider: HSlider
 var value_label: Label
 var reset_button: Button
+## Set before add_child(): each surface keeps its own dragged position.
+var storage_key := "settings"
 
 
 func _ready() -> void:
-	window_id = "settings"
+	window_id = storage_key
 	title = "SETTINGS"
 	custom_minimum_size = Vector2(410, 0)
 	padding = Vector4(18, 12, 18, 16)

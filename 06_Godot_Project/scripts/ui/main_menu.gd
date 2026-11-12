@@ -118,6 +118,7 @@ func _update_status() -> void:
 func _open_settings() -> void:
 	if _settings_window == null:
 		_settings_window = SETTINGS_WINDOW.new()
+		_settings_window.storage_key = SETTINGS_WINDOW.MENU_STORAGE_KEY
 		add_child(_settings_window)
 	_settings_window.toggle()
 

@@ -5,6 +5,7 @@ extends RefCounted
 
 const TEST_WINDOW := "__ui_layout_test"
 const SETTINGS_WINDOW := preload("res://scripts/ui/settings_window.gd")
+const SETTINGS_POSITION_TEST := "__settings_position_test"
 
 
 func test_labels_are_vertically_centred(_t) -> Variant:
@@ -221,9 +222,10 @@ func test_settings_window_remembers_dragged_position(t: SceneTree) -> Variant:
 	var settings = t.root.get_node_or_null("/root/Settings")
 	if settings == null:
 		return "Settings autoload is missing"
-	var old: Variant = settings.get_value("ui_windows", "settings", null)
-	settings.set_value("ui_windows", "settings", Vector2(120, 100))
+	var old: Variant = settings.get_value("ui_windows", SETTINGS_POSITION_TEST, null)
+	settings.set_value("ui_windows", SETTINGS_POSITION_TEST, Vector2(120, 100))
 	var w = SETTINGS_WINDOW.new()
+	w.storage_key = SETTINGS_POSITION_TEST
 	t.root.add_child(w)
 	await t.process_frame
 	w.toggle()
@@ -231,7 +233,7 @@ func test_settings_window_remembers_dragged_position(t: SceneTree) -> Variant:
 	w.start_drag(w.global_position)
 	w.drag_to(Vector2(240, 180))
 	w.end_drag()
-	var saved: Variant = settings.get_value("ui_windows", "settings", null)
+	var saved: Variant = settings.get_value("ui_windows", SETTINGS_POSITION_TEST, null)
 	var saved_ok := false
 	if saved is Vector2:
 		var at: Vector2 = saved
@@ -240,14 +242,46 @@ func test_settings_window_remembers_dragged_position(t: SceneTree) -> Variant:
 	w.queue_free()
 	await t.process_frame
 	var w2 = SETTINGS_WINDOW.new()
+	w2.storage_key = SETTINGS_POSITION_TEST
 	t.root.add_child(w2)
 	await t.process_frame
 	var restored: bool = w2.position.is_equal_approx(Vector2(240, 180))
 	w2.queue_free()
-	settings.set_value("ui_windows", "settings", old)
+	settings.set_value("ui_windows", SETTINGS_POSITION_TEST, old)
 	await t.process_frame
 	if not saved_ok:
 		return "ending a Settings drag should save its position"
 	if not restored:
 		return "a new Settings window should restore the saved position"
+	return true
+
+
+func test_settings_window_keeps_surface_positions_separate(t: SceneTree) -> Variant:
+	var settings = t.root.get_node_or_null("/root/Settings")
+	if settings == null:
+		return "Settings autoload is missing"
+	var menu_key: String = SETTINGS_WINDOW.MENU_STORAGE_KEY
+	var game_key: String = SETTINGS_WINDOW.GAME_STORAGE_KEY
+	var old_menu: Variant = settings.get_value("ui_windows", menu_key, null)
+	var old_game: Variant = settings.get_value("ui_windows", game_key, null)
+	settings.set_value("ui_windows", menu_key, Vector2(70, 80))
+	settings.set_value("ui_windows", game_key, Vector2(500, 360))
+	var menu := SETTINGS_WINDOW.new()
+	menu.storage_key = menu_key
+	t.root.add_child(menu)
+	var game := SETTINGS_WINDOW.new()
+	game.storage_key = game_key
+	t.root.add_child(game)
+	await t.process_frame
+	var menu_ok: bool = menu.position.is_equal_approx(Vector2(70, 80))
+	var game_ok: bool = game.position.is_equal_approx(Vector2(500, 360))
+	menu.queue_free()
+	game.queue_free()
+	settings.set_value("ui_windows", menu_key, old_menu)
+	settings.set_value("ui_windows", game_key, old_game)
+	await t.process_frame
+	if not menu_ok:
+		return "the title-screen Settings position should load independently"
+	if not game_ok:
+		return "the in-game Settings position should load independently"
 	return true

@@ -93,6 +93,7 @@ func _ready() -> void:
 	_build_settings_button()
 	_build_chat()
 	settings_window = SETTINGS_WINDOW.new()
+	settings_window.storage_key = SETTINGS_WINDOW.GAME_STORAGE_KEY
 	_root.add_child(settings_window)
 
 
