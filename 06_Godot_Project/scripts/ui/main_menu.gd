@@ -120,7 +120,12 @@ func _open_settings() -> void:
 		_settings_window = SETTINGS_WINDOW.new()
 		_settings_window.storage_key = SETTINGS_WINDOW.MENU_STORAGE_KEY
 		add_child(_settings_window)
+		_settings_window.reset_layout_requested.connect(_reset_ui_layout)
 	_settings_window.toggle()
+
+
+func _reset_ui_layout() -> void:
+	_settings_window.center_position()
 
 
 func _on_mount() -> void:

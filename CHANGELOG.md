@@ -3,6 +3,7 @@
 ## [Unreleased] - 2026-11-12
 
 ### Added
+- **Reset UI layout:** Settings gains a **RESET UI LAYOUT** action that returns every glass window to its creation position and re-centers Settings itself. The title-screen action re-centers the single Settings window. Every reset is saved, and a new UI test verifies moved windows return while Settings centers. Suite: 199 passed, 0 failed, 0 skipped.
 - **Independent Settings positions:** the title-screen Settings window and the in-game overlay now save separate positions (`settings_menu` and `settings_game`). Dragging one no longer moves the other, and each still centers on its own first use. Tests: one new UI case for independent restore. Suite: 198 passed, 0 failed, 0 skipped.
 - **Persistent Settings position:** dragging the Settings window saves its position for the next open and the next session. It still centers on first use and clamps back inside smaller windows. Tests: one new UI case for drag-save and restore. Suite: 197 passed, 0 failed, 0 skipped.
 - **Overhead scale reset:** a compact **RESET** action beside the slider restores overhead names to the 70% default without closing Settings. Tests: the shared-window UI case now covers reset. Suite: 196 passed, 0 failed, 0 skipped.

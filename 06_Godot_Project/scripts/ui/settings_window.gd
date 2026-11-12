@@ -4,12 +4,15 @@ extends GlassWindow
 ## The overhead-name slider updates every live name tag through Settings'
 ## change signal, so the result is visible before closing the window.
 
+signal reset_layout_requested
+
 const MENU_STORAGE_KEY := "settings_menu"
 const GAME_STORAGE_KEY := "settings_game"
 
 var slider: HSlider
 var value_label: Label
 var reset_button: Button
+var reset_layout_button: Button
 ## Set before add_child(): each surface keeps its own dragged position.
 var storage_key := "settings"
 
@@ -65,6 +68,12 @@ func _build() -> void:
 		settings.set_overhead_name_scale(v)
 		value_label.text = "%d%%" % roundi(v * 100.0))
 	body.add_child(UiTheme.label("NPC · MONSTER · PLAYER NAMES", 9, UiTheme.TEXT_DIM, 400, 2))
+	reset_layout_button = Button.new()
+	reset_layout_button.text = "RESET UI LAYOUT"
+	reset_layout_button.tooltip_text = "Return every glass window to its default position"
+	UiTheme.style_button(reset_layout_button, false, false, 9)
+	reset_layout_button.pressed.connect(func(): reset_layout_requested.emit())
+	body.add_child(reset_layout_button)
 
 
 func _reset_overhead_scale() -> void:
@@ -85,3 +94,14 @@ func _place() -> void:
 	else:
 		position = ((get_viewport_rect().size - size) / 2.0).max(Vector2.ZERO)
 	set_home_position(position)
+
+
+## Moves Settings itself to the viewport centre and remembers that home spot.
+func center_position() -> void:
+	if not visible:
+		return
+	reset_size()
+	position = ((get_viewport_rect().size - size) / 2.0).max(Vector2.ZERO)
+	_clamp_to_screen()
+	set_home_position(position)
+	_save_position()

@@ -285,3 +285,35 @@ func test_settings_window_keeps_surface_positions_separate(t: SceneTree) -> Vari
 	if not game_ok:
 		return "the in-game Settings position should load independently"
 	return true
+
+
+func test_hud_reset_ui_layout_returns_windows(t: SceneTree) -> Variant:
+	var settings = t.root.get_node_or_null("/root/Settings")
+	if settings == null:
+		return "Settings autoload is missing"
+	var hud := CombatHud.new()
+	t.root.add_child(hud)
+	await t.process_frame
+	var saved: Dictionary = {}
+	for node in hud._root.get_children():
+		if node is GlassWindow and node.window_id != "":
+			saved[node.window_id] = settings.get_value("ui_windows", node.window_id, null)
+	var inventory_pos: Vector2 = hud.inventory._default_position
+	hud.inventory.position = Vector2(200, 200)
+	hud.toggle_settings()
+	await t.process_frame
+	await t.process_frame
+	hud.settings_window.reset_layout_button.pressed.emit()
+	await t.process_frame
+	var inventory_ok: bool = hud.inventory.position.is_equal_approx(inventory_pos)
+	var expected := ((hud.settings_window.get_viewport_rect().size - hud.settings_window.size) / 2.0).max(Vector2.ZERO)
+	var settings_ok: bool = hud.settings_window.position.is_equal_approx(expected)
+	for id in saved:
+		settings.set_value("ui_windows", id, saved[id])
+	hud.queue_free()
+	await t.process_frame
+	if not inventory_ok:
+		return "Reset UI Layout should restore the inventory position"
+	if not settings_ok:
+		return "Reset UI Layout should re-center Settings"
+	return true

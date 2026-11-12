@@ -95,6 +95,7 @@ func _ready() -> void:
 	settings_window = SETTINGS_WINDOW.new()
 	settings_window.storage_key = SETTINGS_WINDOW.GAME_STORAGE_KEY
 	_root.add_child(settings_window)
+	settings_window.reset_layout_requested.connect(reset_ui_layout)
 
 
 ## Adds a draggable window at its default position. Saved positions win.
@@ -343,6 +344,14 @@ func hover_tag(text: String, screen_pos: Vector2, overhead := false) -> void:
 ## Opens or closes the in-game Settings overlay (Esc in the field).
 func toggle_settings() -> void:
 	settings_window.toggle()
+
+
+## Returns every glass window to its creation position, then re-centers Settings.
+func reset_ui_layout() -> void:
+	for node in _root.get_children():
+		if node is GlassWindow and node != settings_window:
+			(node as GlassWindow).reset_position()
+	settings_window.center_position()
 
 
 # --- World HP bars ------------------------------------------------------------
