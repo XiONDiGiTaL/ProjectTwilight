@@ -151,7 +151,7 @@ The overlay's **RESET UI LAYOUT** action returns every glass window to its defau
 - **Guild message and chat:** leaders and officers can set a 200-character message of the day from the guild window; every member sees it when joining. Type `/g <message>` (or `/guild <message>`) to talk to online guild members; messages appear in the normal feed and are not persisted. Guild chat is local until the co-op transport exists.
 - **Warper:** fast travel to any town, field or dungeon in your client.
 - **Stylist:** hair style, hair colour and cloth dye.
-- **Commands:** press **Enter** — `/g <message>` for guild chat, `@go prontera`, `@heal`, `@rates`, `@mobinfo poring`, `@autoloot on`, `@save`, `@help`.
+- **Commands:** press **Enter** — `/g <message>` for guild chat, `@go prontera`, `@heal`, `@rates` (effective multipliers such as `x50`), `@mobinfo poring`, `@autoloot on`, `@save`, `@help`.
 - Also: **Platinum Skills**, **Rental** and **Reset**.
 
 The main menu also has a **Map Viewer** (fly around any classic map) and a **Sprite Viewer** (browse animated sprites from your client).

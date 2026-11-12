@@ -3,6 +3,7 @@
 ## [Unreleased] - 2026-11-12
 
 ### Changed
+- **Readable @rates output:** `@rates` now shows effective multipliers instead of raw percentages, so the new defaults read **EXP x50 / JOB x50 / DROP x50** and a 150% override reads **x1.5**. Configuration files still use percentage values. Tests: one new rate-label case. Suite: 201 passed, 0 failed, 0 skipped.
 - **50× midrate defaults:** shipped Base EXP, Job EXP and drop rates are now **5000% (50×)** in `data/config.json`, instead of the 1× Pre-Renewal baseline. Player `user://server.cfg` and rAthena/Hercules `conf/battle` overrides still take priority. Four deterministic tests now pin their simulations to an explicit 1× `RuleConfig` so they remain independent of shipped rates. Suite: 200 passed, 0 failed, 0 skipped.
 
 ### Fixed

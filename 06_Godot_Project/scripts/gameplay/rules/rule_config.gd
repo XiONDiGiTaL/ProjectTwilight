@@ -54,8 +54,17 @@ static func load_config(server_root := "") -> RuleConfig:
 
 ## One line for the @rates command.
 func describe() -> String:
-	return "EXP x%d   JOB x%d   DROP x%d   MAX LV %d   AUTOLOOT %s" % [
-		exp_rate, job_exp_rate, drop_rate, max_level, "ON" if autoloot else "OFF"]
+	return "EXP x%s   JOB x%s   DROP x%s   MAX LV %d   AUTOLOOT %s" % [
+		_rate_label(exp_rate), _rate_label(job_exp_rate), _rate_label(drop_rate), max_level,
+		"ON" if autoloot else "OFF"]
+
+
+## Percent value -> player-facing multiplier (5000 -> "50", 150 -> "1.5").
+static func _rate_label(rate: int) -> String:
+	if rate % 100 == 0:
+		return str(rate / 100)
+	var label := "%.2f" % (rate / 100.0)
+	return label.trim_suffix("0").trim_suffix("0").trim_suffix(".")
 
 
 func _read_json(path: String) -> void:

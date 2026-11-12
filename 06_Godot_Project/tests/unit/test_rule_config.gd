@@ -51,7 +51,22 @@ func test_shipped_defaults(_t) -> Variant:
 		return "shipped rates should be 5000 (50x): %s" % r.describe()
 	if r.max_level != 99 or r.autoloot:
 		return "shipped caps wrong: %s" % r.describe()
-	return true if r.describe().contains("EXP x5000") else "describe() missing rates"
+	return true if r.describe().contains("EXP x50") else "describe() should show effective multipliers"
+
+
+func test_effective_rate_labels(_t) -> Variant:
+	var r := RuleConfig.new()
+	r.exp_rate = 150
+	r.job_exp_rate = 125
+	r.drop_rate = 5000
+	var text := r.describe()
+	if not text.contains("EXP x1.5"):
+		return "150%% should render as x1.5: %s" % text
+	if not text.contains("JOB x1.25"):
+		return "125%% should render as x1.25: %s" % text
+	if not text.contains("DROP x50"):
+		return "5000%% should render as x50: %s" % text
+	return true
 
 
 func test_kv_overrides_and_clamps(_t) -> Variant:
