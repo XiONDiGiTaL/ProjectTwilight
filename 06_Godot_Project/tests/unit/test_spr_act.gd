@@ -104,3 +104,24 @@ func test_act_205(_t) -> Variant:
 	if not is_equal_approx(act.actions[0].interval, 150.0):
 		return "interval wrong: %f" % act.actions[0].interval
 	return true
+
+
+func test_sprite_ground_anchor(_t) -> Variant:
+	var spr := SprFile.decode(_make_spr_201())
+	var act := ActFile.decode(_make_act_205())
+	if spr == null or act == null:
+		return "fixtures failed to decode"
+	var sprite := CharacterSprite.new()
+	sprite.setup(spr, act)
+	if sprite.texture == null:
+		sprite.free()
+		return "sprite did not compose a texture"
+	var height := float(sprite.texture.get_height())
+	var anchor_ok := is_equal_approx(sprite.offset.y, height / 2.0)
+	var top_ok := is_equal_approx(sprite.top_height(), height * sprite.pixel_size)
+	sprite.free()
+	if not anchor_ok:
+		return "sprite bottom should sit on the node, not the ACT origin"
+	if not top_ok:
+		return "overhead height should follow the anchored texture top"
+	return true

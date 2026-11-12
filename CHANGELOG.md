@@ -2,6 +2,9 @@
 
 ## [Unreleased] - 2026-11-12
 
+### Fixed
+- **Sprite ground clipping:** character, NPC, monster and ground-item sprites now anchor the bottom of their composed image to the ground instead of the ACT foot origin. RO frames include opaque shoe pixels below that origin, which a depth-tested 3D ground cut off; overhead heights now follow the anchored texture top. Tests: one new SPR/ACT case checks the anchor and top height. Suite: 200 passed, 0 failed, 0 skipped.
+
 ### Added
 - **Reset UI layout:** Settings gains a **RESET UI LAYOUT** action that returns every glass window to its creation position and re-centers Settings itself. The title-screen action re-centers the single Settings window and fades **UI layout reset.** into the existing status line over 0.2 seconds, holds it for 2.5 seconds, then fades back to the mounted-client status. Every reset is saved, and the HUD feed confirms it in-game. A new UI test verifies moved windows return, Settings centers, and the feed notice appears. Suite: 199 passed, 0 failed, 0 skipped.
 - **Independent Settings positions:** the title-screen Settings window and the in-game overlay now save separate positions (`settings_menu` and `settings_game`). Dragging one no longer moves the other, and each still centers on its own first use. Tests: one new UI case for independent restore. Suite: 198 passed, 0 failed, 0 skipped.

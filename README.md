@@ -98,7 +98,7 @@ Classic information stays where veterans expect it: the status window is top-lef
 
 ## Visual direction
 
-The classic isometric camera, sprite characters and original map layouts stay. Lighting, effects, animation smoothness and UI are modernised on top of them, and each enhancement can be switched off independently of gameplay. Ragnarok M: Eternal Love is studied as a visual *reference* only. Its 3D Unity assets are not compatible with, or used in, this project.
+The classic isometric camera, sprite characters and original map layouts stay. Sprite bottoms are anchored to the ground plane so shoe and feet pixels are not cut off by the terrain. Lighting, effects, animation smoothness and UI are modernised on top of them, and each enhancement can be switched off independently of gameplay. Ragnarok M: Eternal Love is studied as a visual *reference* only. Its 3D Unity assets are not compatible with, or used in, this project.
 
 ## Getting started (development)
 

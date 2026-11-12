@@ -120,7 +120,7 @@ func reset_action() -> void:
 func top_height() -> float:
 	if texture == null or not _cache.has(_shown_key):
 		return 8.0
-	return float((_cache[_shown_key].origin as Vector2i).y) * pixel_size
+	return float(texture.get_height()) * pixel_size
 
 
 func _process(delta: float) -> void:
@@ -173,10 +173,11 @@ func _refresh() -> void:
 		_cache[key] = _compose(act_idx, f)
 	var entry: Dictionary = _cache[key]
 	texture = entry.texture
-	# Place the feet (composite origin) on the node position.
+	# Anchor the composite's bottom edge, not the ACT origin. RO frames carry
+	# opaque shoe pixels below that origin, which a depth-tested ground clips.
 	var size: Vector2 = entry.texture.get_size() if entry.texture else Vector2.ONE
 	var origin: Vector2 = entry.origin
-	offset = Vector2(size.x / 2.0 - origin.x, origin.y - size.y / 2.0)
+	offset = Vector2(size.x / 2.0 - origin.x, size.y / 2.0)
 	_shown_key = key
 
 
