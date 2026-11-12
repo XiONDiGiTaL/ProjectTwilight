@@ -215,3 +215,39 @@ func test_hud_settings_button_toggles_overlay(t: SceneTree) -> Variant:
 	if not closed:
 		return "the HUD Settings button should close the overlay"
 	return true
+
+
+func test_settings_window_remembers_dragged_position(t: SceneTree) -> Variant:
+	var settings = t.root.get_node_or_null("/root/Settings")
+	if settings == null:
+		return "Settings autoload is missing"
+	var old: Variant = settings.get_value("ui_windows", "settings", null)
+	settings.set_value("ui_windows", "settings", Vector2(120, 100))
+	var w = SETTINGS_WINDOW.new()
+	t.root.add_child(w)
+	await t.process_frame
+	w.toggle()
+	await t.process_frame
+	w.start_drag(w.global_position)
+	w.drag_to(Vector2(240, 180))
+	w.end_drag()
+	var saved: Variant = settings.get_value("ui_windows", "settings", null)
+	var saved_ok := false
+	if saved is Vector2:
+		var at: Vector2 = saved
+		saved_ok = at.is_equal_approx(Vector2(240, 180))
+	w.toggle(false)
+	w.queue_free()
+	await t.process_frame
+	var w2 = SETTINGS_WINDOW.new()
+	t.root.add_child(w2)
+	await t.process_frame
+	var restored: bool = w2.position.is_equal_approx(Vector2(240, 180))
+	w2.queue_free()
+	settings.set_value("ui_windows", "settings", old)
+	await t.process_frame
+	if not saved_ok:
+		return "ending a Settings drag should save its position"
+	if not restored:
+		return "a new Settings window should restore the saved position"
+	return true

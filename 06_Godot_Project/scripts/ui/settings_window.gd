@@ -10,6 +10,7 @@ var reset_button: Button
 
 
 func _ready() -> void:
+	window_id = "settings"
 	title = "SETTINGS"
 	custom_minimum_size = Vector2(410, 0)
 	padding = Vector4(18, 12, 18, 16)
@@ -21,7 +22,7 @@ func _ready() -> void:
 func toggle(show: Variant = null) -> void:
 	super.toggle(show)
 	if visible:
-		_center.call_deferred()
+		_place.call_deferred()
 
 
 func _build() -> void:
@@ -65,13 +66,17 @@ func _reset_overhead_scale() -> void:
 	slider.value = Settings.OVERHEAD_NAME_DEFAULT
 
 
-func _center() -> void:
+func _place() -> void:
 	if not visible:
 		return
 	reset_size()
 	await get_tree().process_frame
 	if not visible:
 		return
-	var at := ((get_viewport_rect().size - size) / 2.0).max(Vector2.ZERO)
-	position = at
-	set_home_position(at)
+	var settings := get_node_or_null("/root/Settings")
+	var saved: Variant = settings.get_value("ui_windows", window_id, null) if settings else null
+	if saved is Vector2:
+		_clamp_to_screen()
+	else:
+		position = ((get_viewport_rect().size - size) / 2.0).max(Vector2.ZERO)
+	set_home_position(position)

@@ -3,6 +3,7 @@
 ## [Unreleased] - 2026-11-12
 
 ### Added
+- **Persistent Settings position:** dragging the Settings window saves its position for the next open and the next session. It still centers on first use and clamps back inside smaller windows. Tests: one new UI case for drag-save and restore. Suite: 197 passed, 0 failed, 0 skipped.
 - **Overhead scale reset:** a compact **RESET** action beside the slider restores overhead names to the 70% default without closing Settings. Tests: the shared-window UI case now covers reset. Suite: 196 passed, 0 failed, 0 skipped.
 - **HUD Settings button:** a compact **SETTINGS** button below the minimap opens the shared Settings overlay without using the Esc shortcut. Tests: one new UI case for the button's open/close wiring. Suite: 196 passed, 0 failed, 0 skipped.
 - **In-game Settings shortcut:** **Esc** now opens or closes Settings in the field without returning to the title screen. The shared Settings window scales every live NPC, CPU player, warp and monster hover label while the slider moves. Tests: one new UI case for the window's live scale update. Suite: 195 passed, 0 failed, 0 skipped.
