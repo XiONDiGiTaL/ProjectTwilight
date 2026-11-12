@@ -301,12 +301,19 @@ func _build_chat() -> void:
 	chat.offset_top = -54
 
 
-## Shows a small name tag at a screen position (ground item hover); "" hides it.
-func hover_tag(text: String, screen_pos: Vector2) -> void:
+## Shows a small name tag at a screen position (ground item or monster hover);
+## "" hides it. `overhead` opts into the user's overhead-name scale.
+func hover_tag(text: String, screen_pos: Vector2, overhead := false) -> void:
 	_hover_tag.visible = text != ""
 	if text == "":
 		return
 	_hover_label.text = text.to_upper()
+	var font_size := 11
+	if overhead:
+		var s := get_node_or_null("/root/Settings")
+		var scale: float = s.overhead_name_scale() if s else 1.0
+		font_size = maxi(8, roundi(14.0 * scale))
+	_hover_label.label_settings.font_size = font_size
 	_hover_tag.reset_size()
 	_hover_tag.position = screen_pos - Vector2(_hover_tag.size.x / 2.0, _hover_tag.size.y + 6.0)
 

@@ -3,8 +3,9 @@ extends GlassPanel
 ## Draggable glass window with a title bar and close button. Subclasses add
 ## their content to `body`. Position is remembered per window in settings.
 ## Drag capture continues while the pointer leaves the title bar, so windows
-## can be repositioned like the classic client. Dragging snaps to the viewport
-## edges, and a title-bar double-click returns the window to its default spot.
+## can be repositioned like the classic client. Dragging snaps flush to the
+## viewport edges and adjacent windows; a title-bar double-click returns the
+## window to its default spot.
 
 signal closed
 
@@ -22,6 +23,7 @@ var _drag_offset := Vector2.ZERO
 var _default_position := Vector2.ZERO
 var _title_bar: HBoxContainer
 var _drag_grip: Label
+var _edge_snapped := false
 
 
 func _ready() -> void:
@@ -103,6 +105,7 @@ func start_drag(at: Vector2) -> void:
 	if not visible:
 		return
 	_dragging = true
+	_edge_snapped = false
 	_drag_offset = at - global_position
 	move_to_front()
 
@@ -126,12 +129,18 @@ func end_drag() -> void:
 ## Returns the window to the position it was created at, then remembers it.
 func reset_position() -> void:
 	_dragging = false
+	_edge_snapped = false
 	position = _default_position
 	_clamp_to_screen()
 	_save_position()
 	# A short glow confirms the reset without adding a transient label.
 	set_glow(0.6)
 	create_tween().tween_method(func(v: float): set_glow(v), 0.6, 0.0, 0.28)
+
+
+## Sets where a double-click reset returns this window.
+func set_home_position(at: Vector2) -> void:
+	_default_position = at
 
 
 func _on_title_input(e: InputEvent) -> void:
@@ -178,7 +187,57 @@ func _snap_to_edges() -> void:
 		p.y = 0.0
 	elif p.y >= max_pos.y - SNAP_DISTANCE:
 		p.y = max_pos.y
+	p = _snap_to_windows(p)
 	global_position = p.clamp(Vector2.ZERO, max_pos)
+	var at_edge := is_zero_approx(global_position.x) or is_zero_approx(global_position.y) \
+		or is_equal_approx(global_position.x, max_pos.x) or is_equal_approx(global_position.y, max_pos.y)
+	if at_edge:
+		if not _edge_snapped:
+			_edge_snapped = true
+			_flash_edge_snap()
+	elif _edge_snapped:
+		_edge_snapped = false
+
+
+## Pulls the window flush to a neighbouring window's edge when both the edge
+## and the perpendicular span overlap. Uses the same threshold as screen snaps.
+func _snap_to_windows(p: Vector2) -> Vector2:
+	var parent := get_parent()
+	if parent == null:
+		return p
+	var best := p
+	var best_dx := SNAP_DISTANCE + 1.0
+	var best_dy := SNAP_DISTANCE + 1.0
+	for node in parent.get_children():
+		if node == self or not (node is GlassWindow):
+			continue
+		var other := node as GlassWindow
+		if not other.visible:
+			continue
+		var op := other.global_position
+		var os := other.size
+		if _spans_overlap(p.y, p.y + size.y, op.y, op.y + os.y):
+			for candidate in [op.x + os.x, op.x - size.x]:
+				var d: float = absf(p.x - candidate)
+				if d <= SNAP_DISTANCE and d < best_dx:
+					best_dx = d
+					best.x = candidate
+		if _spans_overlap(p.x, p.x + size.x, op.x, op.x + os.x):
+			for candidate in [op.y + os.y, op.y - size.y]:
+				var d: float = absf(p.y - candidate)
+				if d <= SNAP_DISTANCE and d < best_dy:
+					best_dy = d
+					best.y = candidate
+	return best
+
+
+static func _spans_overlap(a0: float, a1: float, b0: float, b1: float) -> bool:
+	return a0 < b1 and a1 > b0
+
+
+func _flash_edge_snap() -> void:
+	set_glow(0.42)
+	create_tween().tween_method(func(v: float): set_glow(v), 0.42, 0.0, 0.24)
 
 
 func _settings() -> Node:

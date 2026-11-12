@@ -100,3 +100,59 @@ func test_double_click_resets_position(t: SceneTree) -> Variant:
 	w.queue_free()
 	await t.process_frame
 	return true if ok else "a title-bar double-click should restore the default position: %s" % got
+
+
+func test_windows_snap_to_each_other(t: SceneTree) -> Variant:
+	var a := GlassWindow.new()
+	var b := GlassWindow.new()
+	t.root.add_child(a)
+	t.root.add_child(b)
+	await t.process_frame
+	a.size = Vector2(200, 150)
+	b.size = Vector2(200, 150)
+	a.position = Vector2(100, 100)
+	b.position = Vector2(500, 100)
+	a.start_drag(a.global_position)
+	a.drag_to(Vector2(306, 100))
+	var got := a.global_position
+	var ok := got.is_equal_approx(Vector2(300, 100))
+	a.end_drag()
+	a.queue_free()
+	b.queue_free()
+	await t.process_frame
+	return true if ok else "a dragged window should snap flush to a neighbour's edge: %s" % got
+
+
+func test_edge_snap_state_tracks_viewport_border(t: SceneTree) -> Variant:
+	var w := GlassWindow.new()
+	t.root.add_child(w)
+	await t.process_frame
+	w.size = Vector2(300, 200)
+	w.position = Vector2(100, 100)
+	w.start_drag(w.global_position)
+	w.drag_to(Vector2(4, 100))
+	if not w._edge_snapped:
+		return "a window flush to the viewport should enter its edge-snap state"
+	w.drag_to(Vector2(100, 100))
+	var ok := not w._edge_snapped
+	w.end_drag()
+	w.queue_free()
+	await t.process_frame
+	return true if ok else "edge-snap state should clear when the window leaves the border"
+
+
+func test_overhead_name_scale_is_clamped(t: SceneTree) -> Variant:
+	var settings = t.root.get_node_or_null("/root/Settings")
+	if settings == null:
+		return "Settings autoload is missing"
+	var old: float = settings.overhead_name_scale()
+	settings.set_overhead_name_scale(-1.0)
+	var low_ok := is_equal_approx(settings.overhead_name_scale(), 0.5)
+	settings.set_overhead_name_scale(9.0)
+	var high_ok := is_equal_approx(settings.overhead_name_scale(), 1.25)
+	settings.set_overhead_name_scale(old)
+	if not low_ok:
+		return "overhead name scale should clamp to 50%"
+	if not high_ok:
+		return "overhead name scale should clamp to 125%"
+	return true

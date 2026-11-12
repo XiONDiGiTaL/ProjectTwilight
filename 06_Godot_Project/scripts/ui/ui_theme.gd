@@ -143,6 +143,26 @@ static func style_line_edit(e: LineEdit) -> void:
 		e.add_theme_stylebox_override(state, sb)
 
 
+## Glass-styled horizontal slider with an accent fill and a thin track.
+static func style_slider(s: HSlider) -> void:
+	s.custom_minimum_size = Vector2(maxf(s.custom_minimum_size.x, 160), 24)
+	s.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	var track := StyleBoxFlat.new()
+	track.bg_color = Color(0.02, 0.05, 0.09, 0.75)
+	track.border_color = Color(ACCENT, 0.28)
+	track.border_width_top = 1
+	track.border_width_bottom = 1
+	track.set_corner_radius_all(2)
+	track.content_margin_top = 2
+	track.content_margin_bottom = 2
+	s.add_theme_stylebox_override("slider", track)
+	for state in ["grabber_area", "grabber_area_highlight"]:
+		var fill := StyleBoxFlat.new()
+		fill.bg_color = Color(ACCENT, 0.7)
+		fill.set_corner_radius_all(2)
+		s.add_theme_stylebox_override(state, fill)
+
+
 ## HP colour by remaining fraction (green -> amber -> red), blended smoothly.
 static func hp_color(frac: float) -> Color:
 	if frac > 0.5:

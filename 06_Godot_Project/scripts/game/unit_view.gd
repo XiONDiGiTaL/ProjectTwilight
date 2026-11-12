@@ -121,9 +121,11 @@ func set_name_tag(text: String, color := Color(0.72, 0.9, 1.0)) -> void:
 		name_tag.no_depth_test = true
 		name_tag.fixed_size = false
 		name_tag.font = UiTheme.font(600, 1)
-		name_tag.font_size = 40
+		var settings := get_node_or_null("/root/Settings")
+		var name_scale: float = settings.overhead_name_scale() if settings else 1.0
+		name_tag.font_size = maxi(10, roundi(40.0 * name_scale))
 		name_tag.pixel_size = 0.045
-		name_tag.outline_size = 12
+		name_tag.outline_size = maxi(6, roundi(12.0 * name_scale))
 		name_tag.outline_modulate = Color(0.02, 0.04, 0.08, 0.85)
 		name_tag.render_priority = 2
 		add_child(name_tag)

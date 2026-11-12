@@ -11,6 +11,16 @@ extends Node
 const SETTINGS_PATH := "user://settings.cfg"
 const LOCAL_DEV_PATH := "res://twilight.local.cfg"
 
+## Overhead name tags are world-space labels, so their scale is independent of
+## the HUD. Keep the default restrained; players who prefer the old size can
+## raise it from Settings.
+const OVERHEAD_NAME_MIN := 0.5
+const OVERHEAD_NAME_MAX := 1.25
+const OVERHEAD_NAME_DEFAULT := 0.7
+const OVERHEAD_NAME_STEP := 0.05
+
+signal overhead_name_scale_changed(scale: float)
+
 var _cfg := ConfigFile.new()
 
 
@@ -27,6 +37,23 @@ func get_value(section: String, key: String, default: Variant = null) -> Variant
 func set_value(section: String, key: String, value: Variant) -> void:
 	_cfg.set_value(section, key, value)
 	_cfg.save(SETTINGS_PATH)
+
+
+func overhead_name_scale_range() -> Vector2:
+	return Vector2(OVERHEAD_NAME_MIN, OVERHEAD_NAME_MAX)
+
+
+func overhead_name_scale() -> float:
+	var value := float(get_value("ui", "overhead_name_scale", OVERHEAD_NAME_DEFAULT))
+	return clampf(value, OVERHEAD_NAME_MIN, OVERHEAD_NAME_MAX)
+
+
+func set_overhead_name_scale(value: float) -> void:
+	var scaled := snappedf(clampf(value, OVERHEAD_NAME_MIN, OVERHEAD_NAME_MAX), OVERHEAD_NAME_STEP)
+	if is_equal_approx(scaled, overhead_name_scale()):
+		return
+	set_value("ui", "overhead_name_scale", scaled)
+	overhead_name_scale_changed.emit(scaled)
 
 
 func client_path() -> String:

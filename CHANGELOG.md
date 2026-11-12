@@ -3,6 +3,8 @@
 ## [Unreleased] - 2026-11-12
 
 ### Added
+- **Window-to-window snapping and border highlight:** glass windows now snap flush to one another's edges when their spans overlap, in addition to the existing viewport-edge snapping. Landing on a viewport border briefly lights the window's edge so the snap is visible without adding chrome. Tests: `test_ui_layout.gd` covers sibling snapping and the edge state.
+- **Overhead name scale:** NPC name tags now default to a sleek 70% of their former size. **SETTINGS** on the title screen adds a 50–125% slider with a live percentage readout; the saved scale also applies to CPU player tags, warp labels and monster hover names. Tests: `test_ui_layout.gd` covers the setting's clamping. Suite: 194 passed, 0 failed, 0 skipped.
 - **Refined window layout and repositioning:** Twilight Glass labels now centre vertically by default, buttons share a consistent 28 px rhythm and content padding, and window title bars have a drag grip that keeps tracking the pointer outside the bar. Saved window positions are restored before `CombatHud`'s defaults, so dragging a window to a new spot survives reopening and restarting.
 - **Window snapping and reset:** dragging a glass window within 14 px of a viewport edge snaps it flush to that edge; double-clicking its title bar returns it to the default position for that window and saves the reset.
 - **UI resolution matrix:** `tests/capture_ui_windows.gd` populates Prontera and captures the inventory, status, equipment, skills, shop, Kafra storage, guild storage, guild and NPC dialogue at 1280×720 and 1920×1080. It checks each window for an empty rect, wrong frame size or out-of-viewport placement and writes a report beside the screenshots.

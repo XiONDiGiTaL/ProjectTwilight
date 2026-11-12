@@ -26,10 +26,12 @@ func setup(npc: Dictionary, res: Node, map: RoMap) -> void:
 	_tag = Label3D.new()
 	_tag.text = npc_name.to_upper()
 	_tag.font = UiTheme.font(600, 2)
-	_tag.font_size = 44
+	var settings := get_node_or_null("/root/Settings")
+	var name_scale: float = settings.overhead_name_scale() if settings else 1.0
+	_tag.font_size = maxi(10, roundi(44.0 * name_scale))
 	_tag.pixel_size = 0.06
 	_tag.modulate = UiTheme.ACCENT
-	_tag.outline_size = 10
+	_tag.outline_size = maxi(6, roundi(10.0 * name_scale))
 	_tag.outline_modulate = Color(0.0, 0.03, 0.06, 0.85)
 	_tag.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	_tag.no_depth_test = true

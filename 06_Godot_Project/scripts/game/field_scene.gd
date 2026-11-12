@@ -393,12 +393,17 @@ func _process(delta: float) -> void:
 	if not player.walker.is_moving():
 		_target_marker.visible = false
 	var mouse := get_viewport().get_mouse_position()
-	var hover := item_at_screen(mouse)
-	if hover != 0:
-		var iv: GroundItemView = item_views[hover]
-		hud.hover_tag(iv.item_name, camera.unproject_position(iv.head_position()))
+	var monster := monster_at_screen(mouse)
+	if monster != 0:
+		var mv: UnitView = views[monster]
+		hud.hover_tag(mv.unit.name, camera.unproject_position(mv.head_position()), true)
 	else:
-		hud.hover_tag("", Vector2.ZERO)
+		var hover := item_at_screen(mouse)
+		if hover != 0:
+			var iv: GroundItemView = item_views[hover]
+			hud.hover_tag(iv.item_name, camera.unproject_position(iv.head_position()))
+		else:
+			hud.hover_tag("", Vector2.ZERO)
 	if hud.dialog.visible and player.walker.is_moving():
 		hud.dialog.close()
 	# Walking away from the merchant closes the shop (the simulation also enforces range).
