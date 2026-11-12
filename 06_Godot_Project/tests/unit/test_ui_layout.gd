@@ -175,6 +175,10 @@ func test_settings_window_updates_scale_live(t: SceneTree) -> Variant:
 	await t.process_frame
 	var updates: bool = is_equal_approx(settings.overhead_name_scale(), 0.55) \
 		and w.value_label.text == "55%"
+	w.reset_button.pressed.emit()
+	await t.process_frame
+	var resets: bool = is_equal_approx(settings.overhead_name_scale(), 0.7) \
+		and w.value_label.text == "70%"
 	w.toggle(false)
 	w.queue_free()
 	settings.set_overhead_name_scale(old)
@@ -185,6 +189,8 @@ func test_settings_window_updates_scale_live(t: SceneTree) -> Variant:
 		return "SettingsWindow.toggle() should open it"
 	if not updates:
 		return "the Settings slider should update and display the live scale"
+	if not resets:
+		return "the Settings reset action should restore the 70% default"
 	return true
 
 

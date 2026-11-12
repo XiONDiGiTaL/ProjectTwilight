@@ -6,6 +6,7 @@ extends GlassWindow
 
 var slider: HSlider
 var value_label: Label
+var reset_button: Button
 
 
 func _ready() -> void:
@@ -37,7 +38,7 @@ func _build() -> void:
 	slider.max_value = limits.y
 	slider.step = Settings.OVERHEAD_NAME_STEP
 	slider.value = settings.overhead_name_scale()
-	slider.custom_minimum_size = Vector2(260, 24)
+	slider.custom_minimum_size = Vector2(200, 24)
 	slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	slider.tooltip_text = "Scale overhead names from 50%% to 125%%"
 	UiTheme.style_slider(slider)
@@ -46,10 +47,22 @@ func _build() -> void:
 	value_label.custom_minimum_size = Vector2(44, 0)
 	value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	row.add_child(value_label)
+	reset_button = Button.new()
+	reset_button.text = "RESET"
+	reset_button.tooltip_text = "Reset overhead names to %d%%" % roundi(Settings.OVERHEAD_NAME_DEFAULT * 100.0)
+	reset_button.custom_minimum_size = Vector2(74, 0)
+	UiTheme.style_button(reset_button, false, false, 9)
+	reset_button.add_theme_color_override("font_color", UiTheme.ACCENT)
+	reset_button.pressed.connect(_reset_overhead_scale)
+	row.add_child(reset_button)
 	slider.value_changed.connect(func(v: float) -> void:
 		settings.set_overhead_name_scale(v)
 		value_label.text = "%d%%" % roundi(v * 100.0))
 	body.add_child(UiTheme.label("NPC · MONSTER · PLAYER NAMES", 9, UiTheme.TEXT_DIM, 400, 2))
+
+
+func _reset_overhead_scale() -> void:
+	slider.value = Settings.OVERHEAD_NAME_DEFAULT
 
 
 func _center() -> void:
