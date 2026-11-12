@@ -252,14 +252,21 @@ func test_settings_window_rate_presets(t: SceneTree) -> Variant:
 
 
 func test_rate_change_notices_show_effective_rates(t: SceneTree) -> Variant:
+	var settings = t.root.get_node_or_null("/root/Settings")
+	if settings == null:
+		return "Settings autoload is missing"
+	var old: int = settings.rate_preset()
+	settings.set_value("rules", "rate_preset", Settings.RATE_PRESET_NONE)
 	var gat := GatFile.new()
-	gat.width = 1
-	gat.height = 1
-	gat.heights.resize(4)
-	gat.types.resize(1)
+	gat.width = 10
+	gat.height = 10
+	gat.heights.resize(400)
+	gat.types.resize(100)
 	var rules := RuleConfig.new()
+	var sim := FieldSimulation.new(gat, 1, rules)
 	var scene = FIELD_SCENE.new()
-	scene.sim = FieldSimulation.new(gat, 1, rules)
+	scene.sim = sim
+	scene.player = sim.add_player("Rates", Vector2i(5, 5), {"str": 5, "agi": 5, "vit": 5, "int": 5, "dex": 5, "luk": 5})
 	scene._config_exp_rate = 5000
 	scene._config_job_exp_rate = 5000
 	scene._config_drop_rate = 5000
@@ -267,22 +274,30 @@ func test_rate_change_notices_show_effective_rates(t: SceneTree) -> Variant:
 	t.root.add_child(hud)
 	await t.process_frame
 	scene.hud = hud
-	scene._apply_rate_preset(25)
+	settings.rate_preset_changed.connect(scene._apply_rate_preset)
+	scene._on_chat_submit("@rates 25")
 	await t.process_frame
 	var set_text: String = str(_feed_texts(hud)[-1])
-	scene._apply_rate_preset(Settings.RATE_PRESET_NONE)
+	var stored_25: bool = settings.rate_preset() == 25
+	scene._on_chat_submit("@rates default")
 	await t.process_frame
 	var restored_text: String = str(_feed_texts(hud)[-1])
+	var cleared: bool = settings.rate_preset() == Settings.RATE_PRESET_NONE
 	var restored_rates: bool = rules.exp_rate == 5000 and rules.job_exp_rate == 5000 and rules.drop_rate == 5000
 	scene.free()
 	hud.queue_free()
+	settings.set_value("rules", "rate_preset", old)
 	await t.process_frame
 	if set_text != "Rates set:  EXP x25   JOB x25   DROP x25":
-		return "a preset change should announce its rates: %s" % set_text
+		return "@rates 25 should announce its rates: %s" % set_text
+	if not stored_25:
+		return "@rates 25 should store the same preset as Settings"
 	if restored_text != "Rates restored:  EXP x50   JOB x50   DROP x50":
-		return "DEFAULT should announce the restored config rates: %s" % restored_text
+		return "@rates default should announce the restored config rates: %s" % restored_text
+	if not cleared:
+		return "@rates default should clear the stored preset"
 	if not restored_rates:
-		return "DEFAULT should restore the config rates captured by the field"
+		return "@rates default should restore the config rates captured by the field"
 	return true
 
 

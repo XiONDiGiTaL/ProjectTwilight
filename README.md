@@ -92,7 +92,7 @@ Project Twilight's HUD uses its own **Twilight Glass** design language, a sleek 
 - condensed, letter-spaced typography
 - every gameplay window drags from its title-bar grip, snaps to screen edges and neighbouring windows, and remembers its position; a subtle edge highlight confirms a viewport-border snap, and double-clicking the title bar resets it
 - overhead name tags use a restrained 70% default scale, adjustable from 50–125% in **SETTINGS** (title screen, **Esc**, or the HUD button) with a **RESET** action back to 70%; the same scale covers NPCs, CPU players, warp labels and monster hover names, and the title-screen and in-game Settings windows each remember their own dragged position
-- **SERVER RATES** in Settings switches Base EXP, Job EXP and drops between **1×, 25× and 50×**, with **DEFAULT** returning to the loaded server-config rates; the active choice is highlighted, saved with the player's settings, applies to the running field immediately with a system-feed confirmation, and a preset takes priority over server config defaults
+- **SERVER RATES** in Settings switches Base EXP, Job EXP and drops between **1×, 25× and 50×**, with **DEFAULT** returning to the loaded server-config rates; the active choice is highlighted, saved with the player's settings, applies to the running field immediately with a system-feed confirmation, and a preset takes priority over server config defaults. The same choice is available from chat with `@rates 1|25|50|default`
 - **RESET UI LAYOUT** in Settings returns every glass window—inventory, status, equipment, skills, shop, storage, guild and Settings itself—to its default position; Settings re-centers, a brief feed message confirms it, and every reset is remembered
 
 Classic information stays where veterans expect it: the status window is top-left. It fades when you aren't using it, wakes up when your HP or SP changes, and can be collapsed.
@@ -152,7 +152,7 @@ The overlay's **RESET UI LAYOUT** action returns every glass window to its defau
 - **Guild message and chat:** leaders and officers can set a 200-character message of the day from the guild window; every member sees it when joining. Type `/g <message>` (or `/guild <message>`) to talk to online guild members; messages appear in the normal feed and are not persisted. Guild chat is local until the co-op transport exists.
 - **Warper:** fast travel to any town, field or dungeon in your client.
 - **Stylist:** hair style, hair colour and cloth dye.
-- **Commands:** press **Enter** — `/g <message>` for guild chat, `@go prontera`, `@heal`, `@rates` (effective multipliers such as `x50`), `@mobinfo poring`, `@autoloot on`, `@save`, `@help`.
+- **Commands:** press **Enter** — `/g <message>` for guild chat, `@go prontera`, `@heal`, `@rates` (effective multipliers such as `x50`; `@rates 1|25|50|default` sets the Settings preset), `@mobinfo poring`, `@autoloot on`, `@save`, `@help`.
 - Also: **Platinum Skills**, **Rental** and **Reset**.
 
 The main menu also has a **Map Viewer** (fly around any classic map) and a **Sprite Viewer** (browse animated sprites from your client).

@@ -76,7 +76,7 @@ func _ready() -> void:
 	_config_exp_rate = sim.rules.exp_rate
 	_config_job_exp_rate = sim.rules.job_exp_rate
 	_config_drop_rate = sim.rules.drop_rate
-	var settings := get_node_or_null("/root/Settings")
+	var settings := _settings_autoload()
 	if settings:
 		settings.rate_preset_changed.connect(_apply_rate_preset)
 		_apply_rate_preset(settings.rate_preset())
@@ -193,11 +193,32 @@ func _on_chat_submit(text: String) -> void:
 	var r := ChatCommands.execute(sim, player, text)
 	if r.has("action"):
 		var a: Dictionary = r.action
-		if String(a.get("kind", "")) == "warp":
-			script_warp(String(a.map), int(a.x), int(a.y))
+		match String(a.get("kind", "")):
+			"warp":
+				script_warp(String(a.map), int(a.x), int(a.y))
+			"rate_preset":
+				_apply_rate_preset_action(int(a.get("multiplier", 0)))
 	var msg := String(r.get("text", ""))
 	if msg != "":
 		hud.notify(msg, UiTheme.ACCENT if bool(r.get("ok", true)) else UiTheme.HP_MID)
+
+
+## @rates presets go through Settings, so the command and the window share the
+## same stored choice. An unchanged choice still reapplies and announces itself.
+func _apply_rate_preset_action(multiplier: int) -> void:
+	var settings := _settings_autoload()
+	if settings == null:
+		_apply_rate_preset(multiplier)
+		return
+	var before: int = settings.rate_preset()
+	settings.set_rate_preset(multiplier)
+	if before == multiplier or not settings.rate_preset_changed.is_connected(_apply_rate_preset):
+		_apply_rate_preset(multiplier)
+
+
+func _settings_autoload() -> Node:
+	var tree := Engine.get_main_loop() as SceneTree
+	return tree.root.get_node_or_null("Settings") if tree else null
 
 
 func _unhandled_input(e: InputEvent) -> void:

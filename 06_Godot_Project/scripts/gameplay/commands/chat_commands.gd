@@ -14,7 +14,7 @@ const HELP_LINES := [
 	"@save              set your save point here",
 	"@revive            stand up where you fell",
 	"@die               fall in battle (for testing)",
-	"@rates             current EXP / drop rates",
+	"@rates [1|25|50|default]  show or set EXP / drop rates",
 	"@autoloot [on|off] take drops straight into your bag",
 	"@mobinfo <name>    monster level, HP, EXP",
 	"@who               players on this map",
@@ -32,7 +32,8 @@ const HELP_LINES := [
 const HUB_TOWNS := {"prontera": Vector2i(156, 191)}
 
 
-## Runs one line. Returns {ok: bool, text: String, action?: {kind, map, x, y}}.
+## Runs one line. Returns {ok: bool, text: String, action?: Dictionary}; map
+## travel carries a destination and rate presets carry a multiplier.
 static func execute(sim: FieldSimulation, u: SimUnit, line: String) -> Dictionary:
 	var text := line.strip_edges()
 	if text == "" or sim == null or u == null:
@@ -90,7 +91,23 @@ static func execute(sim: FieldSimulation, u: SimUnit, line: String) -> Dictionar
 				return _err("You are not dead.")
 			return _ok("You stand up again.")
 		"rates":
-			return _ok(sim.rules.describe())
+			if args.is_empty():
+				return _ok(sim.rules.describe())
+			if args.size() > 1:
+				return _err("Usage: @rates [1|25|50|default]")
+			var preset := -1
+			match String(args[0]).to_lower():
+				"1":
+					preset = 1
+				"25":
+					preset = 25
+				"50":
+					preset = 50
+				"default":
+					preset = 0
+			if preset < 0:
+				return _err("Usage: @rates [1|25|50|default]")
+			return {"ok": true, "text": "", "action": {"kind": "rate_preset", "multiplier": preset}}
 		"autoloot":
 			if args.is_empty():
 				sim.rules.autoloot = not sim.rules.autoloot

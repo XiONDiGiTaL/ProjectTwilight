@@ -95,6 +95,28 @@ func test_mobinfo_who_rates_and_job(_t) -> Variant:
 	return true if String(job.text).contains("Novice") else "@job should name the class"
 
 
+func test_rates_preset_action(_t) -> Variant:
+	var sim := _field()
+	var p := sim.add_player("Rates", Vector2i(50, 50), FLAT)
+	for spec in [["1", 1], ["25", 25], ["50", 50], ["default", 0]]:
+		var r := ChatCommands.execute(sim, p, "@rates %s" % spec[0])
+		if not r.ok or not r.has("action"):
+			return "@rates %s should return a preset action" % spec[0]
+		if String(r.action.kind) != "rate_preset" or int(r.action.multiplier) != int(spec[1]):
+			return "@rates %s carried the wrong action: %s" % [spec[0], r.action]
+		if String(r.text) != "":
+			return "@rates %s should leave feedback to the field" % spec[0]
+	var bad := ChatCommands.execute(sim, p, "@rates 2")
+	if bad.ok or not String(bad.text).contains("Usage"):
+		return "@rates should reject unknown presets"
+	var extra := ChatCommands.execute(sim, p, "@rates 25 50")
+	if extra.ok or not String(extra.text).contains("Usage"):
+		return "@rates should reject extra arguments"
+	var current := ChatCommands.execute(sim, p, "@rates")
+	return true if current.ok and String(current.text).contains("EXP x") \
+		else "@rates without an argument should still describe the rules"
+
+
 func test_autoloot_toggle(_t) -> Variant:
 	var sim := _field()
 	var p := sim.add_player("Looter", Vector2i(50, 50), FLAT)
