@@ -163,6 +163,29 @@ static func style_slider(s: HSlider) -> void:
 		s.add_theme_stylebox_override(state, fill)
 
 
+## Compact dark-glass button for HUD utilities over the bright game world.
+static func style_hud_button(b: BaseButton, font_size := 10) -> void:
+	style_button(b, false, false, font_size)
+	b.add_theme_color_override("font_color", TEXT)
+	b.add_theme_color_override("font_hover_color", Color.WHITE)
+	b.add_theme_color_override("font_pressed_color", Color.WHITE)
+	var make := func(bg_a: float, border_a: float) -> StyleBoxFlat:
+		var sb := StyleBoxFlat.new()
+		sb.bg_color = Color(0.02, 0.05, 0.09, bg_a)
+		sb.border_color = Color(ACCENT, border_a)
+		sb.set_border_width_all(1)
+		sb.set_corner_radius_all(2)
+		sb.content_margin_left = 14
+		sb.content_margin_right = 14
+		sb.content_margin_top = 5
+		sb.content_margin_bottom = 5
+		return sb
+	b.add_theme_stylebox_override("normal", make.call(0.78, 0.5))
+	b.add_theme_stylebox_override("hover", make.call(0.88, 0.9))
+	b.add_theme_stylebox_override("pressed", make.call(0.94, 1.0))
+	b.add_theme_stylebox_override("hover_pressed", make.call(0.94, 1.0))
+
+
 ## HP colour by remaining fraction (green -> amber -> red), blended smoothly.
 static func hp_color(frac: float) -> Color:
 	if frac > 0.5:

@@ -3,6 +3,7 @@
 ## [Unreleased] - 2026-11-12
 
 ### Added
+- **HUD Settings button:** a compact **SETTINGS** button below the minimap opens the shared Settings overlay without using the Esc shortcut. Tests: one new UI case for the button's open/close wiring. Suite: 196 passed, 0 failed, 0 skipped.
 - **In-game Settings shortcut:** **Esc** now opens or closes Settings in the field without returning to the title screen. The shared Settings window scales every live NPC, CPU player, warp and monster hover label while the slider moves. Tests: one new UI case for the window's live scale update. Suite: 195 passed, 0 failed, 0 skipped.
 - **Window-to-window snapping and border highlight:** glass windows now snap flush to one another's edges when their spans overlap, in addition to the existing viewport-edge snapping. Landing on a viewport border briefly lights the window's edge so the snap is visible without adding chrome. Tests: `test_ui_layout.gd` covers sibling snapping and the edge state.
 - **Overhead name scale:** NPC name tags now default to a sleek 70% of their former size. **SETTINGS** on the title screen adds a 50–125% slider with a live percentage readout; the saved scale also applies to CPU player tags, warp labels and monster hover names. Tests: `test_ui_layout.gd` covers the setting's clamping. Suite: 194 passed, 0 failed, 0 skipped.

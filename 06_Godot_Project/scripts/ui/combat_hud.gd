@@ -90,6 +90,7 @@ func _ready() -> void:
 	dialog = NpcDialog.new()
 	_root.add_child(dialog)
 	_build_minimap()
+	_build_settings_button()
 	_build_chat()
 	settings_window = SETTINGS_WINDOW.new()
 	_root.add_child(settings_window)
@@ -115,6 +116,7 @@ var dialog: NpcDialog
 var minimap: Minimap
 var chat: ChatConsole
 var settings_window: GlassWindow
+var settings_button: Button
 var _minimap_panel: GlassPanel
 var _minimap_title: Label
 var _feed: VBoxContainer
@@ -291,6 +293,22 @@ func bind_minimap(gat: GatFile, sim: FieldSimulation, player_id: int, title: Str
 
 func toggle_minimap() -> void:
 	_minimap_panel.visible = not _minimap_panel.visible
+
+
+## A mouse-friendly alternative to the Esc shortcut, tucked below the minimap.
+func _build_settings_button() -> void:
+	settings_button = Button.new()
+	settings_button.text = "SETTINGS"
+	settings_button.tooltip_text = "Settings  ·  Esc"
+	UiTheme.style_hud_button(settings_button, 10)
+	_root.add_child(settings_button)
+	settings_button.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	settings_button.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	settings_button.offset_left = -196
+	settings_button.offset_right = -16
+	settings_button.offset_top = 224
+	settings_button.offset_bottom = 252
+	settings_button.pressed.connect(toggle_settings)
 
 
 ## Bottom-left command line (Enter to open).

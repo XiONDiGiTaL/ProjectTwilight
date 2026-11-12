@@ -186,3 +186,26 @@ func test_settings_window_updates_scale_live(t: SceneTree) -> Variant:
 	if not updates:
 		return "the Settings slider should update and display the live scale"
 	return true
+
+
+func test_hud_settings_button_toggles_overlay(t: SceneTree) -> Variant:
+	var hud := CombatHud.new()
+	t.root.add_child(hud)
+	await t.process_frame
+	if hud.settings_button == null or hud.settings_window == null:
+		return "the HUD should expose a Settings button and overlay"
+	if hud.settings_button.text != "SETTINGS":
+		return "the HUD Settings button should be labelled"
+	hud.settings_button.pressed.emit()
+	await t.process_frame
+	var opened: bool = hud.settings_window.visible
+	hud.settings_button.pressed.emit()
+	await t.process_frame
+	var closed: bool = not hud.settings_window.visible
+	hud.queue_free()
+	await t.process_frame
+	if not opened:
+		return "the HUD Settings button should open the overlay"
+	if not closed:
+		return "the HUD Settings button should close the overlay"
+	return true

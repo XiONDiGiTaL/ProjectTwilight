@@ -135,6 +135,8 @@ git clone https://github.com/XiONDiGiTaL/ProjectTwilight.git
 | U | Cycle aura |
 | F12 | Save (progress also saves automatically) |
 
+A **SETTINGS** button below the minimap opens the same overlay for mouse users.
+
 **Where to go**
 
 - Portals connect every map (rAthena warp lists); Prontera's south gate leads to Prontera Field.
