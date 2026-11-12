@@ -133,7 +133,7 @@ git clone https://github.com/XiONDiGiTaL/ProjectTwilight.git
    [resources]
    client_path="D:/Games/RagnarokOnline"
    ```
-3. Choose **PLAY** and create a character. You start in the Novice Training Grounds, where the Training Guide offers the classic training or a skip straight to Prontera, the hub. On Windows you can also double-click `Play-ProjectTwilight.bat` (set the `GODOT` environment variable to your Godot executable if `godot` is not on your PATH).
+3. Choose **PLAY** and create a character. You start in the Novice Training Grounds, where the Training Guide offers the classic training or a skip straight to Prontera, the hub. On Windows you can also double-click `Play-ProjectTwilight.bat`. It finds Godot 4 by itself in this folder, on your PATH, or in a `Godot` folder on any drive; otherwise set the `GODOT` environment variable, or put the full path to the Godot executable in a `godot_path.txt` file next to the launcher. If it cannot find Godot it says so and waits instead of closing.
 
 **Controls**
 

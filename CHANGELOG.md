@@ -19,6 +19,7 @@
 - **50× midrate defaults:** shipped Base EXP, Job EXP and drop rates are now **5000% (50×)** in `data/config.json`, instead of the 1× Pre-Renewal baseline. Player `user://server.cfg` and rAthena/Hercules `conf/battle` overrides still take priority. Four deterministic tests now pin their simulations to an explicit 1× `RuleConfig` so they remain independent of shipped rates. Suite: 200 passed, 0 failed, 0 skipped.
 
 ### Fixed
+- **Launcher closed instantly:** `Play-ProjectTwilight.bat` ran `godot` from PATH and the window vanished when Godot was not on PATH. It now looks for a Godot 4 executable in `GODOT`, `godot_path.txt`, its own folder, PATH, a `Godot` folder on any drive and common install folders, prefers the windowed build, and explains what to do (and waits) when none is found.
 - **Sprites with a short RLE frame:** one frame of the male Crusader body ends early in the client data, and the decoder rejected the whole sprite, leaving the character invisible. Short frames are now padded with transparent pixels, as the original client does, and counted in `SprFile.repaired_frames`.
 - **Sprite ground clipping:** character, NPC, monster and ground-item sprites now anchor the bottom of their composed image to the ground instead of the ACT foot origin. RO frames include opaque shoe pixels below that origin, which a depth-tested 3D ground cut off; overhead heights now follow the anchored texture top. Tests: one new SPR/ACT case checks the anchor and top height. Suite: 200 passed, 0 failed, 0 skipped.
 
