@@ -138,7 +138,7 @@ git clone https://github.com/XiONDiGiTaL/ProjectTwilight.git
 
 A **SETTINGS** button below the minimap opens the same overlay for mouse users.
 
-The overlay's **RESET UI LAYOUT** action returns every glass window to its default position, re-centers Settings and confirms the reset in the system feed. On the title screen the same action reports **UI layout reset.** in the status line for 2.5 seconds, then fades back to the client status.
+The overlay's **RESET UI LAYOUT** action returns every glass window to its default position, re-centers Settings and confirms the reset in the system feed. On the title screen the same action fades **UI layout reset.** into the status line, holds it for 2.5 seconds, then fades back to the client status.
 
 **Where to go**
 

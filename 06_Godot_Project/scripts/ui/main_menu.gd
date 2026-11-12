@@ -13,6 +13,7 @@ var _path_edit: LineEdit
 var _play: Button
 var _settings_window: GlassWindow
 var _reset_status_token := 0
+var _status_fade: Tween
 
 
 func _ready() -> void:
@@ -132,29 +133,45 @@ func _reset_ui_layout() -> void:
 	_reset_status_token += 1
 	var token := _reset_status_token
 	_status.text = RESET_CONFIRMATION
-	_status.modulate.a = 1.0
+	_status.modulate.a = 0.0
+	_fade_status(1.0, 0.2)
 	await get_tree().create_timer(RESET_CONFIRMATION_SECONDS).timeout
 	if token != _reset_status_token or _status.text != RESET_CONFIRMATION:
 		return
-	var out := create_tween()
-	out.tween_property(_status, "modulate:a", 0.0, 0.2)
+	var out := _fade_status(0.0, 0.2)
 	await out.finished
 	if token != _reset_status_token or _status.text != RESET_CONFIRMATION:
 		_status.modulate.a = 1.0
 		return
 	_update_status()
-	var back := create_tween()
-	back.tween_property(_status, "modulate:a", 1.0, 0.25)
+	_status.modulate.a = 0.0
+	_fade_status(1.0, 0.25)
+
+
+func _fade_status(alpha: float, seconds: float) -> Tween:
+	if _status_fade != null and _status_fade.is_valid():
+		_status_fade.kill()
+	_status_fade = create_tween()
+	_status_fade.tween_property(_status, "modulate:a", alpha, seconds)
+	return _status_fade
+
+
+func _set_status(text: String) -> void:
+	_reset_status_token += 1
+	if _status_fade != null and _status_fade.is_valid():
+		_status_fade.kill()
+	_status.modulate.a = 1.0
+	_status.text = text
 
 
 func _on_mount() -> void:
 	var p := _path_edit.text.strip_edges()
-	_status.text = "Indexing client archives…"
+	_set_status("Indexing client archives…")
 	await get_tree().process_frame
 	var res := get_node("/root/RoResources")
 	if res.mount(p):
 		get_node("/root/Settings").set_client_path(p)
 		get_tree().reload_current_scene()
 	else:
-		_status.text = res.last_error
+		_set_status(res.last_error)
 		_play.disabled = true
