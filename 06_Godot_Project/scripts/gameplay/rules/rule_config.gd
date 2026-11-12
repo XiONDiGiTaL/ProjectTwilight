@@ -19,7 +19,7 @@ var exp_rate := 100        # percent; 100 = Pre-Renewal baseline (data/config.js
 var job_exp_rate := 100
 var drop_rate := 100
 var autoloot := false
-var max_level := 99
+var max_level := 150
 ## Zeny charged once when a Twilight Kafra storage is opened; 0 = free.
 ## rAthena's own Kafra scripts charge their own fee argument instead.
 var kafra_fee := 0
@@ -58,7 +58,9 @@ func rate_summary() -> String:
 		_rate_label(exp_rate), _rate_label(job_exp_rate), _rate_label(drop_rate)]
 
 
-## One line for the @rates command.
+## One line for the @rates command. Third jobs use 150; earlier classes stop
+## at 99 through their job data, so this is the server's ceiling, not every
+## class's cap.
 func describe() -> String:
 	return "%s   MAX LV %d   AUTOLOOT %s" % [
 		rate_summary(), max_level, "ON" if autoloot else "OFF"]

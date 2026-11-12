@@ -30,7 +30,7 @@ git -C Resources/rathena sparse-checkout set npc
 |---|---|---|
 | Free healer in every town | `npc/custom/healer.txt` (over 30 towns) | `twilight/healer.txt` (18 towns) |
 | Warper (fast travel) | `npc/custom/warper.txt` (towns, fields, dungeons, …) | `twilight/warper.txt` (towns, fields, dungeons) |
-| Job changer | `npc/custom/jobmaster.txt` | `twilight/prontera_services.txt` Job Master. Always loaded; the only one that offers Dark Knight and Shaman. |
+| Job changer | `npc/custom/jobmaster.txt` | `twilight/prontera_services.txt` Job Master. Always loaded; it offers first/second jobs, all canonical transcendent and third-job steps, and the custom Dark Knight → Dread Knight → Abyss Knight and Shaman → Oracle → Spirit Sage lines. |
 | Platinum skills | `npc/custom/platinum_skills.txt` | Job Master area, Prontera south gate |
 | Stylist (hair style, hair colour, cloth dye) | `npc/custom/stylist.txt` | Prontera south gate |
 | Rental (falcon, cart, Peco) | `npc/custom/breeder.txt` | Prontera south gate |

@@ -49,7 +49,7 @@ func test_shipped_defaults(_t) -> Variant:
 		return "data/config.json is missing"
 	if r.exp_rate != 5000 or r.job_exp_rate != 5000 or r.drop_rate != 5000:
 		return "shipped rates should be 5000 (50x): %s" % r.describe()
-	if r.max_level != 99 or r.autoloot:
+	if r.max_level != 150 or r.autoloot:
 		return "shipped caps wrong: %s" % r.describe()
 	return true if r.describe().contains("EXP x50") else "describe() should show effective multipliers"
 

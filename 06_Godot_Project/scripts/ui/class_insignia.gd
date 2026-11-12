@@ -20,6 +20,7 @@ const TIER_MATERIALS := {
 	"high_novice":  [Color(0.32, 0.19, 0.09), Color(0.62, 0.42, 0.24), Color(0.36, 0.52, 0.66), Color(0.78, 0.92, 1.0), true],
 	"high_first":   [Color(0.36, 0.18, 0.08), Color(0.78, 0.48, 0.28), Color(0.36, 0.52, 0.66), Color(0.8, 0.94, 1.0), false],
 	"transcendent": [Color(0.45, 0.3, 0.05), Color(0.98, 0.8, 0.32), Color(0.4, 0.26, 0.04), Color(1.0, 0.92, 0.6), false],
+	"third":        [Color(0.12, 0.3, 0.38), Color(0.32, 0.72, 0.88), Color(0.45, 0.32, 0.08), Color(1.0, 0.86, 0.45), false],
 }
 
 ## Class family colours (badges, auras).
@@ -40,6 +41,11 @@ const CLASS_FAMILY := {
 	"merchant": "merchant", "blacksmith": "merchant", "alchemist": "merchant", "high_merchant": "merchant", "whitesmith": "merchant", "creator": "merchant",
 	"thief": "thief", "assassin": "thief", "rogue": "thief", "high_thief": "thief", "assassin_cross": "thief", "stalker": "thief",
 	"dark_knight": "dark_knight", "shaman": "shaman",
+	"dread_knight": "dark_knight", "oracle": "shaman",
+	"rune_knight": "sword", "royal_guard": "sword", "warlock": "mage", "sorcerer": "mage",
+	"ranger": "archer", "minstrel": "archer", "wanderer": "archer", "arch_bishop": "acolyte",
+	"sura": "acolyte", "mechanic": "merchant", "genetic": "merchant", "guillotine_cross": "thief",
+	"shadow_chaser": "thief", "abyss_knight": "dark_knight", "spirit_sage": "shaman",
 	"taekwon_kid": "taekwon", "star_gladiator": "taekwon", "ninja": "ninja", "gunslinger": "gunslinger", "soul_linker": "soul_linker",
 }
 

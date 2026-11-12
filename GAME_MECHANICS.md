@@ -62,6 +62,10 @@ Implementation: `scripts/gameplay/items/inventory.gd`, `field_simulation.gd`, `d
 | Size modifiers | e.g. dagger 100/75/50 against small/medium/large; fists 100 for all sizes | High |
 | Critical with a weapon | StatusATK + max WATK × size modifier, ignoring DEF | Medium-high |
 | Armor | Equipment DEF is summed into hard DEF (percentage reduction) | High |
+| Ranged/music weapon range | Bow 9 cells; instrument and whip 2 cells; normal attacks use the equipped weapon's `range` | Project Twilight item addition |
+| Bow ammunition | Normal bow attacks and bow skills consume one Arrow; without arrows the attack fails without spending SP | Project Twilight |
+| Ammo weight and stock | Arrows weigh 1 and stack; a Quiver weighs 100, costs 250 Zeny, and unpacks into 100 Arrows if they fit within the carry limit | Project Twilight |
+| Weapon equip gate | The class `btba` table must contain the weapon type: bow for Archer/Hunter/Sniper/Ranger, instrument for Bard/Clown/Minstrel, whip for Dancer/Gypsy/Wanderer | Project Twilight |
 | Novice BTBA | Fist 0.5 s, dagger 0.65 s | Medium |
 | NPC prices | Buy at the item price; sell at floor(price / 2) | High (without Discount/Overcharge) |
 | Interaction range | Talk within 2 cells; trades rejected beyond 6 cells | Medium |
@@ -127,9 +131,9 @@ Implementation: `scripts/gameplay/combat/element_rules_prerenewal.gd`, cast hand
 | Soul Strike | Ghost; ⌈lv/2⌉ bolts of 100% MATK; +5% × lv vs. Undead; cast 0.5 s; requires Napalm Beat 4 | Medium (delays) |
 | Increase SP Recovery | 3 × lv + 0.2% × lv of Max SP every 10 s while still | Medium (item bonus not yet applied) |
 
-## Statuses and second jobs
+## Statuses and advanced jobs
 
-Details and per-skill numbers are in `docs/design/CLASS_DARK_KNIGHT_SHAMAN.md`. Implementation: `StatusRules`, `FieldSimulation` (class skills section). Tests: `test_dark_knight.gd`, `test_shaman.gd`.
+Class details and skill lists are in `docs/design/CLASS_DARK_KNIGHT_SHAMAN.md`; exact per-skill numbers live in `data/prerenewal/skills.json`. Implementation: `StatusRules`, `FieldSimulation` (class skills section). Tests: `test_dark_knight.gd`, `test_shaman.gd`, `test_third_jobs.gd` for the canonical and custom transcendent/third-job paths, `test_rank_skills.gd` for the second-job/transcendent trees, `test_first_job_skills.gd` for the Archer/Acolyte/Merchant/Thief trees, `test_weapon_types.gd` for bows, instruments and whips, and `test_ammo.gd` for arrows, quivers and bow ammunition.
 
 | Rule | Value | Confidence |
 |---|---|---|
@@ -138,7 +142,11 @@ Details and per-skill numbers are in `docs/design/CLASS_DARK_KNIGHT_SHAMAN.md`. 
 | Resistance | Chance and duration × (100 − stat)%. Stats: VIT for Stun and Silence; INT for Sleep; MDEF for Stone; (INT+VIT)/2 for Blind; (STR+INT)/2 for Confusion | Medium |
 | Durations | Stun 5 s, Stone 20 s, others 30 s, before resistance | Medium |
 | Second job | Parent first job at Job Level 40 or higher; unspent skill points carry over | High for the classic rule; Shaman sex rule is a Project Twilight rule |
+| Transcendence | Parent second job at Base Level 99 / Job Level 50; unspent skill points carry over; Base Level cap remains 99 | Project Twilight progression rule |
+| Third job | Parent transcendent class at Base Level 99 / Job Level 70; unspent skill points carry over; Base Level cap 150, Job Level cap 70 | Project Twilight progression rule; 150 is the documented third-job cap |
 | Second-job EXP | Provisional: job_first × 2 | Low (placeholder) |
+| Third-job EXP | `job_third`: documented Pre-Renewal 70-level advanced table | Medium |
+| Base EXP | `base_normal` covers levels 1-99 plus the documented 99-150 extension | Medium |
 | Heal formula (Spiritual Comfort) | ⌊(BaseLv + INT)/8⌋ × (4 + 8 × level) | High |
 | ASPD cap | 190 (200 ms between attacks) | High |
 

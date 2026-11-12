@@ -22,6 +22,9 @@ const RANKS := [RANK_LEADER, RANK_OFFICER, RANK_MEMBER]
 const MOTD_MAX := 200
 
 var path := PATH
+## False for a client's read-only replica of the host's guild records
+## (co-op): nothing is loaded from or written to disk.
+var persistent := true
 var guilds: Dictionary = {}   # gid -> {id, name, leader, members: Array, ranks: Dictionary, invites: Array, storage: Inventory}
 var _item_db: Dictionary = {}
 
@@ -29,7 +32,32 @@ var _item_db: Dictionary = {}
 func _init(p_path := PATH, item_db: Dictionary = {}) -> void:
 	path = p_path
 	_item_db = item_db
-	load_from_disk()
+	if p_path == "":
+		persistent = false
+	else:
+		load_from_disk()
+
+
+## Plain-data copy of one guild record (for sending to co-op clients).
+func record_data(gid: String) -> Dictionary:
+	var g: Dictionary = get_guild(gid)
+	if g.is_empty():
+		return {}
+	var inv: Inventory = g.get("storage")
+	return {"id": String(g.id), "name": String(g.name), "leader": String(g.leader), "members": (g.members as Array).duplicate(),
+		"ranks": (g.ranks as Dictionary).duplicate(), "invites": (g.invites as Array).duplicate(), "storage": inv.to_array()}
+
+
+## Installs a record received from the host into a replica store.
+func install_record(d: Dictionary) -> void:
+	if d.is_empty() or String(d.get("id", "")) == "":
+		return
+	var raw: Variant = d.get("storage", [])
+	var inv := Inventory.from_array(raw if raw is Array else [], _item_db)
+	inv.max_entries = SLOTS
+	guilds[String(d.id)] = {"id": String(d.id), "name": String(d.get("name", "Guild")), "leader": String(d.get("leader", "")),
+		"members": (d.get("members", []) as Array).duplicate(), "ranks": (d.get("ranks", {}) as Dictionary).duplicate(),
+		"invites": (d.get("invites", []) as Array).duplicate(), "storage": inv}
 
 
 ## Stable id derived from the guild name, so the same name is the same guild.
@@ -256,6 +284,8 @@ func set_motd(gid: String, text: String) -> bool:
 
 
 func save() -> void:
+	if not persistent:
+		return
 	var out := {}
 	for gid in guilds:
 		var g: Dictionary = guilds[gid]

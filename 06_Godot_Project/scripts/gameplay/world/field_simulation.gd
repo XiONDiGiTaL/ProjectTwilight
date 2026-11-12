@@ -24,6 +24,7 @@ extends RefCounted
 ##   {type: "skill_fx", id, skill, fx, element, cell, from_cell, area, hits}  (physical skill visual)
 ##   {type: "status", id, status, on: bool}   {type: "counter", id, target}
 ##   {type: "sp_heal", id, amount}   {type: "resurrect", id, by}
+##   {type: "despawn", id}   (a unit left this map)
 ##   {type: "chat", channel: "guild", id, guild_id, guild_name, from, text}
 
 const MONSTER_DB := "res://data/prerenewal/monsters.json"
@@ -373,6 +374,18 @@ func command_use_item(unit_id: int, index: int) -> bool:
 	var def: Dictionary = item_db.get(str(item_id), {})
 	if def.get("type", "") != "usable":
 		return false
+	# Quivers unpack into arrows; the quiver is removed only after the arrows fit.
+	if String(def.get("use_effect", "")) == "ammo":
+		var ammo_id := int(def.get("ammo_item", 0))
+		var ammo_amount := int(def.get("ammo_amount", 0))
+		if ammo_id <= 0 or ammo_amount <= 0 or not item_db.has(str(ammo_id)):
+			return false
+		u.inventory.remove_at(index, 1)
+		if not u.inventory.add(ammo_id, ammo_amount, item_db, u.max_weight() - u.equipment_weight(item_db)):
+			u.inventory.entries.insert(mini(index, u.inventory.entries.size()), {"id": item_id, "amount": 1})
+			return false
+		events.append({"type": "inventory", "id": u.id})
+		return true
 	var heal_range: Array = def.get("heal_hp", [0, 0])
 	u.inventory.remove_at(index, 1)
 	var amount := rng.randi_range(int(heal_range[0]), int(heal_range[1]))
@@ -935,12 +948,14 @@ func command_learn_skill(unit_id: int, code: String) -> bool:
 func command_job_change(unit_id: int, job: String) -> bool:
 	var u: SimUnit = units.get(unit_id)
 	var j: Dictionary = job_db.get(job, {})
-	if u == null or u.dead or j.is_empty() or not (int(j.get("tier", 0)) in [1, 2] or _forcing_job):
+	if u == null or u.dead or j.is_empty() or not (int(j.get("tier", 0)) in [1, 2, 3, 4] or _forcing_job):
 		return false
 	var reason := "" if _forcing_job else job_change_unmet(u, job)
 	if reason != "":
 		return _skill_fail(u, reason)
-	var keep_points := u.skill_points if int(j.tier) == 2 else 0   # Pre-Renewal: unspent points carry over
+	# Pre-Renewal: unspent points carry over from second job onward. This also
+	# covers transcendence and third jobs, so no points are lost on promotion.
+	var keep_points := u.skill_points if int(j.tier) >= 2 else 0
 	var hp_frac := float(u.hp) / maxi(u.max_hp, 1)
 	u.job = job
 	u.sprite = String(j.sprite)
@@ -972,6 +987,9 @@ func job_change_unmet(u: SimUnit, job: String) -> String:
 		return ""
 	if u.job != String(j.get("parent", "")):
 		return "Only a %s can become a %s." % [String(job_db.get(String(j.get("parent", "")), {}).get("name", "?")), String(j.name)]
+	var need_base := int(j.get("min_parent_base_level", 0))
+	if u.level < need_base:
+		return "You need Base Level %d as a %s (you have %d)." % [need_base, String(job_db.get(u.job, {}).get("name", u.job)), u.level]
 	var need := int(j.get("min_parent_job_level", 40))
 	if u.job_level < need:
 		return "You need Job Level %d as a %s (you have %d)." % [need, String(job_db.get(u.job, {}).get("name", u.job)), u.job_level]
@@ -1008,6 +1026,8 @@ func command_use_skill(unit_id: int, code: String, target_id: int = 0) -> bool:
 	var weapon_err := _weapon_unmet(u, s)
 	if weapon_err != "":
 		return _skill_fail(u, weapon_err)
+	if _needs_ammo(u, s) and not _has_ammo(u):
+		return _skill_fail(u, "You have no arrows.")
 	if u.skill_delay > 0.0:
 		return _skill_fail(u, "Skill is not ready yet.")
 	var level := int(u.skills.get(code, 0))
@@ -1568,6 +1588,23 @@ func add_kafra_npc(cell: Vector2i, display := "Kafra") -> int:
 	return nid
 
 
+## Removes a unit from this map (a player left, or moved to another map on
+## a co-op host). Emits {type: "despawn", id}.
+func remove_unit(unit_id: int) -> void:
+	var u: SimUnit = units.get(unit_id)
+	if u == null:
+		return
+	_cancel_cast(u)
+	units.erase(unit_id)
+	for id in units:
+		var other: SimUnit = units[id]
+		if other.target_id == unit_id:
+			other.target_id = 0
+		if other.cast_target == unit_id:
+			_cancel_cast(other)
+	events.append({"type": "despawn", "id": unit_id})
+
+
 ## Adds a script NPC to this map (spawned by the field from RaWorld).
 func add_script_npc(def: Dictionary, sprite: String) -> int:
 	var nid := _next_npc
@@ -1624,16 +1661,22 @@ func _grant_default_skills(u: SimUnit, reset := true) -> void:
 			u.skills[code] = 0
 
 
-## Skill codes a unit can have: Novice skills plus those of its current job.
+## Skill codes a unit can have: Novice skills plus every job in its ancestry.
+## The chain is built from the current class upward, so transcendent and third
+## jobs keep the first- and second-job trees that led to them.
 func available_skills(u: SimUnit) -> Array:
 	var out: Array = []
-	var chain := ["novice"]
-	var parent := String(job_db.get(u.job, {}).get("parent", ""))
-	if parent != "":
-		chain.append(parent)
-	chain.append(u.job)
-	for job in chain:
-		for code in job_db.get(job, {}).get("skills", []):
+	var chain: Array = []
+	var job := u.job
+	var guard := 0
+	while job != "" and not chain.has(job) and guard < 8:
+		chain.push_front(job)
+		job = String(job_db.get(job, {}).get("parent", ""))
+		guard += 1
+	if not chain.has("novice"):
+		chain.push_front("novice")
+	for jid in chain:
+		for code in job_db.get(jid, {}).get("skills", []):
 			if skill_db.has(code) and not out.has(code):
 				out.append(code)
 	return out
@@ -1905,6 +1948,25 @@ func spawn_ground_item(item_id: int, amount: int, cell: Vector2i) -> int:
 	return gid
 
 
+## Bow attacks consume one Arrow (item 1750) from the inventory.
+func _needs_ammo(u: SimUnit, sk: Dictionary = {}) -> bool:
+	if not u.is_player() or u.weapon_type != "bow":
+		return false
+	return sk.is_empty() or (sk.get("weapon", []) as Array).has("bow")
+
+
+func _has_ammo(u: SimUnit) -> bool:
+	return u.inventory.count(1750) > 0
+
+
+func _consume_ammo(u: SimUnit) -> bool:
+	for i in range(u.inventory.entries.size()):
+		if int(u.inventory.entries[i].id) == 1750:
+			u.inventory.remove_at(i, 1)
+			return true
+	return false
+
+
 func _attack(u: SimUnit, t: SimUnit) -> void:
 	u.attack_cooldown = u.attack_interval
 	var prof := u.combat_profile()
@@ -1913,12 +1975,18 @@ func _attack(u: SimUnit, t: SimUnit) -> void:
 		u.queued_skill = ""
 		var sk: Dictionary = skill_db.get(code, {})
 		var level := int(u.skills.get(code, 0))
-		if level > 0 and _weapon_unmet(u, sk) == "" and _pay(u, sk, level):
-			events.append({"type": "skill", "id": u.id, "skill": code, "text": String(sk.name)})
-			events.append({"type": "skill_hit", "id": u.id, "skill": code, "cell": t.walker.cell})
-			events.append({"type": "attack", "id": u.id, "target": t.id})
-			_physical_strike(u, t, sk, code, level)
-			return
+		if level > 0 and _weapon_unmet(u, sk) == "":
+			if _needs_ammo(u, sk) and not _has_ammo(u):
+				_skill_fail(u, "You have no arrows.")
+				return
+			if _pay(u, sk, level):
+				if _needs_ammo(u, sk):
+					_consume_ammo(u)
+				events.append({"type": "skill", "id": u.id, "skill": code, "text": String(sk.name)})
+				events.append({"type": "skill_hit", "id": u.id, "skill": code, "cell": t.walker.cell})
+				events.append({"type": "attack", "id": u.id, "target": t.id})
+				_physical_strike(u, t, sk, code, level)
+				return
 		elif level > 0 and _weapon_unmet(u, sk) != "":
 			_skill_fail(u, _weapon_unmet(u, sk))
 	# Auto Counter: a braced player blocks a monster's melee swing and counters.
@@ -1929,6 +1997,9 @@ func _attack(u: SimUnit, t: SimUnit) -> void:
 		var cp := t.combat_profile()
 		cp.force_crit = true
 		_apply_hit(t, u, CombatRulesPreRenewal.resolve_attack(cp, u.combat_profile(), rng), t.weapon_element())
+		return
+	if _needs_ammo(u) and not _consume_ammo(u):
+		_skill_fail(u, "You have no arrows.")
 		return
 	events.append({"type": "attack", "id": u.id, "target": t.id})
 	_apply_hit(u, t, CombatRulesPreRenewal.resolve_attack(prof, t.combat_profile(), rng), u.weapon_element() if u.is_player() else "neutral")
@@ -2035,6 +2106,14 @@ func _wander(u: SimUnit, ms: float) -> void:
 
 # --- Progression ----------------------------------------------------------------
 
+## Base-level cap for this character's class. Third jobs reach 150; every
+## earlier class (Novice through transcendent) stops at 99. The server rule
+## can lower the cap, but never raise it past the class limit.
+func base_level_cap(u: SimUnit) -> int:
+	var class_cap := int(job_db.get(u.job, {}).get("max_base_level", 99))
+	return clampi(mini(rules.max_level, class_cap), 1, 999)
+
+
 func _gain_exp(p: SimUnit, base: int, job: int) -> void:
 	base = roundi(base * rules.exp_rate / 100.0)
 	job = roundi(job * rules.job_exp_rate / 100.0)
@@ -2042,7 +2121,8 @@ func _gain_exp(p: SimUnit, base: int, job: int) -> void:
 	p.base_exp += base
 	p.job_exp += job
 	var base_table: Array = exp_tables.get("base_normal", [])
-	while p.level < rules.max_level and p.level - 1 < base_table.size() and p.base_exp >= int(base_table[p.level - 1]):
+	var cap := base_level_cap(p)
+	while p.level < cap and p.level - 1 < base_table.size() and p.base_exp >= int(base_table[p.level - 1]):
 		p.base_exp -= int(base_table[p.level - 1])
 		p.status_points += StatRulesPreRenewal.status_points_gained(p.level)
 		p.level += 1
@@ -2061,7 +2141,7 @@ func _gain_exp(p: SimUnit, base: int, job: int) -> void:
 ## EXP needed for the next base / job level, or 0 when the table ends.
 func next_base_exp(p: SimUnit) -> int:
 	var t: Array = exp_tables.get("base_normal", [])
-	return int(t[p.level - 1]) if p.level - 1 < t.size() else 0
+	return int(t[p.level - 1]) if p.level < base_level_cap(p) and p.level - 1 < t.size() else 0
 
 
 func next_job_exp(p: SimUnit) -> int:
@@ -2078,6 +2158,8 @@ func _recalc_player(u: SimUnit) -> void:
 	u.batk = StatRulesPreRenewal.status_atk(int(s.str), int(s.dex), int(s.luk))
 	var weapon: Dictionary = item_db.get(str(u.equipment.get("weapon", 0)), {})
 	u.weapon_type = String(weapon.get("weapon_type", "fist"))
+	# Bows attack from range; instruments and whips have a short reach.
+	u.attack_range = int(weapon.get("range", 1))
 	var wr := CombatRulesPreRenewal.weapon_atk_range(int(weapon.get("atk", 0)), int(weapon.get("weapon_level", 1)), int(s.dex))
 	u.watk_min = wr.x
 	u.watk_max = wr.y
@@ -2092,7 +2174,11 @@ func _recalc_player(u: SimUnit) -> void:
 	var def_total := 0
 	for slot in u.equipment:
 		def_total += int(item_db.get(str(u.equipment[slot]), {}).get("def", 0))
-	u.def_bonus = int(u.status_value("protection", "def_bonus", 0))
+	# Every active buff that carries a DEF bonus contributes (Spiritual
+	# Protection, Rune Shield, Assumptio, ...).
+	u.def_bonus = 0
+	for st in u.statuses:
+		u.def_bonus += int(u.statuses[st].get("def_bonus", 0))
 	u.hard_def = def_total + u.def_bonus
 	u.mdef = u.def_bonus
 	u.crit_bonus = int(u.skills.get("DK_CRITUP", 0)) * int(skill_db.get("DK_CRITUP", {}).get("crit_permille_per_level", 10))

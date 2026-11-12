@@ -121,7 +121,8 @@ Full brief: Swordman → **Dark Knight**, female Acolyte → **Shaman**, with fu
 
 ### Known gaps to state honestly
 
-- **Networking:** there is no network transport yet. The co-op and dedicated-server paths do not exist in code. `FieldSimulation` commands are the authority layer and validate everything server-side. Report multiplayer as "authority logic ready, transport not implemented".
+- **Networking:** private co-op exists and is playable (host-authoritative ENet, `scripts/networking/`, HOST / JOIN on the character select screen). It was verified between two game windows on one PC only; a real LAN/internet link, three or more players and reconnects are unverified, so report it that way. The dedicated-server (MMO) path does not exist in code. Read `docs/DIRECTIVE_COOP_NETWORKING.md` before touching it.
+- **Audio:** `GameAudio` (autoload, `scripts/audio/game_audio.gd`) plays BGM from the client's `BGM` folder and effects from `data/wav`. No audio file may ever be committed.
 - **Persistence of buffs:** buffs and statuses are not saved; they end on logout, which is the classic behaviour.
 - **Weapon layers:** the Dark Knight pack only ships a sword weapon layer, so axes have no weapon sprite.
 
@@ -134,7 +135,8 @@ Full brief: Swordman → **Dark Knight**, female Acolyte → **Shaman**, with fu
 - [ ] Per-skill animations (the brief's animation list).
 - [ ] A weapon layer for Dark Knight axes.
 - [ ] Knight, Crusader, Priest and Monk.
-- [ ] A network transport for co-op and dedicated servers. The authority logic is ready in `FieldSimulation`.
+- [x] A network transport for private co-op (ENet, host-authoritative).
+- [ ] A dedicated-server transport for the MMO mode. The authority logic is ready in `FieldSimulation`.
 
 ## Task: NPC scripts (owner brief, 2026-11-11) — done
 
@@ -222,7 +224,7 @@ Owner brief: the game should run from the essential `.grf` data in a folder, wit
 | Mode | State |
 |---|---|
 | **Offline** | Playable: character creation → Training Grounds (or skip straight to Prontera) → field combat, loot, jobs, saves, warps, rAthena NPC scripts, CPU adventurers. |
-| **Private co-op** | Authority logic exists (`FieldSimulation` validates every command) and invitation codes are implemented and tested. **No transport**: no ENet peer, no session, no sync. |
+| **Private co-op** | Playable (2026-11-12): host-authoritative ENet, HOST / JOIN from character select, shared maps, chat, map travel and remote NPC dialogs. Verified between two game windows on one PC; a real LAN/internet link, 3+ players and reconnects are unverified. |
 | **MMO** | **Not implemented.** rAthena and Hercules are read as script/data sources only; there is no packet adapter. Their protocols target the original client and specific `PACKETVER`s. `RuleConfig` now reads their `conf/battle` rates, which is the first piece of server-config loading. |
 
 ## Asset independence (still open)
@@ -233,5 +235,5 @@ The game still reads the player's kRO client for maps, sprites and models; `Reso
 
 - Archer, Merchant and Thief first-job skills, and Acolyte skills (Heal, Blessing, Holy Light).
 - More maps and monsters; quests.
-- The co-op host and dedicated server transport.
+- Co-op verification on a real network; the dedicated server transport.
 - Hercules-specific elements: nothing from Hercules is used yet. Its script language is close to rAthena's, so the interpreter is the place to add Hercules deviations — only against a concrete script that fails.

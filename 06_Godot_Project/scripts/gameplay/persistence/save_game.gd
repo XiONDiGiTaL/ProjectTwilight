@@ -138,7 +138,9 @@ static func validate(parsed: Variant, item_db: Dictionary, classes: Dictionary) 
 	out.name = name if name != "" else "Adventurer"
 	var job := String(c.get("job", "novice"))
 	out.job = job if classes.has(job) else "novice"
-	out.level = clampi(int(c.get("level", 1)), 1, 99)
+	# Third jobs may reach base level 150; every other class stops at 99.
+	var base_cap := clampi(int(classes.get(out.job, {}).get("max_base_level", 99)), 1, 999)
+	out.level = clampi(int(c.get("level", 1)), 1, base_cap)
 	out.job_level = clampi(int(c.get("job_level", 1)), 1, 70)
 	out.base_exp = maxi(0, int(c.get("base_exp", 0)))
 	out.job_exp = maxi(0, int(c.get("job_exp", 0)))

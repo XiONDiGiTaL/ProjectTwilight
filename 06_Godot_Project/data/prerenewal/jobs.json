@@ -1,5 +1,5 @@
 {
-  "_provenance": "Pre-Renewal job data as documented by iRO Wiki classic and the rAthena pre-re job database (facts only). hp_a / hp_b / sp_factor feed MaxHP = (35 + BaseLv*hp_b + sum_{i=2..BaseLv} round(hp_a*i)) * (1 + VIT/100) and MaxSP = (10 + BaseLv*sp_factor) * (1 + INT/100). btba = base weapon delay in seconds per weapon type. sprite = client body sprite name. Confidence: Medium-high for factors and weight bonus, Medium for BTBA values; cross-check pending. Second jobs: Dark Knight (Swordman) and Shaman (Acolyte, female only) are Project Twilight classes adapted from Ragnarok Online DS concepts; their factors follow the Knight / Priest rows and are design values, not Gravity data. parent = required first job; min_parent_job_level = advancement requirement.",
+  "_provenance": "Pre-Renewal job data as documented by iRO Wiki classic and the rAthena pre-re job database (facts only). hp_a / hp_b / sp_factor feed MaxHP and MaxSP; btba = base weapon delay per weapon type; sprite = client body sprite name. Canonical second jobs have tier 2 (Job Level 50), transcendent classes tier 3 (Base 99 / Job 50) and third jobs tier 4 (Base 99 / Job 70, Base Level cap 150, Job Level cap 70). Dark Knight and Shaman keep custom continuations (Dread Knight -> Abyss Knight, Oracle -> Spirit Sage) so their IDs do not collide with canonical Lord Knight / High Priest. Third-job skill trees are Project Twilight designs using the existing data-driven skill engine. Canonical job factors and sprite names are Medium confidence; dedicated third-job art is still pending.",
   "novice": {
     "name": "Novice",
     "tier": 0,
@@ -85,7 +85,11 @@
       "dagger": 0.6,
       "bow": 0.7
     },
-    "skills": []
+    "skills": [
+      "AC_DOUBLESTRAFE",
+      "AC_CHARGEARROW",
+      "AC_ARROWSHOWER"
+    ]
   },
   "acolyte": {
     "name": "Acolyte",
@@ -102,7 +106,13 @@
       "mace": 0.7,
       "rod": 0.7
     },
-    "skills": []
+    "skills": [
+      "AL_HEAL",
+      "AL_HOLYLIGHT",
+      "AL_RUWACH",
+      "AL_ANGELUS",
+      "AL_MACEMASTERY"
+    ]
   },
   "merchant": {
     "name": "Merchant",
@@ -121,7 +131,12 @@
       "axe": 0.8,
       "mace": 0.7
     },
-    "skills": []
+    "skills": [
+      "MC_MAMMONITE",
+      "MC_CARTREVOLUTION",
+      "MC_HAMMERFALL",
+      "MC_AXEMASTERY"
+    ]
   },
   "thief": {
     "name": "Thief",
@@ -138,7 +153,12 @@
       "dagger": 0.5,
       "sword": 0.7
     },
-    "skills": []
+    "skills": [
+      "TF_ENVENOM",
+      "TF_SANDATTACK",
+      "TF_BACKSLASH",
+      "TF_DAGGERMASTERY"
+    ]
   },
   "dark_knight": {
     "name": "Dark Knight",
@@ -220,6 +240,1057 @@
       "SH_SPIRITWATER",
       "SH_SPIRITWIND",
       "SH_DIVINE"
+    ]
+  },
+  "lord_knight": {
+    "name": "Lord Knight",
+    "tier": 3,
+    "parent": "knight",
+    "min_parent_base_level": 99,
+    "min_parent_job_level": 50,
+    "sprite": "로드나이트",
+    "hp_a": 1.5,
+    "hp_b": 5,
+    "sp_factor": 4,
+    "weight_bonus": 800,
+    "job_table": "job_third",
+    "max_job_level": 70,
+    "btba": {
+      "fist": 0.4,
+      "dagger": 0.65,
+      "sword": 0.7,
+      "two_hand_sword": 0.75,
+      "axe": 0.8,
+      "two_hand_axe": 0.9
+    },
+    "skills": [
+      "LK_SPIRALPIERCE",
+      "LK_SPEARBOOMERANG"
+    ]
+  },
+  "high_priest": {
+    "name": "High Priest",
+    "tier": 3,
+    "parent": "priest",
+    "min_parent_base_level": 99,
+    "min_parent_job_level": 50,
+    "sprite": "하이프리",
+    "hp_a": 0.8,
+    "hp_b": 5,
+    "sp_factor": 9,
+    "weight_bonus": 400,
+    "job_table": "job_third",
+    "max_job_level": 70,
+    "btba": {
+      "fist": 0.5,
+      "mace": 0.7,
+      "rod": 0.7,
+      "book": 0.65
+    },
+    "skills": [
+      "HP_SANCTUARY",
+      "HP_MAGNUS"
+    ]
+  },
+  "rune_knight": {
+    "name": "Rune Knight",
+    "tier": 4,
+    "parent": "lord_knight",
+    "min_parent_base_level": 99,
+    "min_parent_job_level": 70,
+    "sprite": "룬나이트",
+    "hp_a": 1.8,
+    "hp_b": 5,
+    "sp_factor": 4,
+    "weight_bonus": 800,
+    "job_table": "job_third",
+    "max_job_level": 70,
+    "max_base_level": 150,
+    "btba": {
+      "fist": 0.4,
+      "dagger": 0.65,
+      "sword": 0.7,
+      "two_hand_sword": 0.75,
+      "axe": 0.8,
+      "two_hand_axe": 0.9
+    },
+    "skills": [
+      "RK_RUNEMASTERY",
+      "RK_HUNDREDSPEAR",
+      "RK_DRAGONBREATH",
+      "RK_RUNESHIELD"
+    ]
+  },
+  "arch_bishop": {
+    "name": "Arch Bishop",
+    "tier": 4,
+    "parent": "high_priest",
+    "min_parent_base_level": 99,
+    "min_parent_job_level": 70,
+    "sprite": "아크비숍",
+    "hp_a": 0.9,
+    "hp_b": 5,
+    "sp_factor": 10,
+    "weight_bonus": 400,
+    "job_table": "job_third",
+    "max_job_level": 70,
+    "max_base_level": 150,
+    "btba": {
+      "fist": 0.5,
+      "mace": 0.7,
+      "rod": 0.7,
+      "book": 0.65
+    },
+    "skills": [
+      "AB_HIGHHEAL",
+      "AB_ASSUMPTIO",
+      "AB_HOLYLIGHT",
+      "AB_JUDGEMENT"
+    ]
+  },
+  "knight": {
+    "name": "Knight",
+    "tier": 2,
+    "parent": "swordman",
+    "min_parent_job_level": 40,
+    "sprite": "기사",
+    "hp_a": 1.2,
+    "hp_b": 5,
+    "sp_factor": 3,
+    "weight_bonus": 800,
+    "job_table": "job_second",
+    "max_job_level": 50,
+    "btba": {
+      "fist": 0.4,
+      "dagger": 0.65,
+      "sword": 0.7,
+      "two_hand_sword": 0.75,
+      "axe": 0.8,
+      "two_hand_axe": 0.9
+    },
+    "skills": [
+      "KN_SPEARSTAB",
+      "KN_BOWLINGBASH"
+    ]
+  },
+  "crusader": {
+    "name": "Crusader",
+    "tier": 2,
+    "parent": "swordman",
+    "min_parent_job_level": 40,
+    "sprite": "크루세이더",
+    "hp_a": 1.1,
+    "hp_b": 5,
+    "sp_factor": 4,
+    "weight_bonus": 800,
+    "job_table": "job_second",
+    "max_job_level": 50,
+    "btba": {
+      "fist": 0.4,
+      "dagger": 0.65,
+      "sword": 0.7,
+      "two_hand_sword": 0.75,
+      "axe": 0.8,
+      "two_hand_axe": 0.9
+    },
+    "skills": [
+      "CR_SHIELDCHARGE",
+      "CR_HOLYCROSS"
+    ]
+  },
+  "paladin": {
+    "name": "Paladin",
+    "tier": 3,
+    "parent": "crusader",
+    "min_parent_base_level": 99,
+    "min_parent_job_level": 50,
+    "sprite": "팔라딘",
+    "hp_a": 1.4,
+    "hp_b": 5,
+    "sp_factor": 5,
+    "weight_bonus": 800,
+    "job_table": "job_third",
+    "max_job_level": 70,
+    "btba": {
+      "fist": 0.4,
+      "dagger": 0.65,
+      "sword": 0.7,
+      "two_hand_sword": 0.75,
+      "axe": 0.8,
+      "two_hand_axe": 0.9
+    },
+    "skills": [
+      "PA_SHIELDCHAIN",
+      "PA_GRANDCROSS"
+    ]
+  },
+  "royal_guard": {
+    "name": "Royal Guard",
+    "tier": 4,
+    "parent": "paladin",
+    "min_parent_base_level": 99,
+    "min_parent_job_level": 70,
+    "sprite": "가드",
+    "hp_a": 1.7,
+    "hp_b": 5,
+    "sp_factor": 5,
+    "weight_bonus": 800,
+    "job_table": "job_third",
+    "max_job_level": 70,
+    "max_base_level": 150,
+    "btba": {
+      "fist": 0.4,
+      "dagger": 0.65,
+      "sword": 0.7,
+      "two_hand_sword": 0.75,
+      "axe": 0.8,
+      "two_hand_axe": 0.9
+    },
+    "skills": [
+      "RG_SHIELDPRESS",
+      "RG_EARTHDRIVE"
+    ]
+  },
+  "wizard": {
+    "name": "Wizard",
+    "tier": 2,
+    "parent": "mage",
+    "min_parent_job_level": 40,
+    "sprite": "위저드",
+    "hp_a": 0.3,
+    "hp_b": 5,
+    "sp_factor": 6,
+    "weight_bonus": 200,
+    "job_table": "job_second",
+    "max_job_level": 50,
+    "btba": {
+      "fist": 0.5,
+      "dagger": 0.6,
+      "rod": 0.7,
+      "book": 0.65
+    },
+    "skills": [
+      "WZ_FROSTNOVA",
+      "WZ_METEOR"
+    ]
+  },
+  "high_wizard": {
+    "name": "High Wizard",
+    "tier": 3,
+    "parent": "wizard",
+    "min_parent_base_level": 99,
+    "min_parent_job_level": 50,
+    "sprite": "하이위저드",
+    "hp_a": 0.35,
+    "hp_b": 5,
+    "sp_factor": 8,
+    "weight_bonus": 200,
+    "job_table": "job_third",
+    "max_job_level": 70,
+    "btba": {
+      "fist": 0.5,
+      "dagger": 0.6,
+      "rod": 0.7,
+      "book": 0.65
+    },
+    "skills": [
+      "HW_METEORSTORM",
+      "HW_GANBANTEIN"
+    ]
+  },
+  "warlock": {
+    "name": "Warlock",
+    "tier": 4,
+    "parent": "high_wizard",
+    "min_parent_base_level": 99,
+    "min_parent_job_level": 70,
+    "sprite": "워록",
+    "hp_a": 0.4,
+    "hp_b": 5,
+    "sp_factor": 9,
+    "weight_bonus": 200,
+    "job_table": "job_third",
+    "max_job_level": 70,
+    "max_base_level": 150,
+    "btba": {
+      "fist": 0.5,
+      "dagger": 0.6,
+      "rod": 0.7,
+      "book": 0.65
+    },
+    "skills": [
+      "WL_COMET",
+      "WL_SOULDRAIN"
+    ]
+  },
+  "sage": {
+    "name": "Sage",
+    "tier": 2,
+    "parent": "mage",
+    "min_parent_job_level": 40,
+    "sprite": "세이지",
+    "hp_a": 0.4,
+    "hp_b": 5,
+    "sp_factor": 7,
+    "weight_bonus": 200,
+    "job_table": "job_second",
+    "max_job_level": 50,
+    "btba": {
+      "fist": 0.5,
+      "dagger": 0.6,
+      "rod": 0.7,
+      "book": 0.65
+    },
+    "skills": [
+      "SA_EARTHSPIKE",
+      "SA_HEAVENSDRIVE"
+    ]
+  },
+  "professor": {
+    "name": "Professor",
+    "tier": 3,
+    "parent": "sage",
+    "min_parent_base_level": 99,
+    "min_parent_job_level": 50,
+    "sprite": "프로페서",
+    "hp_a": 0.45,
+    "hp_b": 5,
+    "sp_factor": 9,
+    "weight_bonus": 200,
+    "job_table": "job_third",
+    "max_job_level": 70,
+    "btba": {
+      "fist": 0.5,
+      "dagger": 0.6,
+      "rod": 0.7,
+      "book": 0.65
+    },
+    "skills": [
+      "PF_EARTHSTRAIN",
+      "PF_FIREWALL"
+    ]
+  },
+  "sorcerer": {
+    "name": "Sorcerer",
+    "tier": 4,
+    "parent": "professor",
+    "min_parent_base_level": 99,
+    "min_parent_job_level": 70,
+    "sprite": "소서러",
+    "hp_a": 0.5,
+    "hp_b": 5,
+    "sp_factor": 10,
+    "weight_bonus": 200,
+    "job_table": "job_third",
+    "max_job_level": 70,
+    "max_base_level": 150,
+    "btba": {
+      "fist": 0.5,
+      "dagger": 0.6,
+      "rod": 0.7,
+      "book": 0.65
+    },
+    "skills": [
+      "SO_PSYCHICWAVE",
+      "SO_DIAMONDDUST"
+    ]
+  },
+  "hunter": {
+    "name": "Hunter",
+    "tier": 2,
+    "parent": "archer",
+    "min_parent_job_level": 40,
+    "sprite": "헌터",
+    "hp_a": 0.5,
+    "hp_b": 5,
+    "sp_factor": 4,
+    "weight_bonus": 600,
+    "job_table": "job_second",
+    "max_job_level": 50,
+    "btba": {
+      "fist": 0.5,
+      "dagger": 0.6,
+      "bow": 0.7
+    },
+    "skills": [
+      "HT_ARROWSHOWER",
+      "HT_BLITZBEAT"
+    ]
+  },
+  "sniper": {
+    "name": "Sniper",
+    "tier": 3,
+    "parent": "hunter",
+    "min_parent_base_level": 99,
+    "min_parent_job_level": 50,
+    "sprite": "스나이퍼",
+    "hp_a": 0.6,
+    "hp_b": 5,
+    "sp_factor": 5,
+    "weight_bonus": 600,
+    "job_table": "job_third",
+    "max_job_level": 70,
+    "btba": {
+      "fist": 0.5,
+      "dagger": 0.6,
+      "bow": 0.7
+    },
+    "skills": [
+      "SN_FALCONASSAULT",
+      "SN_SHARPSHOOTING"
+    ]
+  },
+  "ranger": {
+    "name": "Ranger",
+    "tier": 4,
+    "parent": "sniper",
+    "min_parent_base_level": 99,
+    "min_parent_job_level": 70,
+    "sprite": "레인져",
+    "hp_a": 0.65,
+    "hp_b": 5,
+    "sp_factor": 6,
+    "weight_bonus": 600,
+    "job_table": "job_third",
+    "max_job_level": 70,
+    "max_base_level": 150,
+    "btba": {
+      "fist": 0.5,
+      "dagger": 0.6,
+      "bow": 0.7
+    },
+    "skills": [
+      "RA_ARROWSTORM",
+      "RA_WARGSTRIKE"
+    ]
+  },
+  "bard": {
+    "name": "Bard",
+    "tier": 2,
+    "parent": "archer",
+    "min_parent_job_level": 40,
+    "sex": "male",
+    "sprite": "바드",
+    "hp_a": 0.45,
+    "hp_b": 5,
+    "sp_factor": 4,
+    "weight_bonus": 600,
+    "job_table": "job_second",
+    "max_job_level": 50,
+    "btba": {
+      "fist": 0.5,
+      "dagger": 0.6,
+      "instrument": 0.7
+    },
+    "skills": [
+      "BA_DISSONANCE",
+      "BA_MUSICALSTRIKE"
+    ]
+  },
+  "clown": {
+    "name": "Clown",
+    "tier": 3,
+    "parent": "bard",
+    "min_parent_base_level": 99,
+    "min_parent_job_level": 50,
+    "sex": "male",
+    "sprite": "클라운",
+    "hp_a": 0.55,
+    "hp_b": 5,
+    "sp_factor": 5,
+    "weight_bonus": 600,
+    "job_table": "job_third",
+    "max_job_level": 70,
+    "btba": {
+      "fist": 0.5,
+      "dagger": 0.6,
+      "instrument": 0.7
+    },
+    "skills": [
+      "CL_MELODYSTRIKE",
+      "CL_PANGVOICE"
+    ]
+  },
+  "minstrel": {
+    "name": "Minstrel",
+    "tier": 4,
+    "parent": "clown",
+    "min_parent_base_level": 99,
+    "min_parent_job_level": 70,
+    "sprite": "민스트럴",
+    "hp_a": 0.6,
+    "hp_b": 5,
+    "sp_factor": 6,
+    "weight_bonus": 600,
+    "job_table": "job_third",
+    "max_job_level": 70,
+    "max_base_level": 150,
+    "btba": {
+      "fist": 0.5,
+      "dagger": 0.6,
+      "instrument": 0.7
+    },
+    "skills": [
+      "MI_ARROWVULCAN",
+      "MI_SEVERERAINS"
+    ]
+  },
+  "dancer": {
+    "name": "Dancer",
+    "tier": 2,
+    "parent": "archer",
+    "min_parent_job_level": 40,
+    "sex": "female",
+    "sprite": "무희",
+    "hp_a": 0.45,
+    "hp_b": 5,
+    "sp_factor": 4,
+    "weight_bonus": 600,
+    "job_table": "job_second",
+    "max_job_level": 50,
+    "btba": {
+      "fist": 0.5,
+      "dagger": 0.6,
+      "whip": 0.7
+    },
+    "skills": [
+      "DC_UGLYDANCE",
+      "DC_SLINGARROW"
+    ]
+  },
+  "gypsy": {
+    "name": "Gypsy",
+    "tier": 3,
+    "parent": "dancer",
+    "min_parent_base_level": 99,
+    "min_parent_job_level": 50,
+    "sex": "female",
+    "sprite": "집시",
+    "hp_a": 0.55,
+    "hp_b": 5,
+    "sp_factor": 5,
+    "weight_bonus": 600,
+    "job_table": "job_third",
+    "max_job_level": 70,
+    "btba": {
+      "fist": 0.5,
+      "dagger": 0.6,
+      "whip": 0.7
+    },
+    "skills": [
+      "GY_SLINGARROW",
+      "GY_DAZZLER"
+    ]
+  },
+  "wanderer": {
+    "name": "Wanderer",
+    "tier": 4,
+    "parent": "gypsy",
+    "min_parent_base_level": 99,
+    "min_parent_job_level": 70,
+    "sprite": "원더러",
+    "hp_a": 0.6,
+    "hp_b": 5,
+    "sp_factor": 6,
+    "weight_bonus": 600,
+    "job_table": "job_third",
+    "max_job_level": 70,
+    "max_base_level": 150,
+    "btba": {
+      "fist": 0.5,
+      "dagger": 0.6,
+      "whip": 0.7
+    },
+    "skills": [
+      "WA_ARROWVULCAN",
+      "WA_METALICSOUND"
+    ]
+  },
+  "priest": {
+    "name": "Priest",
+    "tier": 2,
+    "parent": "acolyte",
+    "min_parent_job_level": 40,
+    "sprite": "프리스트",
+    "hp_a": 0.6,
+    "hp_b": 5,
+    "sp_factor": 7,
+    "weight_bonus": 400,
+    "job_table": "job_second",
+    "max_job_level": 50,
+    "btba": {
+      "fist": 0.5,
+      "mace": 0.7,
+      "rod": 0.7,
+      "book": 0.65
+    },
+    "skills": [
+      "PR_HEAL",
+      "PR_HOLYLIGHT"
+    ]
+  },
+  "monk": {
+    "name": "Monk",
+    "tier": 2,
+    "parent": "acolyte",
+    "min_parent_job_level": 40,
+    "sprite": "몽크",
+    "hp_a": 0.7,
+    "hp_b": 5,
+    "sp_factor": 4,
+    "weight_bonus": 400,
+    "job_table": "job_second",
+    "max_job_level": 50,
+    "btba": {
+      "fist": 0.5,
+      "mace": 0.7,
+      "rod": 0.7,
+      "book": 0.65
+    },
+    "skills": [
+      "MO_IRONFIST",
+      "MO_ASURASTRIKE"
+    ]
+  },
+  "champion": {
+    "name": "Champion",
+    "tier": 3,
+    "parent": "monk",
+    "min_parent_base_level": 99,
+    "min_parent_job_level": 50,
+    "sprite": "챔피온",
+    "hp_a": 0.9,
+    "hp_b": 5,
+    "sp_factor": 5,
+    "weight_bonus": 400,
+    "job_table": "job_third",
+    "max_job_level": 70,
+    "btba": {
+      "fist": 0.5,
+      "mace": 0.7,
+      "rod": 0.7,
+      "book": 0.65
+    },
+    "skills": [
+      "CH_PALMSTRIKE",
+      "CH_ASURASTRIKE"
+    ]
+  },
+  "sura": {
+    "name": "Sura",
+    "tier": 4,
+    "parent": "champion",
+    "min_parent_base_level": 99,
+    "min_parent_job_level": 70,
+    "sprite": "슈라",
+    "hp_a": 1.0,
+    "hp_b": 5,
+    "sp_factor": 6,
+    "weight_bonus": 400,
+    "job_table": "job_third",
+    "max_job_level": 70,
+    "max_base_level": 150,
+    "btba": {
+      "fist": 0.5,
+      "mace": 0.7,
+      "rod": 0.7,
+      "book": 0.65
+    },
+    "skills": [
+      "SU_GATESOFHELL",
+      "SU_TIGERSTRIKE"
+    ]
+  },
+  "blacksmith": {
+    "name": "Blacksmith",
+    "tier": 2,
+    "parent": "merchant",
+    "min_parent_job_level": 40,
+    "sprite": "제철공",
+    "hp_a": 0.7,
+    "hp_b": 5,
+    "sp_factor": 4,
+    "weight_bonus": 800,
+    "job_table": "job_second",
+    "max_job_level": 50,
+    "btba": {
+      "fist": 0.4,
+      "dagger": 0.65,
+      "sword": 0.7,
+      "axe": 0.8,
+      "mace": 0.7
+    },
+    "skills": [
+      "BS_MAMMONITE",
+      "BS_HAMMERFALL"
+    ]
+  },
+  "whitesmith": {
+    "name": "Whitesmith",
+    "tier": 3,
+    "parent": "blacksmith",
+    "min_parent_base_level": 99,
+    "min_parent_job_level": 50,
+    "sprite": "화이트스미스",
+    "hp_a": 0.9,
+    "hp_b": 5,
+    "sp_factor": 5,
+    "weight_bonus": 800,
+    "job_table": "job_third",
+    "max_job_level": 70,
+    "btba": {
+      "fist": 0.4,
+      "dagger": 0.65,
+      "sword": 0.7,
+      "axe": 0.8,
+      "mace": 0.7
+    },
+    "skills": [
+      "WS_CARTTERMINATION",
+      "WS_HAMMERFALL"
+    ]
+  },
+  "mechanic": {
+    "name": "Mechanic",
+    "tier": 4,
+    "parent": "whitesmith",
+    "min_parent_base_level": 99,
+    "min_parent_job_level": 70,
+    "sprite": "미케닉",
+    "hp_a": 1.0,
+    "hp_b": 5,
+    "sp_factor": 6,
+    "weight_bonus": 800,
+    "job_table": "job_third",
+    "max_job_level": 70,
+    "max_base_level": 150,
+    "btba": {
+      "fist": 0.4,
+      "dagger": 0.65,
+      "sword": 0.7,
+      "axe": 0.8,
+      "mace": 0.7
+    },
+    "skills": [
+      "ME_POWERSWING",
+      "ME_AXEBOOMERANG"
+    ]
+  },
+  "alchemist": {
+    "name": "Alchemist",
+    "tier": 2,
+    "parent": "merchant",
+    "min_parent_job_level": 40,
+    "sprite": "연금술사",
+    "hp_a": 0.6,
+    "hp_b": 5,
+    "sp_factor": 5,
+    "weight_bonus": 800,
+    "job_table": "job_second",
+    "max_job_level": 50,
+    "btba": {
+      "fist": 0.4,
+      "dagger": 0.65,
+      "sword": 0.7,
+      "axe": 0.8,
+      "mace": 0.7
+    },
+    "skills": [
+      "AL_ACIDTERROR",
+      "AL_POTIONPITCHER"
+    ]
+  },
+  "creator": {
+    "name": "Creator",
+    "tier": 3,
+    "parent": "alchemist",
+    "min_parent_base_level": 99,
+    "min_parent_job_level": 50,
+    "sprite": "크리에이터",
+    "hp_a": 0.8,
+    "hp_b": 5,
+    "sp_factor": 6,
+    "weight_bonus": 800,
+    "job_table": "job_third",
+    "max_job_level": 70,
+    "btba": {
+      "fist": 0.4,
+      "dagger": 0.65,
+      "sword": 0.7,
+      "axe": 0.8,
+      "mace": 0.7
+    },
+    "skills": [
+      "CR_ACIDDEMONSTRATION",
+      "CR_BOMB"
+    ]
+  },
+  "genetic": {
+    "name": "Genetic",
+    "tier": 4,
+    "parent": "creator",
+    "min_parent_base_level": 99,
+    "min_parent_job_level": 70,
+    "sprite": "제네릭",
+    "hp_a": 0.9,
+    "hp_b": 5,
+    "sp_factor": 7,
+    "weight_bonus": 800,
+    "job_table": "job_third",
+    "max_job_level": 70,
+    "max_base_level": 150,
+    "btba": {
+      "fist": 0.4,
+      "dagger": 0.65,
+      "sword": 0.7,
+      "axe": 0.8,
+      "mace": 0.7
+    },
+    "skills": [
+      "GE_CARTCANNON",
+      "GE_ACIDBOMB"
+    ]
+  },
+  "assassin": {
+    "name": "Assassin",
+    "tier": 2,
+    "parent": "thief",
+    "min_parent_job_level": 40,
+    "sprite": "어세신",
+    "hp_a": 0.6,
+    "hp_b": 5,
+    "sp_factor": 3,
+    "weight_bonus": 400,
+    "job_table": "job_second",
+    "max_job_level": 50,
+    "btba": {
+      "fist": 0.4,
+      "dagger": 0.5,
+      "sword": 0.7
+    },
+    "skills": [
+      "AS_SONICBLOW",
+      "AS_GRIMTOOTH"
+    ]
+  },
+  "assassin_cross": {
+    "name": "Assassin Cross",
+    "tier": 3,
+    "parent": "assassin",
+    "min_parent_base_level": 99,
+    "min_parent_job_level": 50,
+    "sprite": "어쌔신크로스",
+    "hp_a": 0.8,
+    "hp_b": 5,
+    "sp_factor": 4,
+    "weight_bonus": 400,
+    "job_table": "job_third",
+    "max_job_level": 70,
+    "btba": {
+      "fist": 0.4,
+      "dagger": 0.5,
+      "sword": 0.7
+    },
+    "skills": [
+      "ASC_SOULDESTROYER",
+      "ASC_METEORASSAULT"
+    ]
+  },
+  "guillotine_cross": {
+    "name": "Guillotine Cross",
+    "tier": 4,
+    "parent": "assassin_cross",
+    "min_parent_base_level": 99,
+    "min_parent_job_level": 70,
+    "sprite": "길로틴크로스",
+    "hp_a": 0.9,
+    "hp_b": 5,
+    "sp_factor": 5,
+    "weight_bonus": 400,
+    "job_table": "job_third",
+    "max_job_level": 70,
+    "max_base_level": 150,
+    "btba": {
+      "fist": 0.4,
+      "dagger": 0.5,
+      "sword": 0.7
+    },
+    "skills": [
+      "GC_CROSSIMPACT",
+      "GC_DARKCLAW"
+    ]
+  },
+  "rogue": {
+    "name": "Rogue",
+    "tier": 2,
+    "parent": "thief",
+    "min_parent_job_level": 40,
+    "sprite": "로그",
+    "hp_a": 0.6,
+    "hp_b": 5,
+    "sp_factor": 4,
+    "weight_bonus": 400,
+    "job_table": "job_second",
+    "max_job_level": 50,
+    "btba": {
+      "fist": 0.4,
+      "dagger": 0.5,
+      "sword": 0.7
+    },
+    "skills": [
+      "RG_BACKSTAB",
+      "RG_RAID"
+    ]
+  },
+  "stalker": {
+    "name": "Stalker",
+    "tier": 3,
+    "parent": "rogue",
+    "min_parent_base_level": 99,
+    "min_parent_job_level": 50,
+    "sprite": "스토커",
+    "hp_a": 0.8,
+    "hp_b": 5,
+    "sp_factor": 5,
+    "weight_bonus": 400,
+    "job_table": "job_third",
+    "max_job_level": 70,
+    "btba": {
+      "fist": 0.4,
+      "dagger": 0.5,
+      "sword": 0.7
+    },
+    "skills": [
+      "ST_BACKSTAB",
+      "ST_RAID"
+    ]
+  },
+  "shadow_chaser": {
+    "name": "Shadow Chaser",
+    "tier": 4,
+    "parent": "stalker",
+    "min_parent_base_level": 99,
+    "min_parent_job_level": 70,
+    "sprite": "쉐도우체이서",
+    "hp_a": 0.9,
+    "hp_b": 5,
+    "sp_factor": 6,
+    "weight_bonus": 400,
+    "job_table": "job_third",
+    "max_job_level": 70,
+    "max_base_level": 150,
+    "btba": {
+      "fist": 0.4,
+      "dagger": 0.5,
+      "sword": 0.7
+    },
+    "skills": [
+      "SC_FATALMENACE",
+      "SC_FEINTBOMB"
+    ]
+  },
+  "dread_knight": {
+    "name": "Dread Knight",
+    "tier": 3,
+    "parent": "dark_knight",
+    "min_parent_base_level": 99,
+    "min_parent_job_level": 50,
+    "sprite": "기사",
+    "hp_a": 1.7,
+    "hp_b": 5,
+    "sp_factor": 4,
+    "weight_bonus": 800,
+    "job_table": "job_third",
+    "max_job_level": 70,
+    "btba": {
+      "fist": 0.38,
+      "dagger": 0.6,
+      "sword": 0.7,
+      "two_hand_sword": 0.6,
+      "axe": 0.75,
+      "two_hand_axe": 0.85
+    },
+    "skills": [
+      "DR_DEATHSTRIKE",
+      "DR_SOULREAP"
+    ]
+  },
+  "oracle": {
+    "name": "Oracle",
+    "tier": 3,
+    "parent": "shaman",
+    "min_parent_base_level": 99,
+    "min_parent_job_level": 50,
+    "sex": "female",
+    "sprite": "프리스트",
+    "hp_a": 0.8,
+    "hp_b": 5,
+    "sp_factor": 9,
+    "weight_bonus": 600,
+    "job_table": "job_third",
+    "max_job_level": 70,
+    "btba": {
+      "fist": 0.4,
+      "mace": 0.6,
+      "rod": 0.6,
+      "book": 0.6
+    },
+    "skills": [
+      "OR_FATESEAL",
+      "OR_STARFALL"
+    ]
+  },
+  "abyss_knight": {
+    "name": "Abyss Knight",
+    "tier": 4,
+    "parent": "dread_knight",
+    "min_parent_base_level": 99,
+    "min_parent_job_level": 70,
+    "sprite": "기사",
+    "hp_a": 2.0,
+    "hp_b": 5,
+    "sp_factor": 4,
+    "weight_bonus": 1000,
+    "job_table": "job_third",
+    "max_job_level": 70,
+    "max_base_level": 150,
+    "btba": {
+      "fist": 0.38,
+      "dagger": 0.6,
+      "sword": 0.7,
+      "two_hand_sword": 0.6,
+      "axe": 0.75,
+      "two_hand_axe": 0.85
+    },
+    "skills": [
+      "AK_ABYSSSTRIKE",
+      "AK_NIGHTMARE"
+    ]
+  },
+  "spirit_sage": {
+    "name": "Spirit Sage",
+    "tier": 4,
+    "parent": "oracle",
+    "min_parent_base_level": 99,
+    "min_parent_job_level": 70,
+    "sex": "female",
+    "sprite": "프리스트",
+    "hp_a": 0.9,
+    "hp_b": 5,
+    "sp_factor": 10,
+    "weight_bonus": 600,
+    "job_table": "job_third",
+    "max_job_level": 70,
+    "max_base_level": 150,
+    "btba": {
+      "fist": 0.4,
+      "mace": 0.6,
+      "rod": 0.6,
+      "book": 0.6
+    },
+    "skills": [
+      "SS_SPIRITSTORM",
+      "SS_SOULBIND"
     ]
   }
 }

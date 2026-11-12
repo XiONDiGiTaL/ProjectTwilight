@@ -35,9 +35,11 @@ The project-wide rules and history are in [`Directive.md`](Directive.md).
 
 ## Next — gameplay
 
-- [ ] Archer, Acolyte, Merchant and Thief first-job skill trees
-- [ ] Knight, Crusader, Priest and Monk second jobs
-- [ ] Remaining Acolyte skills (Heal, Blessing, Holy Light)
+- [x] Archer, Acolyte, Merchant and Thief first-job skill trees
+- [x] Knight, Crusader, Priest and Monk second jobs
+- [x] Canonical second, transcendent and third-job paths for all six families (plus custom Dread Knight / Abyss Knight and Oracle / Spirit Sage)
+- [x] Dedicated second-job and transcendent skill trees for every canonical rank, plus Dread Knight and Oracle
+- [ ] Acolyte Blessing and other supportive buffs
 - [ ] Party window and party EXP sharing
 - [ ] Quests and quest log
 - [ ] More maps, monsters and dungeon content
@@ -50,7 +52,11 @@ The project-wide rules and history are in [`Directive.md`](Directive.md).
 
 ## Multiplayer and server
 
-- [ ] Co-op transport (ENet) behind the existing `FieldSimulation` authority layer
+- [x] Co-op transport (ENet) behind the existing `FieldSimulation` authority layer (playable; see `docs/DIRECTIVE_COOP_NETWORKING.md`)
+- [ ] Co-op: verify on a real LAN and over the internet, with three or more players; reconnect after a drop; port / advertised-IP fields in the Settings window (they are read from `user://settings.cfg` today)
+- [ ] Co-op: party window, speech bubbles, trading between players, PvP rules
+- [ ] Audio: positional panning, per-map ambient sounds from RSW sound sources, ACT-embedded sound events
+- [ ] More monster species: `monsters.json` has only Poring, Fabre and Lunatic, so most maps are empty of monsters
   - [ ] Host/session lifecycle and invitation-code handshake
   - [ ] Snapshot + command replication, reconnect and late join
   - [ ] Server-authoritative guild and storage actions

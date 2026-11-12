@@ -92,6 +92,12 @@ func _build() -> void:
 		settings.set_overhead_name_scale(v)
 		value_label.text = "%d%%" % roundi(v * 100.0))
 	body.add_child(UiTheme.label("NPC · MONSTER · PLAYER NAMES", 9, UiTheme.TEXT_DIM, 400, 2))
+	var audio := get_node_or_null("/root/GameAudio")
+	if audio:
+		body.add_child(UiTheme.label("AUDIO", 11, UiTheme.ACCENT, 700, 3))
+		_volume_row("MUSIC", audio.music_volume(), audio.set_music_volume)
+		_volume_row("SOUND", audio.sfx_volume(), audio.set_sfx_volume)
+		body.add_child(UiTheme.label("PLAYED FROM YOUR CLIENT'S BGM FOLDER AND DATA/WAV", 9, UiTheme.TEXT_DIM, 400, 2))
 	reset_layout_button = Button.new()
 	reset_layout_button.text = "RESET UI LAYOUT"
 	reset_layout_button.tooltip_text = "Return every glass window to its default position"
@@ -100,6 +106,32 @@ func _build() -> void:
 	body.add_child(reset_layout_button)
 	if not settings.rate_preset_changed.is_connected(_sync_rate_buttons):
 		settings.rate_preset_changed.connect(_sync_rate_buttons)
+
+
+## A labelled 0-100% volume slider that applies and stores on change.
+func _volume_row(title: String, value: float, apply: Callable) -> void:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	body.add_child(row)
+	var name_label := UiTheme.label(title, 10, UiTheme.TEXT_DIM, 600, 2)
+	name_label.custom_minimum_size = Vector2(52, 0)
+	row.add_child(name_label)
+	var s := HSlider.new()
+	s.min_value = 0.0
+	s.max_value = 1.0
+	s.step = 0.05
+	s.value = value
+	s.custom_minimum_size = Vector2(200, 24)
+	s.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	UiTheme.style_slider(s)
+	row.add_child(s)
+	var pct := UiTheme.label("%d%%" % roundi(value * 100.0), 13, UiTheme.TEXT, 600, 2)
+	pct.custom_minimum_size = Vector2(44, 0)
+	pct.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	row.add_child(pct)
+	s.value_changed.connect(func(v: float) -> void:
+		apply.call(v)
+		pct.text = "%d%%" % roundi(v * 100.0))
 
 
 func _sync_rate_buttons(multiplier: int) -> void:

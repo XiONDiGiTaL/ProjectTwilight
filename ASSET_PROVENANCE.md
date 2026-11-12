@@ -35,5 +35,6 @@ Project Twilight ships **no Gravity content**. At runtime the game reads resourc
 | kRO client (2025-07-16 Ragexe, `data.grf` v0x300) | `01_Client_Original/Client_Files/kRO_Latest` | Runtime asset source on the developer machine; format research | **Prohibited** |
 | Ragnarok M: Eternal Love 1.4.7 XAPK (`com.gravity.romg`) | `09_Ragnarok_Eternal_Love` | Visual and technical reference only | **Prohibited** |
 | Rendered captures (`user://captures`) | Godot user data folder | Visual verification of decoders | Internal only |
+| README screenshots (`docs/screenshots/*.jpg`, 7 files) | Committed at the owner's request (2026-11-12) | Whole-frame 1280×720 gameplay screenshots produced by `tests/capture_readme.gd` and the co-op scene tests. They show Gravity sprites and maps as rendered in play, composited with Project Twilight's own UI and effects; no source asset (sprite sheet, texture, model, audio) is included or recoverable at source quality | Illustrative screenshots only; remove on request of the rights holder |
 
 No individual Eternal Love resource has been extracted yet. When one is examined, it will be logged here with its bundle path, type, dimensions, extraction method, purpose and status: *internal analysis only* or *requires independent recreation*.

@@ -115,7 +115,7 @@ func refresh() -> void:
 		var e: Dictionary = _unit.inventory.entries[i]
 		var def: Dictionary = item_db.get(str(e.id), {})
 		var t := String(def.get("type", "etc"))
-		var bucket := "weapon" if t in ["weapon", "armor"] else t
+		var bucket := "weapon" if t in ["weapon", "armor"] else ("usable" if t == "ammo" else t)
 		if bucket != want:
 			continue
 		_grid.add_child(_slot(i, e, def))
@@ -139,8 +139,10 @@ func _slot(index: int, e: Dictionary, def: Dictionary) -> Control:
 		slot.amount = int(e.amount)
 		slot.def = def
 		slot._item_id = int(e.id)
-		var equippable := String(def.get("equip", "")) != ""
-		slot.activated.connect(func(i): equip_requested.emit(i) if equippable else use_requested.emit(i))
+		if String(def.get("equip", "")) != "":
+			slot.activated.connect(func(i): equip_requested.emit(i))
+		elif String(def.get("type", "")) == "usable":
+			slot.activated.connect(func(i): use_requested.emit(i))
 	return slot
 
 

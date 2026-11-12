@@ -17,6 +17,8 @@ boot_splash/bg_color=Color(0.05, 0.05, 0.09, 1)
 Settings="*res://scripts/core/settings.gd"
 RoResources="*res://scripts/resources/ro_resources.gd"
 GameSession="*res://scripts/core/game_session.gd"
+NetSession="*res://scripts/networking/net_session.gd"
+GameAudio="*res://scripts/audio/game_audio.gd"
 
 [display]
 

@@ -24,6 +24,9 @@ const DEFS := {
 	"wrath":          {"name": "Spiritual Wrath"},
 	"rain_dance":     {"name": "Rain Dance"},
 	"se_wind":        {"name": "Southeast Wind"},
+	"rune_shield":    {"name": "Rune Shield"},
+	"assumptio":      {"name": "Assumptio"},
+	"angelus":        {"name": "Angelus"},
 }
 
 const BLIND_HIT_FLEE_PCT := 75     # blind: HIT and FLEE x 0.75

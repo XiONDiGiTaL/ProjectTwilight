@@ -27,9 +27,20 @@ Project Twilight **contains no Gravity game data**. On first launch you point it
 
 **No client executable is used.** Godot is the engine: the original launcher, patcher and `Ragexe` are not needed, only the data.
 
+## Screenshots
+
+Captured from the running game with `tests/capture_readme.gd`. The sprites, maps and effects icons come from the player's own Ragnarok Online data at run time; the interface, casting circles, damage text and lighting are Project Twilight's.
+
+| | |
+|---|---|
+| ![Prontera, the hub](docs/screenshots/prontera_hub.jpg) **Prontera, the hub.** Thirteen classes with their own body sprites, hair colours and cloth dyes: sitting, walking and blessing each other in the plaza. | ![A CPU Priest heals the player](docs/screenshots/priest_heals_player.jpg) **CPU adventurers.** A Priest notices the player is hurt mid-fight, casts Heal (the green +751) and follows up with Angelus. |
+| ![Sonic Blow](docs/screenshots/sonic_blow.jpg) **Sonic Blow.** An Assassin's multi-hit skill: the small numbers are the hits, the glowing blue number is the built-up total. | ![Bowling Bash](docs/screenshots/combat_bowling_bash.jpg) **Area combat.** A Knight's Bowling Bash splashing a pack, with engaged HP bars and the target frame. |
+| ![Casting Fire Bolt](docs/screenshots/magic_casting.jpg) **Magic.** Casting circles take the colour of the spell's element; the cast bar sits over the caster. | ![Private co-op](docs/screenshots/coop_host.jpg) **Private co-op.** The host's view of Prontera with a friend who joined by invitation code. |
+| ![Character select](docs/screenshots/character_select.jpg) **Character select.** PLAY offline, HOST CO-OP, or paste a code and JOIN. | |
+
 ## Development status
 
-> Early development. The resource pipeline is working; the playable game is not there yet.
+> Early development, but playable: create a character, train or skip to Prontera, fight, loot, change jobs, travel between maps, and host or join a private co-op session. Music and sound effects play from your own client. Monster variety is still very small (three species), and co-op has only been tested on one PC.
 
 | Area | Status |
 |---|---|
@@ -38,7 +49,10 @@ Project Twilight **contains no Gravity game data**. On first launch you point it
 | SPR sprites, palettes and ACT animations | ✅ Implemented and tested |
 | Animated sprite rendering and Sprite Viewer tool | ✅ Implemented |
 | Pre-Renewal stat formulas (core) | 🔧 In development |
-| Co-op invitation codes | ✅ Implemented and tested · networking 📋 planned |
+| Co-op invitation codes | ✅ Implemented and tested |
+| Private co-op (host-authoritative ENet: HOST / JOIN from character select, shared maps, chat, remote NPC dialogs) | ✅ Implemented · tested between two game windows on one PC · LAN/internet and 3+ players not yet verified |
+| Music (client `BGM` folder, per-map table) and sound effects (`data/wav`: weapons, skills, monsters, statuses, UI) | ✅ Implemented and tested |
+| Own body sprites for all 39 second, transcendent and third jobs | ✅ Implemented (checked against the client) |
 | Map decoding (GAT/GND/RSW) and ground rendering | ✅ Implemented and tested |
 | Map models (RSM/RSM2: buildings, trees, props) | ✅ Implemented and tested (static) |
 | Character sprites (body + head, hair dyes) and click-to-walk movement | ✅ Implemented and tested |
@@ -47,7 +61,7 @@ Project Twilight **contains no Gravity game data**. On first launch you point it
 | Original class insignia for all 46 classes | ✅ Generated (polish ongoing) |
 | Loot, inventory, item use, stat allocation | ✅ Implemented and tested |
 | Local save/load (versioned, validated) | ✅ Implemented and tested |
-| Equipment (weapon damage model, armor DEF, weapon sprites) | ✅ Implemented and tested |
+| Equipment (weapon damage model, armor DEF, weapon sprites, bow/instrument/whip weapons, arrows and quivers) | ✅ Implemented and tested |
 | NPC merchant and shop (buy/sell, Zeny) | ✅ Implemented and tested |
 | Character select and creation (classic stat hexagon, live preview) | ✅ Implemented and tested |
 | Novice skills, skill window, F1–F9 hotkey bar, sitting and regen | ✅ Implemented and tested |
@@ -60,10 +74,9 @@ Project Twilight **contains no Gravity game data**. On first launch you point it
 | Guild storage (shared 300-slot bag, `guildopenstorage`) | ✅ Implemented and tested |
 | Guild ranks (leader / officer / member) and permissions | ✅ Implemented and tested (local only, not networked) |
 | Guild message of the day and guild chat (`/g`) | ✅ Implemented and tested (local only, not networked) |
-| Job change to all six first jobs; Swordman skill tree | ✅ Implemented and tested |
-| Other first-job skill trees, magic and elements, more maps and monsters | 📋 Next |
-| First offline playable (character, map, monster, combat, save) | 📋 Planned |
-| Private co-op sessions | 📋 Planned |
+| Job change to all six first jobs; all six first-job skill trees | ✅ Implemented and tested |
+| More skill depth, magic and elements, more maps and monsters | 📋 Next |
+| First offline playable (character, map, monster, combat, save) | ✅ Playable (`Play-ProjectTwilight.bat`) |
 | eAthena / Hercules compatibility | 🔍 Under investigation, not claimed |
 | Persistent MMO server | 📋 Planned |
 
@@ -73,16 +86,18 @@ The detailed plan is in [ROADMAP.md](ROADMAP.md).
 
 The Pre-Renewal target covers these classes:
 
-| First job | Second jobs | Transcendent |
-|---|---|---|
-| Swordman | Knight / Crusader | Lord Knight / Paladin |
-| Mage | Wizard / Sage | High Wizard / Professor |
-| Archer | Hunter / Bard / Dancer | Sniper / Clown / Gypsy |
-| Acolyte | Priest / Monk | High Priest / Champion |
-| Merchant | Blacksmith / Alchemist | Whitesmith / Creator |
-| Thief | Assassin / Rogue | Assassin Cross / Stalker |
+| First job | Second jobs | Transcendent | Third job |
+|---|---|---|---|
+| Swordman | Knight / Crusader | Lord Knight / Paladin | Rune Knight / Royal Guard |
+| Mage | Wizard / Sage | High Wizard / Professor | Warlock / Sorcerer |
+| Archer | Hunter / Bard / Dancer | Sniper / Clown / Gypsy | Ranger / Minstrel / Wanderer |
+| Acolyte | Priest / Monk | High Priest / Champion | Arch Bishop / Sura |
+| Merchant | Blacksmith / Alchemist | Whitesmith / Creator | Mechanic / Genetic |
+| Thief | Assassin / Rogue | Assassin Cross / Stalker | Guillotine Cross / Shadow Chaser |
+| Swordman (custom) | Dark Knight | Dread Knight | Abyss Knight |
+| Acolyte (custom) | Shaman | Oracle | Spirit Sage |
 
-Expanded classes (Super Novice, Taekwon, Star Gladiator, Soul Linker) are tracked separately. Renewal third jobs and Renewal mechanics are out of scope for the classic ruleset.
+Every first job can now advance through its canonical second job, transcendent class and third job. The Dark Knight and Shaman lines keep separate custom continuations so their ids do not collide with canonical Lord Knight / High Priest. A third job needs a transcendent character at Base Level 99 / Job Level 70, raises the Base Level cap to 150 and keeps the Job Level cap at 70; every earlier class stays capped at Base Level 99. Every first job now has its own skill tree, every canonical second job and transcendent class has two dedicated skills, and Dread Knight and Oracle have their own continuations; third jobs keep their signature trees. Expanded classes (Super Novice, Taekwon, Star Gladiator, Soul Linker) are tracked separately, and Renewal mechanics beyond the third-job caps remain out of scope.
 
 ## Interface
 
@@ -144,7 +159,7 @@ The overlay's **RESET UI LAYOUT** action returns every glass window to its defau
 **Where to go**
 
 - Portals connect every map (rAthena warp lists); Prontera's south gate leads to Prontera Field.
-- **Job Guide / Job Master:** first and second jobs, including Dark Knight and Shaman.
+- **Job Guide / Job Master:** every first job, its canonical second job and transcendent class, then a third job. The custom Dark Knight and Shaman lines also continue through Dread Knight → Abyss Knight and Oracle → Spirit Sage.
 - **Healer:** free full heal.
 - **Kafra:** item storage in Prontera, west of the hub landing point. The official rAthena Kafra NPCs (save, storage, teleport, pushcart) also work and open the same window; their fee is the one written in `kafras.txt`. Twilight's own Kafra uses `kafra_fee` in `data/config.json` or `user://server.cfg` (0 = free).
 - **Guild storage:** `@guild create <name>` founds or joins a guild, and a guild Kafra's guild-storage option opens one shared 300-slot bag for every member. Guilds and their storage live in `user://guilds.json`; character saves keep membership. Only one member can use the bag at a time. The Guild Keeper in Prontera, just east of the hub, opens it. Press `G` for the guild window: roster with rank chips, invitations with accept/decline, and leave with automatic succession (an officer first, then a member).
@@ -156,6 +171,30 @@ The overlay's **RESET UI LAYOUT** action returns every glass window to its defau
 - Also: **Platinum Skills**, **Rental** and **Reset**.
 
 The main menu also has a **Map Viewer** (fly around any classic map) and a **Sprite Viewer** (browse animated sprites from your client).
+
+### Private co-op
+
+One player hosts, friends join with an invitation code. The host's game decides everything (movement, combat, drops, NPC scripts); a guest's game mirrors it.
+
+1. **Host:** on the character select screen pick a character and press **HOST CO-OP**. The game starts normally and the invitation code is copied to your clipboard and shown in the feed. `@code` in chat shows and copies it again; `@who` lists who is in the session.
+2. **Guest:** pick a character, paste the code into **Invitation code** and press **JOIN**. You appear on the host's map with your own character, inventory and skills.
+3. **Leaving:** `@leave` returns to the title screen. If the host leaves, guests are returned to the title screen with a message. Guests keep saving their own character to their own slot.
+
+Notes and limits:
+- The code contains the host's address, port and a one-time secret. Share it only with people you want in your game.
+- Default port **7350 (UDP)**. On a home LAN or a VPN (Hamachi, ZeroTier, Tailscale) it works as is. Over the internet the host must forward that port and put the public address in `user://settings.cfg`:
+  ```ini
+  [coop]
+  port=7350
+  advertised_ip="203.0.113.10"
+  ```
+- Both players need the same maps in their own client data. Up to 8 players.
+- Verified so far: two game windows on one PC (join, combat, chat, map travel, NPC dialogs). Not yet verified: a real LAN or internet link, three or more players, reconnecting.
+- Design, protocol and known limits: [docs/DIRECTIVE_COOP_NETWORKING.md](docs/DIRECTIVE_COOP_NETWORKING.md).
+
+### Music and sound
+
+Project Twilight ships no audio. Music is read from your client's `BGM` folder (the track for each map comes from the client's `data/mp3nametable.txt`) and effects from `data/wav` inside the GRFs: weapon swings and hits, skill and spell sounds, monster voices, status effects, level-ups and UI clicks. **SETTINGS → AUDIO** has separate MUSIC and SOUND volumes. If you mounted only GRF archives without a `BGM` folder, the game simply plays without music.
 
 ### Optional resource pack and rAthena NPCs
 

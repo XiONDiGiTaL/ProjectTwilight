@@ -92,6 +92,9 @@ func _ready() -> void:
 	back.pressed.connect(func(): get_tree().change_scene_to_file(MENU_SCENE))
 	add_child(back)
 	_reload_slots()
+	var audio := get_node_or_null("/root/GameAudio")
+	if audio:
+		audio.play_menu_music()
 
 
 # --- Slots ------------------------------------------------------------------------
@@ -178,6 +181,7 @@ func _show_details(entry: Dictionary) -> void:
 	UiTheme.style_button(del, false, true)
 	del.pressed.connect(_confirm_delete.bind(entry))
 	buttons.add_child(del)
+	_build_coop_rows(String(entry.slot))
 
 
 func _show_message(text: String) -> void:
@@ -193,6 +197,104 @@ func _show_message(text: String) -> void:
 
 
 func _play(slot: String) -> void:
+	get_node("/root/NetSession").leave()
+	get_node("/root/GameSession").slot = slot
+	get_tree().change_scene_to_file(FIELD_SCENE)
+
+
+# --- Private co-op ------------------------------------------------------------------
+
+var _coop_status: Label
+var _joining := false
+
+
+## HOST opens a session with this character; JOIN enters a friend's session
+## with it, using the invitation code they sent.
+func _build_coop_rows(slot: String) -> void:
+	_detail_box.add_child(_divider())
+	_detail_box.add_child(UiTheme.label("PRIVATE CO-OP", 11, UiTheme.ACCENT, 600, 4))
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	_detail_box.add_child(row)
+	var host := Button.new()
+	host.text = "HOST CO-OP"
+	host.tooltip_text = "Play this character and let friends join with an invitation code."
+	UiTheme.style_button(host, false, false, 12)
+	host.pressed.connect(_host.bind(slot))
+	row.add_child(host)
+	var code := LineEdit.new()
+	code.placeholder_text = "Invitation code"
+	code.custom_minimum_size = Vector2(190, 0)
+	code.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	UiTheme.style_line_edit(code)
+	code.add_theme_font_size_override("font_size", 12)
+	row.add_child(code)
+	var join := Button.new()
+	join.text = "JOIN"
+	UiTheme.style_button(join, false, false, 12)
+	join.pressed.connect(func(): _join(slot, code.text))
+	code.text_submitted.connect(func(t): _join(slot, t))
+	row.add_child(join)
+	_coop_status = UiTheme.label("", 11, UiTheme.TEXT_DIM, 400, 1)
+	_coop_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_coop_status.custom_minimum_size = Vector2(400, 0)
+	_detail_box.add_child(_coop_status)
+
+
+func _coop_say(text: String, bad := false) -> void:
+	if is_instance_valid(_coop_status):
+		_coop_status.text = text
+		_coop_status.add_theme_color_override("font_color", UiTheme.HP_MID if bad else UiTheme.TEXT_DIM)
+
+
+func _host(slot: String) -> void:
+	var ns := get_node("/root/NetSession")
+	var settings := get_node("/root/Settings")
+	var port := int(settings.get_value("coop", "port", ns.DEFAULT_PORT))
+	var code: String = ns.host(port, String(settings.get_value("coop", "advertised_ip", "")))
+	if code == "":
+		_coop_say(String(ns.last_error), true)
+		return
+	get_node("/root/GameSession").slot = slot
+	get_tree().change_scene_to_file(FIELD_SCENE)
+
+
+func _join(slot: String, code: String) -> void:
+	if _joining:
+		return
+	var ns := get_node("/root/NetSession")
+	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(SaveGame.path_for(slot)))
+	if not (parsed is Dictionary):
+		_coop_say("This character's save could not be read.", true)
+		return
+	if code.strip_edges() == "":
+		_coop_say("Paste the invitation code the host sent you.", true)
+		return
+	if not ns.join(code.strip_edges(), parsed):
+		_coop_say(String(ns.last_error), true)
+		return
+	_joining = true
+	_coop_say("Connecting to the host…")
+	if not ns.session_failed.is_connected(_on_join_failed):
+		ns.session_failed.connect(_on_join_failed)
+		ns.session_ended.connect(_on_join_failed)
+		ns.map_entered.connect(_on_joined.bind(slot))
+	# A host that never answers (wrong address, closed port) must not hang the menu.
+	await get_tree().create_timer(12.0).timeout
+	if _joining and is_inside_tree():
+		ns.leave()
+		_on_join_failed("The host did not answer. Check the code, and that the host's port is reachable.")
+
+
+func _on_join_failed(message: String) -> void:
+	_joining = false
+	_coop_say(message, true)
+
+
+func _on_joined(_map: String, slot: String) -> void:
+	if not _joining:
+		return
+	_joining = false
 	get_node("/root/GameSession").slot = slot
 	get_tree().change_scene_to_file(FIELD_SCENE)
 

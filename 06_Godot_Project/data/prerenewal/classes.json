@@ -1,5 +1,5 @@
 {
-  "_doc": "Class insignia registry. tier: novice | first | second | high_novice | high_first | transcendent. emblem: path under res://assets/ui/class_emblems/ (rank folder / file), per the Project Twilight Class Shield Insignia spec.",
+  "_doc": "Class insignia registry. tier: novice | first | second | high_novice | high_first | transcendent | third. max_base_level is used by save validation; third jobs reach 150, all earlier classes 99. Third-job emblems are not painted yet, so ClassInsignia uses its third-tier shield fallback.",
   "novice": {
     "name": "Novice",
     "tier": "novice",
@@ -239,5 +239,88 @@
     "name": "Shaman",
     "tier": "second",
     "emblem": "SecondJobs/priest.png"
+  },
+  "rune_knight": {
+    "name": "Rune Knight",
+    "tier": "third",
+    "max_base_level": 150
+  },
+  "arch_bishop": {
+    "name": "Arch Bishop",
+    "tier": "third",
+    "max_base_level": 150
+  },
+  "royal_guard": {
+    "name": "Royal Guard",
+    "tier": "third",
+    "max_base_level": 150
+  },
+  "warlock": {
+    "name": "Warlock",
+    "tier": "third",
+    "max_base_level": 150
+  },
+  "sorcerer": {
+    "name": "Sorcerer",
+    "tier": "third",
+    "max_base_level": 150
+  },
+  "ranger": {
+    "name": "Ranger",
+    "tier": "third",
+    "max_base_level": 150
+  },
+  "minstrel": {
+    "name": "Minstrel",
+    "tier": "third",
+    "max_base_level": 150
+  },
+  "wanderer": {
+    "name": "Wanderer",
+    "tier": "third",
+    "max_base_level": 150
+  },
+  "sura": {
+    "name": "Sura",
+    "tier": "third",
+    "max_base_level": 150
+  },
+  "mechanic": {
+    "name": "Mechanic",
+    "tier": "third",
+    "max_base_level": 150
+  },
+  "genetic": {
+    "name": "Genetic",
+    "tier": "third",
+    "max_base_level": 150
+  },
+  "guillotine_cross": {
+    "name": "Guillotine Cross",
+    "tier": "third",
+    "max_base_level": 150
+  },
+  "shadow_chaser": {
+    "name": "Shadow Chaser",
+    "tier": "third",
+    "max_base_level": 150
+  },
+  "dread_knight": {
+    "name": "Dread Knight",
+    "tier": "transcendent"
+  },
+  "oracle": {
+    "name": "Oracle",
+    "tier": "transcendent"
+  },
+  "abyss_knight": {
+    "name": "Abyss Knight",
+    "tier": "third",
+    "max_base_level": 150
+  },
+  "spirit_sage": {
+    "name": "Spirit Sage",
+    "tier": "third",
+    "max_base_level": 150
   }
 }

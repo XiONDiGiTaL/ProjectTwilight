@@ -1,8 +1,8 @@
 class_name Inventory
 extends RefCounted
 ## A character's carried items. Pure data + rules (stacking, weight).
-## Entries: {"id": int, "amount": int}. Etc and usable items stack; equipment
-## occupies one entry per piece.
+## Entries: {"id": int, "amount": int}. Etc, usable and ammo items stack;
+## equipment occupies one entry per piece.
 
 const MAX_ENTRIES := 100   # classic inventory limit (Medium confidence)
 const MAX_STACK := 30000
@@ -13,7 +13,7 @@ var entries: Array = []
 
 
 static func is_stackable(def: Dictionary) -> bool:
-	return String(def.get("type", "etc")) in ["etc", "usable"]
+	return String(def.get("type", "etc")) in ["etc", "usable", "ammo"]
 
 
 ## Total weight in the client's units (tenths are not used in Pre-Renewal data here).

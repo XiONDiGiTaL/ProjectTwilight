@@ -35,7 +35,13 @@ const ARCHETYPES := [
 	{"role": "caster", "job": "mage", "weapon": 1601, "skills": {"MG_FIREBOLT": 0.5, "MG_COLDBOLT": 0.5, "MG_LIGHTNINGBOLT": 0.5, "MG_SRECOVERY": 0.6}},
 	{"role": "support", "job": "shaman", "weapon": 1601, "female": true,
 		"skills": {"SH_COMFORT": 1.0, "SH_PROTECTION": 0.8, "SH_WRATH": 0.6, "SH_PRAYER": 0.5, "SH_SUMMON": 0.7, "SH_AUTOHEAL": 0.8}},
+	{"role": "support", "job": "priest", "weapon": 1501, "female": true,
+		"skills": {"PR_HEAL": 1.0, "AL_HEAL": 1.0, "AL_ANGELUS": 0.8, "PR_HOLYLIGHT": 0.6}},
 ]
+
+## What a support bot casts, in order of preference (first one it knows).
+const HEAL_SKILLS := ["SH_COMFORT", "PR_HEAL", "AL_HEAL"]
+const BUFF_SKILLS := {"SH_PROTECTION": "protection", "AL_ANGELUS": "angelus"}
 
 ## Display colour per role, used by name tags and minimap blips.
 const ROLE_COLORS := {
@@ -263,8 +269,9 @@ static func _combat_skill(sim: FieldSimulation, u: SimUnit, t: SimUnit) -> void:
 			if best != "":
 				sim.command_use_skill(u.id, best, t.id)
 		"support":
-			if int(u.skills.get("SH_SUMMON", 0)) > 0:
-				sim.command_use_skill(u.id, "SH_SUMMON", t.id)
+			var smite := _known(u, ["SH_SUMMON", "PR_HOLYLIGHT", "AL_HOLYLIGHT"])
+			if smite != "":
+				sim.command_use_skill(u.id, smite, t.id)
 		_:
 			for code in ["DK_BLOODYCRASH", "SM_BASH"]:
 				if int(u.skills.get(code, 0)) > 0 and sim.rng.randf() < 0.35:
@@ -280,6 +287,8 @@ static func _support(sim: FieldSimulation, u: SimUnit) -> bool:
 	var hurt_frac := 0.65
 	var fallen: SimUnit = null
 	var unbuffed: SimUnit = null
+	var heal := _known(u, HEAL_SKILLS)
+	var buff := _known(u, BUFF_SKILLS.keys())
 	for id in sim.units:
 		var p: SimUnit = sim.units[id]
 		if not p.is_player() or FieldSimulation._chebyshev(u.walker.cell, p.walker.cell) > SUPPORT_RANGE:
@@ -292,17 +301,25 @@ static func _support(sim: FieldSimulation, u: SimUnit) -> bool:
 		if frac < hurt_frac or (frac < 0.9 and not p.is_bot and frac < hurt_frac + 0.2):
 			hurt_frac = frac
 			hurt = p
-		if not p.has_status("protection") and (unbuffed == null or not p.is_bot):
+		if buff != "" and not p.has_status(String(BUFF_SKILLS[buff])) and (unbuffed == null or not p.is_bot):
 			unbuffed = p
 	if fallen and int(u.skills.get("SH_PRAYER", 0)) > 0 and u.sp >= 60:
 		return sim.command_use_skill(u.id, "SH_PRAYER", fallen.id)
-	if hurt and int(u.skills.get("SH_COMFORT", 0)) > 0:
-		return sim.command_use_skill(u.id, "SH_COMFORT", hurt.id)
-	if unbuffed and int(u.skills.get("SH_PROTECTION", 0)) > 0 and u.sp > u.max_sp * 0.4:
-		return sim.command_use_skill(u.id, "SH_PROTECTION", unbuffed.id)
+	if hurt and heal != "":
+		return sim.command_use_skill(u.id, heal, hurt.id)
+	if unbuffed and buff != "" and u.sp > u.max_sp * 0.4:
+		return sim.command_use_skill(u.id, buff, unbuffed.id)
 	if not u.has_status("wrath") and int(u.skills.get("SH_WRATH", 0)) > 0 and u.sp > u.max_sp * 0.6:
 		return sim.command_use_skill(u.id, "SH_WRATH", u.id)
 	return false
+
+
+## First skill of `codes` the bot has learned, or "".
+static func _known(u: SimUnit, codes: Array) -> String:
+	for code in codes:
+		if int(u.skills.get(code, 0)) > 0:
+			return String(code)
+	return ""
 
 
 static func _wander(sim: FieldSimulation, u: SimUnit) -> void:

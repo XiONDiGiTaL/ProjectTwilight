@@ -38,6 +38,15 @@ var _casts: Dictionary = {}        # unit id -> CastingCircle
 var _config_exp_rate := 100
 var _config_job_exp_rate := 100
 var _config_drop_rate := 100
+## Co-op: the NetSession autoload while a session is active, else null.
+## Host: NetSession owns and ticks the simulation; this scene only presents it.
+## Client: `sim` is a RemoteSimulation that mirrors the host's map.
+var _net: Node
+var _net_host := false
+var _net_client := false
+var _hud_refresh_in := 0.0
+var _audio: Node                  # GameAudio autoload (null in bare tool scenes)
+var _leaving := false
 
 
 func _ready() -> void:
@@ -52,6 +61,11 @@ func _ready() -> void:
 	env.environment.background_mode = Environment.BG_COLOR
 	env.environment.background_color = Color(0.45, 0.6, 0.8)
 	add_child(env)
+	var ns := get_node_or_null("/root/NetSession")
+	if ns != null and ns.is_active() and save_slot != "":
+		_net = ns
+		_net_host = ns.is_host()
+		_net_client = ns.is_client()
 
 	# The save decides which map we are on; read it before loading the map.
 	var saved: Dictionary = {}
@@ -66,35 +80,29 @@ func _ready() -> void:
 				map_name = String(saved.map)
 		else:
 			loaded_msg = "Save could not be loaded: %s" % r.error
+	# In a session the host decides where everyone is.
+	if _net_client:
+		map_name = String(_net.local_map)
+	elif _net_host and _net.host_map() != "":
+		map_name = _net.host_map()
 
 	map = RoMap.new()
 	add_child(map)
 	if not map.load_map(map_name):
 		push_error("Could not load map %s" % map_name)
 		return
-	sim = FieldSimulation.new(map.gat, sim_seed)
+	if _net != null:
+		if not _enter_session(saved):
+			return
+	else:
+		_build_offline_world(saved)
 	_config_exp_rate = sim.rules.exp_rate
 	_config_job_exp_rate = sim.rules.job_exp_rate
 	_config_drop_rate = sim.rules.drop_rate
 	var settings := _settings_autoload()
-	if settings:
+	if settings and not _net_client:
 		settings.rate_preset_changed.connect(_apply_rate_preset)
 		_apply_rate_preset(settings.rate_preset())
-	if not saved.is_empty():
-		player = sim.add_player_from_save(saved)
-	if player == null:
-		player = sim.add_player("Adventurer", start_cell, {"str": 5, "agi": 5, "vit": 5, "int": 1, "dex": 5, "luk": 5})
-		player.inventory.add(501, 3, sim.item_db, player.max_weight())  # starter Red Potions
-	# Arrivals from scripts / unknown maps may land on a blocked cell.
-	if not sim.pathfinder.is_walkable(player.walker.cell):
-		var c := player.walker.cell
-		if c.x <= 0 or c.y <= 0 or c.x >= map.gat.width or c.y >= map.gat.height:
-			c = Vector2i(map.gat.width / 2, map.gat.height / 2)
-		player.walker = GridWalker.new(sim.pathfinder.nearest_walkable(c, 60))
-	sim.setup_map(map_name, ensure_npc_world(_res).warps_on(map_name), ensure_npc_world(_res).monsters_on(map_name))
-	_spawn_script_npcs()
-	if bots_enabled:
-		BotBrain.populate(sim, sim.rng.randi_range(2, 4), BotBrain.map_level(sim), player.walker.cell)
 	_maybe_offer_training.call_deferred()
 	for w in sim.warps:
 		var wv := WarpPortalView.new()
@@ -146,6 +154,15 @@ func _ready() -> void:
 	hud.hotkeys.activate_requested.connect(use_hotkey)
 	hud.chat.submitted.connect(_on_chat_submit)
 	_build_marker()
+	if _net_host:
+		# The simulation was already running (or NetSession will drain its
+		# setup events), so present what exists; the handlers skip duplicates.
+		for id in sim.units:
+			_create_view(sim.units[id])
+		for nid in sim.npcs:
+			_create_npc_view(nid)
+		for gid in sim.ground_items:
+			_create_item_view(gid)
 	_consume_events()  # creates views for the initial spawns
 	camera.follow = views[player.id]
 	(views[player.id] as UnitView).update_weapon(_res)
@@ -154,6 +171,154 @@ func _ready() -> void:
 		hud.notify(loaded_msg, UiTheme.HP_MID)
 	hud.map_banner(String(sim.map_info.get("name", map_name)), String(sim.map_info.get("subtitle", "")))
 	hud.bind_minimap(map.gat, sim, player.id, String(sim.map_info.get("name", map_name)))
+	_audio = get_node_or_null("/root/GameAudio")
+	if _audio:
+		_audio.play_map_music(map_name)
+	if _net != null:
+		_net.notice_received.connect(_on_net_notice)
+		_net.chat_received.connect(_on_net_chat)
+		_net.session_ended.connect(_leave_to_menu)
+		_net.session_failed.connect(_leave_to_menu)
+		if _net_host:
+			_net.host_action.connect(_on_chat_action)
+			if not _net.code_announced:
+				_net.code_announced = true
+				DisplayServer.clipboard_set(String(_net.invitation_code))
+				hud.notify("Hosting co-op. Invitation code copied:  %s   (@code shows it again)" % String(_net.invitation_code), UiTheme.ACCENT)
+		else:
+			_net.map_entered.connect(_on_net_map_entered)
+			_net.dialog_received.connect(_on_net_dialog)
+			hud.dialog.number_entered.connect(func(v):
+				if _net_dialog_open:
+					_net_dialog_open = false
+					_net.answer_dialog(int(v)))
+
+
+## Offline world: this scene owns and ticks the simulation.
+func _build_offline_world(saved: Dictionary) -> void:
+	sim = FieldSimulation.new(map.gat, sim_seed)
+	if not saved.is_empty():
+		player = sim.add_player_from_save(saved)
+	if player == null:
+		player = sim.add_player("Adventurer", start_cell, {"str": 5, "agi": 5, "vit": 5, "int": 1, "dex": 5, "luk": 5})
+		player.inventory.add(501, 3, sim.item_db, player.max_weight())  # starter Red Potions
+	# Arrivals from scripts / unknown maps may land on a blocked cell.
+	if not sim.pathfinder.is_walkable(player.walker.cell):
+		var c := player.walker.cell
+		if c.x <= 0 or c.y <= 0 or c.x >= map.gat.width or c.y >= map.gat.height:
+			c = Vector2i(map.gat.width / 2, map.gat.height / 2)
+		player.walker = GridWalker.new(sim.pathfinder.nearest_walkable(c, 60))
+	sim.setup_map(map_name, ensure_npc_world(_res).warps_on(map_name), ensure_npc_world(_res).monsters_on(map_name))
+	_spawn_script_npcs()
+	if bots_enabled:
+		BotBrain.populate(sim, sim.rng.randi_range(2, 4), BotBrain.map_level(sim), player.walker.cell)
+
+
+## Co-op world. Host: the character enters (or is already in) one of
+## NetSession's map simulations. Client: a replica fed by the host.
+func _enter_session(saved: Dictionary) -> bool:
+	if _net_client:
+		var replica := RemoteSimulation.new(map.gat, _net)
+		_net.attach_remote(replica)
+		sim = replica
+		player = sim.units.get(int(_net.local_unit_id))
+		if player == null:
+			_leave_to_menu("The host did not send your character.")
+			return false
+		if not saved.is_empty():
+			player.hotkeys = (saved.get("hotkeys", player.hotkeys) as Array).duplicate(true)
+		return true
+	if _net.host_map() == "":
+		if saved.is_empty():
+			_leave_to_menu("Hosting needs a saved character.")
+			return false
+		var entered: Dictionary = _net.host_enter(saved, map_name, _res)
+		if entered.is_empty():
+			_leave_to_menu("Could not load %s." % map_name)
+			return false
+	sim = _net.host_sim()
+	player = _net.host_unit()
+	if sim == null or player == null:
+		_leave_to_menu("The session lost your character.")
+		return false
+	return true
+
+
+func _on_net_notice(text: String, ok: bool) -> void:
+	hud.notify(text, UiTheme.ACCENT if ok else UiTheme.HP_MID)
+
+
+func _on_net_chat(from: String, text: String) -> void:
+	hud.notify("%s:  %s" % [from, text], UiTheme.TEXT)
+	for v in views.values():
+		var uv := v as UnitView
+		if uv.unit != null and uv.unit.is_player() and uv.unit.name == from:
+			hud.numbers.spawn(uv.head_position(), text.left(40), DamageNumbers.Kind.MISS)
+
+
+## Client: the host moved us to another map (portal, warp, save point).
+func _on_net_map_entered(_map: String) -> void:
+	if _leaving:
+		return
+	_leaving = true
+	player.walker = GridWalker.new(player.walker.cell)
+	save_now()
+	hud.transition("Traveling to %s" % String(sim.map_db.get(String(_net.local_map), {}).get("name", _net.local_map)))
+	set_process(false)
+	await get_tree().create_timer(0.3).timeout
+	_skip_exit_save = true
+	get_tree().change_scene_to_file("res://scenes/game/field.tscn")
+
+
+## Client: an NPC script running on the host shows its dialog here.
+func _on_net_dialog(kind: String, payload: Dictionary) -> void:
+	match kind:
+		"page":
+			_net_dialog_open = true
+			hud.dialog.show_page(String(payload.get("speaker", "")), String(payload.get("text", "")), payload.get("options", ["Next"]))
+		"select":
+			_net_dialog_open = true
+			hud.dialog.show_page(String(payload.get("speaker", "")), String(payload.get("text", "")), payload.get("options", []), true)
+		"number":
+			_net_dialog_open = true
+			hud.dialog.ask_number(String(payload.get("speaker", "")), String(payload.get("text", "")), int(payload.get("lo", 0)), int(payload.get("hi", 0)))
+		"close":
+			_net_dialog_open = false
+			hud.dialog.close()
+		"effect":
+			var n := String(payload.get("name", ""))
+			script_effect("heal" if n.contains("HEAL") or n == "312" or n == "313" else "sparkle")
+		"storage":
+			_net_dialog_open = false
+			hud.dialog.close()
+			hud.storage.open("Kafra", player, sim.item_db)
+		"guild_storage":
+			_net_dialog_open = false
+			hud.dialog.close()
+			var g: Dictionary = sim.guilds.guilds.get(player.guild_id, {})
+			if not g.is_empty():
+				hud.storage.open_guild(String(g.get("name", "Guild")), player, g.get("storage"), sim.item_db)
+
+
+var _net_dialog_open := false
+
+
+## Saves, closes any session and returns to the title screen.
+func _leave_to_menu(message := "") -> void:
+	if _leaving and message == "":
+		return
+	_leaving = true
+	if player != null and not _skip_exit_save:
+		save_now()
+	_skip_exit_save = true
+	var session := get_node_or_null("/root/GameSession")
+	if session:
+		session.notice = message
+	var ns := get_node_or_null("/root/NetSession")
+	if ns:
+		ns.leave()
+	set_process(false)
+	get_tree().change_scene_to_file.call_deferred("res://scenes/main_menu.tscn")
 
 
 func _build_marker() -> void:
@@ -190,17 +355,37 @@ func _input(e: InputEvent) -> void:
 
 ## Chat line: @commands run through the simulation, plain text is local speech.
 func _on_chat_submit(text: String) -> void:
+	var line := text.strip_edges()
+	if line == "@leave" or line == "@quit":
+		_leave_to_menu("")
+		return
+	if _net != null:
+		if line == "@code":
+			if _net_host:
+				DisplayServer.clipboard_set(String(_net.invitation_code))
+				hud.notify("Invitation code copied:  %s" % String(_net.invitation_code), UiTheme.ACCENT)
+			else:
+				hud.notify("Only the host has the invitation code.", UiTheme.TEXT_DIM)
+			return
+		if line == "@who":
+			hud.notify("In this session:  %s" % ", ".join(PackedStringArray(_net.player_names())) if _net_host else "Ask the host: only the host lists players.", UiTheme.ACCENT)
+			return
+		_net.say(line)      # the host runs @commands and relays speech
+		return
 	var r := ChatCommands.execute(sim, player, text)
 	if r.has("action"):
-		var a: Dictionary = r.action
-		match String(a.get("kind", "")):
-			"warp":
-				script_warp(String(a.map), int(a.x), int(a.y))
-			"rate_preset":
-				_apply_rate_preset_action(int(a.get("multiplier", 0)))
+		_on_chat_action(r.action)
 	var msg := String(r.get("text", ""))
 	if msg != "":
 		hud.notify(msg, UiTheme.ACCENT if bool(r.get("ok", true)) else UiTheme.HP_MID)
+
+
+func _on_chat_action(a: Dictionary) -> void:
+	match String(a.get("kind", "")):
+		"warp":
+			script_warp(String(a.map), int(a.x), int(a.y))
+		"rate_preset":
+			_apply_rate_preset_action(int(a.get("multiplier", 0)))
 
 
 ## @rates presets go through Settings, so the command and the window share the
@@ -285,8 +470,8 @@ func monster_at_screen(p: Vector2) -> int:
 	var best := 0
 	var best_d := PICK_RADIUS_PX
 	for id in views:
-		var u: SimUnit = sim.units[id]
-		if u.is_player() or u.dead:
+		var u: SimUnit = sim.units.get(id)
+		if u == null or u.is_player() or u.dead:
 			continue
 		var v: UnitView = views[id]
 		var feet := camera.unproject_position(v.global_position)
@@ -386,7 +571,9 @@ func attack(target_id: int) -> bool:
 	if not sim.command_attack(player.id, target_id):
 		return false
 	_target_marker.visible = false
-	var t: SimUnit = sim.units[target_id]
+	var t: SimUnit = sim.units.get(target_id)
+	if t == null:
+		return false
 	hud.set_target(t.id, t.name, t.level, t.hp, t.max_hp)
 	return true
 
@@ -396,7 +583,7 @@ func attack(target_id: int) -> bool:
 ## Settings presets override server config rates for this field, live while the
 ## window is open. RATE_PRESET_NONE restores the rates loaded at field start.
 func _apply_rate_preset(multiplier: int) -> void:
-	if sim == null:
+	if sim == null or _net_client:
 		return
 	if multiplier <= 0:
 		sim.rules.exp_rate = _config_exp_rate
@@ -440,10 +627,17 @@ func _exit_tree() -> void:
 # --- Frame ---------------------------------------------------------------------
 
 func _process(delta: float) -> void:
-	if sim == null:
+	if sim == null or player == null:
 		return
-	sim.tick(delta * 1000.0)
+	if not _net_host:
+		sim.tick(delta * 1000.0)    # the host's simulations are ticked by NetSession
 	_consume_events()
+	if _net_client:
+		# Replicated HP / SP / EXP arrive as state, not always as events.
+		_hud_refresh_in -= delta
+		if _hud_refresh_in <= 0.0:
+			_hud_refresh_in = 0.25
+			hud.update_player(player, sim.next_base_exp(player), sim.next_job_exp(player))
 	if views.has(player.id):
 		map.update_occlusion(camera, (views[player.id] as Node3D).global_position)
 	for v in views.values():
@@ -464,6 +658,9 @@ func _process(delta: float) -> void:
 			hud.hover_tag("", Vector2.ZERO)
 	if hud.dialog.visible and player.walker.is_moving():
 		hud.dialog.close()
+		if _net_dialog_open:
+			_net_dialog_open = false
+			_net.answer_dialog(255)    # walking away cancels the whole script
 	# Walking away from the merchant closes the shop (the simulation also enforces range).
 	if hud.shop.visible and sim._open_shop_of(player).is_empty():
 		hud.shop.toggle(false)
@@ -485,24 +682,48 @@ func _process(delta: float) -> void:
 func _consume_events() -> void:
 	var player_changed := false
 	var inventory_changed := false
-	for ev in sim.drain_events():
+	var batch: Array = _net.take_local_events() if _net_host else sim.drain_events()
+	for ev in batch:
 		match ev.type:
 			"spawn":
-				var spawned: SimUnit = sim.units[ev.id]
-				_create_view(spawned)
-				if spawned.is_bot:
-					var tag_color: Color = BotBrain.ROLE_COLORS.get(spawned.bot_role, Color(0.72, 0.9, 1.0))
-					(views[spawned.id] as UnitView).set_name_tag(spawned.name, tag_color)
+				var spawned: SimUnit = sim.units.get(ev.id)
+				if spawned != null:
+					_create_view(spawned)
+			"despawn":
+				var gone: UnitView = views.get(ev.id)
+				if gone:
+					hud.unit_died(ev.id)
+					gone.queue_free()
+					views.erase(ev.id)
+				_casts.erase(ev.id)
+				if sim is RemoteSimulation:
+					(sim as RemoteSimulation).forget_unit(int(ev.id))
+			"appearance":
+				var look: UnitView = views.get(ev.id)
+				if look:
+					look.rebuild_player(_res)
+					look.update_weapon(_res)
 			"attack":
-				var a: SimUnit = sim.units[ev.id]
+				var a: SimUnit = sim.units.get(ev.id)
 				var av: UnitView = views.get(ev.id)
-				if av and av.sprite:
+				if a and av and av.sprite:
 					av.sprite.play_once("attack", minf(a.attack_motion, a.attack_interval))
+				if a and _audio:
+					if a.is_player():
+						_audio.swing(a.weapon_type, _vol(a))
+					else:
+						_audio.monster(a.sprite, "attack", _vol(a))
 			"damage":
 				_on_damage(ev)
 				player_changed = player_changed or ev.dst == player.id
 			"death":
 				hud.unit_died(ev.id)
+				var dead_u: SimUnit = sim.units.get(ev.id)
+				if dead_u and _audio:
+					if dead_u.is_player():
+						_audio.play("die_male.wav", _vol(dead_u))
+					elif not _audio.monster(dead_u.sprite, "die", _vol(dead_u)):
+						_audio.play("20th_monster_die.wav", _vol(dead_u) * 0.6)
 				player_changed = player_changed or ev.id == player.id
 			"exp":
 				# CPU adventurers earn EXP by the same rules but stay quiet.
@@ -521,13 +742,16 @@ func _consume_events() -> void:
 						hud.level_up(lv.global_position, "Level Up", "Lv %d  ·  +%d pts" % [ev.level, lu.status_points])
 					else:
 						hud.level_up(lv.global_position, "Job Level Up", "Job Lv %d" % ev.level)
+					if _audio:
+						_audio.play("levelup.wav" if ev.kind == "base" else "effect/st_job_level_up.wav")
 					player_changed = true
 					save_now()
 			"revive":
 				if ev.id == player.id and ev.has("to_map"):
-					player.dead = false
 					hud.notify("You return to your save point.", UiTheme.TEXT)
-					_take_warp(String(ev.to_map), ev.to_cell)
+					if not _net_client:      # a client is moved by the host
+						player.dead = false
+						_take_warp(String(ev.to_map), ev.to_cell)
 				player_changed = player_changed or ev.id == player.id
 			"drop":
 				_create_item_view(ev.ground)
@@ -550,6 +774,8 @@ func _consume_events() -> void:
 				var hv: UnitView = views.get(ev.id)
 				if hv:
 					hud.numbers.spawn(hv.head_position(), "+%d" % ev.amount, DamageNumbers.Kind.HEAL)
+					if _audio and int(ev.amount) > 0:
+						_audio.play("_heal_effect.wav", _vol(hv.unit) * 0.9, 250)
 				player_changed = player_changed or ev.id == player.id
 			"inventory":
 				inventory_changed = inventory_changed or ev.id == player.id
@@ -572,15 +798,18 @@ func _consume_events() -> void:
 					ev_view.update_weapon(_res)
 				player_changed = player_changed or ev.id == player.id
 			"warp":
-				if ev.id == player.id:
+				if ev.id == player.id and _audio:
+					_audio.play("effect/ef_portal.wav")
+				if ev.id == player.id and not _net_client:
 					_take_warp(String(ev.to_map), ev.to_cell)
 			"npc_spawn":
 				_create_npc_view(ev.npc)
 			"npc_open":
-				if ev.id == player.id:
+				if ev.id == player.id and sim.npcs.has(ev.npc):
 					var npc: Dictionary = sim.npcs[ev.npc]
 					if String(npc.get("kind", "shop")) == "script":
-						_run_npc_script(npc)
+						if not _net_client:      # the host runs scripts for its clients
+							_run_npc_script(npc)
 					elif String(npc.get("kind", "shop")) == "job_guide":
 						_job_dialog_start(npc)
 					elif String(npc.get("kind", "shop")) == "kafra":
@@ -604,6 +833,8 @@ func _consume_events() -> void:
 					var circle := CastingCircle.make(String(ev.element), int(ev.level), float(ev.duration) / 1000.0)
 					add_child(circle)
 					circle.global_position = cv.global_position
+					if _audio:
+						_audio.play("effect/ef_beginspell.wav", _vol(cv.unit))
 					if _casts.has(ev.id) and is_instance_valid(_casts[ev.id]):
 						(_casts[ev.id] as CastingCircle).interrupt()
 					_casts[ev.id] = circle
@@ -629,6 +860,8 @@ func _consume_events() -> void:
 				if tv:
 					_play_fx(String(ev.get("fx", "bolts")), caster.global_position if caster else tv.global_position,
 						tv.global_position, String(ev.element), int(ev.hits), int(ev.splash))
+					if _audio:
+						_audio.skill(String(ev.get("skill", "")), String(ev.element), _vol(tv.unit))
 			"skill_fx":
 				var from_v: UnitView = views.get(ev.id)
 				var to_pos := map.cell_to_world(ev.cell.x, ev.cell.y)
@@ -636,6 +869,8 @@ func _consume_events() -> void:
 				if tid != 0 and views.has(tid):
 					to_pos = (views[tid] as UnitView).global_position
 				_play_fx(String(ev.fx), from_v.global_position if from_v else to_pos, to_pos, String(ev.element), int(ev.hits), int(ev.area))
+				if _audio and from_v:
+					_audio.skill(String(ev.get("skill", "")), String(ev.element), _vol(from_v.unit))
 				if from_v and from_v.sprite and String(ev.fx) != "support" and String(ev.fx) != "aura":
 					from_v.sprite.play_once("attack", 450.0)
 			"status":
@@ -644,12 +879,15 @@ func _consume_events() -> void:
 					var stname := StatusRules.display_name(String(ev.status))
 					if ev.on:
 						var deb := StatusRules.is_debuff(String(ev.status))
+						if _audio:
+							_audio.status(String(ev.status), _vol(stv.unit))
 						hud.numbers.spawn(stv.head_position(), stname.to_upper(), DamageNumbers.Kind.MISS)
 						if ev.id == player.id:
 							hud.notify(("%s!" if deb else "%s") % stname, UiTheme.HP_MID if deb else UiTheme.ACCENT)
 					elif ev.id == player.id:
 						hud.notify("%s wore off." % stname, UiTheme.TEXT_DIM)
-					stv.set_status_tint(sim.units[ev.id])
+					if sim.units.has(ev.id):
+						stv.set_status_tint(sim.units[ev.id])
 				player_changed = player_changed or ev.id == player.id
 			"counter":
 				var ctv: UnitView = views.get(ev.id)
@@ -702,10 +940,10 @@ func _consume_events() -> void:
 
 
 func _on_damage(ev: Dictionary) -> void:
-	var dst: SimUnit = sim.units[ev.dst]
-	var src: SimUnit = sim.units[ev.src]
+	var dst: SimUnit = sim.units.get(ev.dst)
+	var src: SimUnit = sim.units.get(ev.src)
 	var dv: UnitView = views.get(ev.dst)
-	if dv == null:
+	if dv == null or dst == null or src == null:
 		return
 	var at := dv.head_position()
 	if ev.miss:
@@ -716,6 +954,13 @@ func _on_damage(ev: Dictionary) -> void:
 		hud.numbers.spawn_combo(at, int(ev.amount), int(ev.get("hits", 1)), bool(ev.crit))
 	if not ev.miss and not dst.dead and dv.sprite:
 		dv.sprite.play_once("hurt", 280.0)
+	if _audio and not ev.miss:
+		if src.is_player():
+			_audio.hit(src.weapon_type, _vol(dst))
+			if not dst.is_player() and not dst.dead:
+				_audio.monster(dst.sprite, "damage", _vol(dst) * 0.8)
+		elif dst.is_player():
+			_audio.taken(_vol(dst))
 	# Monster HP bars appear once a player attacks them and stay until death.
 	if not dst.is_player() and src.is_player():
 		hud.engage(dst.id, dst.hp + (ev.amount if not ev.miss else 0), dst.max_hp, dv.head_position, dst.name)
@@ -724,7 +969,16 @@ func _on_damage(ev: Dictionary) -> void:
 	hud.update_hp(dst.id, dst.hp, dst.max_hp)
 
 
+## Loudness of something happening at a unit, by its distance from the player.
+func _vol(u: SimUnit) -> float:
+	if u == null or player == null:
+		return 1.0
+	return GameAudioFalloff.at(Vector2(u.walker.cell).distance_to(Vector2(player.walker.cell)))
+
+
 func _create_view(u: SimUnit) -> void:
+	if views.has(u.id):
+		return
 	var v := UnitView.new()
 	v.unit = u
 	v.map = map
@@ -734,6 +988,11 @@ func _create_view(u: SimUnit) -> void:
 		push_warning("No sprite for %s (%s)" % [u.name, u.sprite])
 	v.position = map.cell_pos_to_world(u.walker.position())
 	views[u.id] = v
+	if u.is_bot:
+		v.set_name_tag(u.name, BotBrain.ROLE_COLORS.get(u.bot_role, Color(0.72, 0.9, 1.0)))
+	elif u.is_player() and player != null and u.id != player.id:
+		v.set_name_tag(u.name, Color(1.0, 0.93, 0.7))
+		v.update_weapon(_res)
 
 
 # --- Job guide dialogue ------------------------------------------------------------
@@ -744,7 +1003,7 @@ var _dialog_state := ""
 var _dialog_job := ""
 
 
-## Classic second jobs per first job; only those in jobs.json are playable yet.
+## Classic second jobs per first job; jobs.json decides which are playable.
 const SECOND_JOBS := {
 	"swordman": ["knight", "crusader", "dark_knight"], "acolyte": ["priest", "monk", "shaman"],
 	"mage": ["wizard", "sage"], "archer": ["hunter", "bard", "dancer"],
@@ -783,15 +1042,64 @@ func _second_job_dialog(npc: Dictionary) -> void:
 	hud.dialog.show_page(npc.name, text, labels)
 
 
+## Every job whose `parent` is this class (and is a higher tier). Used for the
+## second -> transcendent and transcendent -> third-job steps.
+func _advanced_jobs(job: String, tier: int) -> Array:
+	var out: Array = []
+	for id in sim.job_db:
+		var j: Dictionary = sim.job_db[id]
+		if String(j.get("parent", "")) == job and int(j.get("tier", 0)) > tier:
+			out.append(String(id))
+	return out
+
+
+## Offers the next step of an already-chosen line: transcendence, then the
+## third job. Requirements live in jobs.json (Base Level and Job Level).
+func _advanced_job_dialog(npc: Dictionary, jobs: Array, tier: int) -> void:
+	var first: Dictionary = sim.job_db[jobs[0]]
+	var need_base := int(first.get("min_parent_base_level", 99))
+	var need_job := int(first.get("min_parent_job_level", 70))
+	var jn := String(sim.job_db.get(player.job, {}).get("name", player.job))
+	var text := ""
+	if tier == 2:
+		text = "Your %s path can transcend its mortal limits. At Base Level %d and Job Level %d you may be reborn into a transcendent class (you are Base %d / Job %d)." % [jn, need_base, need_job, player.level, player.job_level]
+	else:
+		text = "You have mastered your transcendent path. At Base Level %d and Job Level %d you may take the third job and continue to Base Level 150 (you are Base %d / Job %d)." % [need_base, need_job, player.level, player.job_level]
+	_dialog_state = "choose2"
+	_dialog_choices = jobs
+	var labels: Array = []
+	for j in jobs:
+		var reason := sim.job_change_unmet(player, j)
+		labels.append(String(sim.job_db[j].name) + ("" if reason == "" else "  (locked)"))
+	labels.append("Not yet")
+	hud.dialog.show_page(npc.name, text, labels)
+
+
 func _job_dialog_start(npc: Dictionary) -> void:
 	_dialog_npc = npc
-	if int(sim.job_db.get(player.job, {}).get("tier", 0)) == 1:
+	var tier := int(sim.job_db.get(player.job, {}).get("tier", 0))
+	if tier == 1:
 		_second_job_dialog(npc)
+		return
+	if tier == 2 or tier == 3:
+		var next_jobs := _advanced_jobs(player.job, tier)
+		if not next_jobs.is_empty():
+			_advanced_job_dialog(npc, next_jobs, tier)
+			return
+		var current_name := String(sim.job_db.get(player.job, {}).get("name", player.job))
+		_dialog_state = "done"
+		var closed_text := "No further job path is open for a %s in this build." % current_name
+		if tier == 3:
+			closed_text = "You have already walked the furthest path available to a %s." % current_name
+		hud.dialog.show_page(npc.name, closed_text, ["Close"])
 		return
 	if player.job != "novice":
 		var jn := String(sim.job_db.get(player.job, {}).get("name", player.job))
 		_dialog_state = "done"
-		hud.dialog.show_page(npc.name, "You have already chosen your path, %s. Train hard and come back stronger!" % jn, ["Close"])
+		var text := "You have already chosen your path, %s. Train hard and come back stronger!" % jn
+		if tier >= 4:
+			text = "You have already taken the third job, %s. Base Level 150 is now open to you." % jn
+		hud.dialog.show_page(npc.name, text, ["Close"])
 		return
 	var basic := int(player.skills.get("NV_BASIC", 0))
 	if player.job_level < FieldSimulation.JOB_CHANGE_JOB_LEVEL or basic < FieldSimulation.JOB_CHANGE_BASIC_SKILL:
@@ -808,6 +1116,10 @@ func _job_dialog_start(npc: Dictionary) -> void:
 
 
 func _on_dialog_choice(i: int) -> void:
+	if _net_dialog_open:
+		_net_dialog_open = false
+		_net.answer_dialog(i)
+		return
 	match _dialog_state:
 		"choose":
 			if i >= FIRST_JOBS.size():
@@ -849,8 +1161,19 @@ func _travel(to_map: String, to_cell: Vector2i) -> void:
 	if save_slot == "":
 		hud.notify("Map travel needs a character save slot.", UiTheme.HP_MID)
 		return
-	player.walker = GridWalker.new(to_cell)
-	player.target_id = 0
+	if _net_client or _leaving:
+		return      # a client travels only when the host says so
+	if _net_host:
+		# NetSession moves the character between its map simulations.
+		if not _net.host_travel(to_map, to_cell, _res):
+			hud.notify("Could not travel to %s." % to_map, UiTheme.HP_MID)
+			player.warping = false
+			return
+		player = _net.host_unit()
+	else:
+		player.walker = GridWalker.new(to_cell)
+		player.target_id = 0
+	_leaving = true
 	SaveGame.write(save_slot, SaveGame.capture(player, to_map))
 	var dest := String(sim.map_db.get(to_map, {}).get("name", to_map))
 	hud.transition("Traveling to %s" % dest)
@@ -872,17 +1195,14 @@ var _npc_running := false
 
 static func ensure_npc_world(res: Node) -> RaWorld:
 	if npc_world == null:
-		npc_world = RaWorld.new()
-		npc_world.load_all(res)
-		for e in npc_world.errors:
-			push_warning("NPC script: " + String(e))
-		print("NPC scripts: %d files, %d NPCs, %d functions, %d errors" % [npc_world.loaded_files.size(),
-			npc_world.npcs.size(), npc_world.functions.size(), npc_world.errors.size()])
+		npc_world = WorldBuilder.world(res)     # one parsed copy, shared with the co-op host
 	return npc_world
 
 
 ## First arrival in the Training Grounds: ask whether to train or skip to Prontera.
 func _maybe_offer_training() -> void:
+	if _net_client or player == null:
+		return
 	if not map_name.begins_with("new_") or int(player.script_vars.get("TW_TRAIN_ASKED", {}).get(0, 0)) != 0:
 		return
 	await get_tree().create_timer(0.8).timeout
@@ -911,7 +1231,7 @@ func _spawn_script_npcs() -> void:
 
 
 func _run_npc_script(npc: Dictionary) -> void:
-	if _npc_running:
+	if _npc_running or _net_client:
 		return
 	var world := ensure_npc_world(_res)
 	var def := world.find_npc(String(npc.script))
@@ -952,6 +1272,8 @@ func show_guild_storage() -> void:
 
 ## warp "<map>",x,y from a script. Validates the map against the client.
 func script_warp(to_map: String, x: int, y: int) -> void:
+	if _net_client:
+		return
 	var m := to_map
 	if m == "SavePoint" or m == "Save":
 		m = player.save_map
@@ -1001,6 +1323,8 @@ func script_appearance_changed() -> void:
 
 
 func _create_npc_view(nid: int) -> void:
+	if npc_views.has(nid) or not sim.npcs.has(nid):
+		return
 	var v := NpcView.new()
 	add_child(v)
 	v.setup(sim.npcs[nid], _res, map)
@@ -1009,7 +1333,7 @@ func _create_npc_view(nid: int) -> void:
 
 func _create_item_view(gid: int) -> void:
 	var g: Dictionary = sim.ground_items.get(gid, {})
-	if g.is_empty():
+	if g.is_empty() or item_views.has(gid):
 		return
 	var v := GroundItemView.new()
 	add_child(v)

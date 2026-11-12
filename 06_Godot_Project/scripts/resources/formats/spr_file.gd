@@ -17,6 +17,8 @@ var indexed_frames: Array = []
 ## Each entry: Image (RGBA8), already flipped upright.
 var rgba_frames: Array[Image] = []
 var last_error: String = ""
+## Frames whose RLE data was short and was padded with transparent pixels.
+var repaired_frames := 0
 
 
 static func decode(data: PackedByteArray) -> SprFile:
@@ -63,8 +65,11 @@ func _parse(data: PackedByteArray) -> bool:
 			indices = data.slice(pos, pos + pixels)
 			pos += pixels
 		if indices.size() != pixels:
-			last_error = "RLE size mismatch in frame %d" % i
-			return false
+			# Some shipped sprites have a frame whose RLE data ends early. The
+			# original client draws the rest transparent, so do the same
+			# instead of rejecting the whole sprite.
+			indices.resize(pixels)
+			repaired_frames += 1
 		indexed_frames.append({"w": w, "h": h, "indices": indices})
 	for i in rgba_count:
 		if pos + 4 > data.size():

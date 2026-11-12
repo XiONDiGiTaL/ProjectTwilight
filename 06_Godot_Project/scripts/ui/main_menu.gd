@@ -11,6 +11,7 @@ const RESET_CONFIRMATION_SECONDS := 2.5
 var _status: Label
 var _path_edit: LineEdit
 var _play: Button
+var _coop: Button
 var _settings_window: GlassWindow
 var _reset_status_token := 0
 var _status_fade: Tween
@@ -74,10 +75,12 @@ func _ready() -> void:
 	settings_btn.pressed.connect(_open_settings)
 	tools.add_child(settings_btn)
 	var coop := Button.new()
-	coop.text = "PRIVATE CO-OP  ·  COMING SOON"
-	coop.disabled = true
+	coop.text = "PRIVATE CO-OP  ·  HOST OR JOIN"
+	coop.tooltip_text = "Pick a character, then HOST CO-OP or JOIN CO-OP."
 	UiTheme.style_button(coop, false, false, 12)
+	coop.pressed.connect(func(): get_tree().change_scene_to_file(CHARACTER_SELECT))
 	inner.add_child(coop)
+	_coop = coop
 
 	inner.add_child(UiTheme.label("RAGNAROK DATA FOLDER  ·  CLIENT OR .GRF ARCHIVES  (read-only)", 10, UiTheme.ACCENT, 600, 3))
 	var row := HBoxContainer.new()
@@ -105,11 +108,22 @@ func _ready() -> void:
 	quit.pressed.connect(func(): get_tree().quit())
 	inner.add_child(quit)
 	_update_status()
+	var audio := get_node_or_null("/root/GameAudio")
+	if audio:
+		audio.play_menu_music()
+	# A session that ended (host left, kicked, connection lost) explains itself here.
+	var session := get_node_or_null("/root/GameSession")
+	if session and String(session.notice) != "":
+		_set_status(String(session.notice))
+		_status.add_theme_color_override("font_color", UiTheme.HP_MID)
+		session.notice = ""
 
 
 func _update_status() -> void:
 	var res := get_node("/root/RoResources")
 	_play.disabled = not res.is_mounted
+	if _coop:
+		_coop.disabled = not res.is_mounted
 	if res.is_mounted:
 		var n := 0
 		for a in res.archives:
