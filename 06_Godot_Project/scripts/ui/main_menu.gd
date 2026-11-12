@@ -5,11 +5,14 @@ const CHARACTER_SELECT := "res://scenes/ui/character_select.tscn"
 const SPRITE_VIEWER := "res://scenes/tools/sprite_viewer.tscn"
 const MAP_VIEWER := "res://scenes/tools/map_viewer.tscn"
 const SETTINGS_WINDOW := preload("res://scripts/ui/settings_window.gd")
+const RESET_CONFIRMATION := "UI layout reset."
+const RESET_CONFIRMATION_SECONDS := 2.5
 
 var _status: Label
 var _path_edit: LineEdit
 var _play: Button
 var _settings_window: GlassWindow
+var _reset_status_token := 0
 
 
 func _ready() -> void:
@@ -126,7 +129,22 @@ func _open_settings() -> void:
 
 func _reset_ui_layout() -> void:
 	_settings_window.center_position()
-	_status.text = "UI layout reset."
+	_reset_status_token += 1
+	var token := _reset_status_token
+	_status.text = RESET_CONFIRMATION
+	_status.modulate.a = 1.0
+	await get_tree().create_timer(RESET_CONFIRMATION_SECONDS).timeout
+	if token != _reset_status_token or _status.text != RESET_CONFIRMATION:
+		return
+	var out := create_tween()
+	out.tween_property(_status, "modulate:a", 0.0, 0.2)
+	await out.finished
+	if token != _reset_status_token or _status.text != RESET_CONFIRMATION:
+		_status.modulate.a = 1.0
+		return
+	_update_status()
+	var back := create_tween()
+	back.tween_property(_status, "modulate:a", 1.0, 0.25)
 
 
 func _on_mount() -> void:
