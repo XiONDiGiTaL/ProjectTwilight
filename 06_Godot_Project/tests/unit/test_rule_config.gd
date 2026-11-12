@@ -66,6 +66,8 @@ func test_effective_rate_labels(_t) -> Variant:
 		return "125%% should render as x1.25: %s" % text
 	if not text.contains("DROP x50"):
 		return "5000%% should render as x50: %s" % text
+	if r.rate_summary() != "EXP x1.5   JOB x1.25   DROP x50":
+		return "rate_summary() should show effective multipliers only: %s" % r.rate_summary()
 	return true
 
 

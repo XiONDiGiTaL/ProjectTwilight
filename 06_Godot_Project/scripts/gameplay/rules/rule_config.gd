@@ -52,11 +52,16 @@ static func load_config(server_root := "") -> RuleConfig:
 	return r
 
 
+## Effective multipliers only, for compact HUD notices.
+func rate_summary() -> String:
+	return "EXP x%s   JOB x%s   DROP x%s" % [
+		_rate_label(exp_rate), _rate_label(job_exp_rate), _rate_label(drop_rate)]
+
+
 ## One line for the @rates command.
 func describe() -> String:
-	return "EXP x%s   JOB x%s   DROP x%s   MAX LV %d   AUTOLOOT %s" % [
-		_rate_label(exp_rate), _rate_label(job_exp_rate), _rate_label(drop_rate), max_level,
-		"ON" if autoloot else "OFF"]
+	return "%s   MAX LV %d   AUTOLOOT %s" % [
+		rate_summary(), max_level, "ON" if autoloot else "OFF"]
 
 
 ## Percent value -> player-facing multiplier (5000 -> "50", 150 -> "1.5").

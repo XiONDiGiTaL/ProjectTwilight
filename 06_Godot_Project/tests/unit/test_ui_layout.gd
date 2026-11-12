@@ -5,6 +5,7 @@ extends RefCounted
 
 const TEST_WINDOW := "__ui_layout_test"
 const SETTINGS_WINDOW := preload("res://scripts/ui/settings_window.gd")
+const FIELD_SCENE := preload("res://scripts/game/field_scene.gd")
 const SETTINGS_POSITION_TEST := "__settings_position_test"
 
 
@@ -248,6 +249,50 @@ func test_settings_window_rate_presets(t: SceneTree) -> Variant:
 	if not default_selected:
 		return "the DEFAULT button should stay highlighted after clearing the preset"
 	return true
+
+
+func test_rate_change_notices_show_effective_rates(t: SceneTree) -> Variant:
+	var gat := GatFile.new()
+	gat.width = 1
+	gat.height = 1
+	gat.heights.resize(4)
+	gat.types.resize(1)
+	var rules := RuleConfig.new()
+	var scene = FIELD_SCENE.new()
+	scene.sim = FieldSimulation.new(gat, 1, rules)
+	scene._config_exp_rate = 5000
+	scene._config_job_exp_rate = 5000
+	scene._config_drop_rate = 5000
+	var hud := CombatHud.new()
+	t.root.add_child(hud)
+	await t.process_frame
+	scene.hud = hud
+	scene._apply_rate_preset(25)
+	await t.process_frame
+	var set_text: String = str(_feed_texts(hud)[-1])
+	scene._apply_rate_preset(Settings.RATE_PRESET_NONE)
+	await t.process_frame
+	var restored_text: String = str(_feed_texts(hud)[-1])
+	var restored_rates: bool = rules.exp_rate == 5000 and rules.job_exp_rate == 5000 and rules.drop_rate == 5000
+	scene.free()
+	hud.queue_free()
+	await t.process_frame
+	if set_text != "Rates set:  EXP x25   JOB x25   DROP x25":
+		return "a preset change should announce its rates: %s" % set_text
+	if restored_text != "Rates restored:  EXP x50   JOB x50   DROP x50":
+		return "DEFAULT should announce the restored config rates: %s" % restored_text
+	if not restored_rates:
+		return "DEFAULT should restore the config rates captured by the field"
+	return true
+
+
+func _feed_texts(hud: CombatHud) -> Array:
+	var texts: Array = []
+	for chip in hud._feed.get_children():
+		for child in chip.get_children():
+			if child is Label:
+				texts.append(child.text)
+	return texts
 
 
 func test_hud_settings_button_toggles_overlay(t: SceneTree) -> Variant:

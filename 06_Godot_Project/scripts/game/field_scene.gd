@@ -381,8 +381,18 @@ func _apply_rate_preset(multiplier: int) -> void:
 		sim.rules.exp_rate = _config_exp_rate
 		sim.rules.job_exp_rate = _config_job_exp_rate
 		sim.rules.drop_rate = _config_drop_rate
+		_notify_rate_change("Rates restored")
 		return
 	sim.rules.apply_rate_multiplier(multiplier)
+	_notify_rate_change("Rates set")
+
+
+## The field ready path applies the stored preset before the HUD exists; only
+## later live changes announce themselves.
+func _notify_rate_change(prefix: String) -> void:
+	if hud == null:
+		return
+	hud.notify("%s:  %s" % [prefix, sim.rules.rate_summary()], UiTheme.ACCENT)
 
 
 func save_now(announce := false) -> void:
