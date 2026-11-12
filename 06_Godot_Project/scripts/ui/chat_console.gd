@@ -30,7 +30,7 @@ func _ready() -> void:
 	_hint.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	row.add_child(_hint)
 	input = LineEdit.new()
-	input.placeholder_text = "@go prontera   ·   @heal   ·   @help"
+	input.placeholder_text = "Say something   ·   /g <message> guild chat   ·   @help"
 	input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	input.custom_minimum_size = Vector2(360, 26)
 	UiTheme.style_line_edit(input)

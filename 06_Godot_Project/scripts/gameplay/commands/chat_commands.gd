@@ -21,6 +21,7 @@ const HELP_LINES := [
 	"@guild             your guild and guild storage",
 	"@guild create <name>  found or join a guild",
 	"@guild leave       leave your guild",
+	"/g <message>        guild chat (members only)",
 	"@exp               your EXP progress",
 	"@job               your class and job level",
 	"@where             current map and cell",
@@ -35,6 +36,16 @@ const HUB_TOWNS := {"prontera": Vector2i(156, 191)}
 static func execute(sim: FieldSimulation, u: SimUnit, line: String) -> Dictionary:
 	var text := line.strip_edges()
 	if text == "" or sim == null or u == null:
+		return _ok("")
+	if text == "/g" or text == "/guild" or text.begins_with("/g ") or text.begins_with("/guild "):
+		var msg := ""
+		if text.begins_with("/g "):
+			msg = text.substr(3).strip_edges()
+		elif text.begins_with("/guild "):
+			msg = text.substr(7).strip_edges()
+		if msg == "":
+			return _err("Usage: /g <message>")
+		sim.command_guild_chat(u.id, msg)
 		return _ok("")
 	if not text.begins_with("@"):
 		return _ok("You say: %s" % text)

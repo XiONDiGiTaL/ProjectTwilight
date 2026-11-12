@@ -1,9 +1,9 @@
 # Directive: guild social layer (next session)
 
-**Status:** hand-off after commit `af50281` · **Suite:** 180 passed, 0 failed, 0 skipped
-**Scope:** turn the guild window into a complete social layer: ranks, officer
-permissions, a message of the day, guild chat, richer roster rows and guild
-storage search/sort.
+**Status:** Milestones 1–2 complete (ranks, MOTD and guild chat) · **Suite:** 185 passed, 0 failed, 0 skipped
+**Scope:** grow the guild window into a complete social layer. Ranks, officer
+permissions, the message of the day and guild chat are done; the next work is
+richer roster rows and guild storage search/sort.
 
 Read [`Directive.md`](../Directive.md) first for project-wide rules, then
 [`TODO.md`](../TODO.md) for the checklist. This file scopes the guild work; it
@@ -13,24 +13,29 @@ does not replace the main directive.
 
 - `GuildStore` (`06_Godot_Project/scripts/gameplay/guilds/guild_store.gd`) is the
   shared registry, persisted to `user://guilds.json`. A record contains
-  `id`, `name`, `leader`, `members`, `ranks`, `invites` and one 300-slot
+  `id`, `name`, `leader`, `members`, `ranks`, `motd`, `invites` and one 300-slot
   `storage` bag. `rank_of()` is the persisted rank lookup; `can()` is the
-  permission matrix.
+  permission matrix; `motd_of` / `clean_motd` / `set_motd` handle the message.
 - `FieldSimulation` owns every guild mutation and validates it:
   `command_create_guild`, `command_guild_invite`, `command_guild_accept`,
   `command_guild_decline`, `command_guild_kick`, `command_guild_promote`,
   `command_guild_demote`, `command_guild_transfer`, `command_guild_disband`,
-  `command_leave_guild`, `command_open_guild_storage`,
-  `command_guild_deposit` and `command_guild_withdraw`.
+  `command_guild_set_motd`, `command_guild_chat`, `command_leave_guild`,
+  `command_open_guild_storage`, `command_guild_deposit` and
+  `command_guild_withdraw`.
 - `GuildWindow` (`G`) shows the roster with rank chips, leader / officer /
-  member controls gated by `GuildStore.can()`, invitations, leave and
-  confirmation for transfer or disband. It only emits intents; it never edits
-  `GuildStore` directly.
+  member controls gated by `GuildStore.can()`, the MOTD labels/editor,
+  invitations, leave and confirmation for transfer or disband. It only emits
+  intents; it never edits `GuildStore` directly.
+- `/g <message>` and `/guild <message>` route through `ChatCommands` to
+  `command_guild_chat`; the simulation emits one `chat` event per online guild
+  member and the field feed renders `[GUILD] name: message`.
 - `StorageWindow` has a GUILD tab; the Prontera Guild Keeper and rAthena
   `guildopenstorage` both open it. One member may use the bag at a time.
 - Character saves (v7) keep only `guild_id` / `guild_name`; the guild record is
   authoritative for membership.
 - Tests: `tests/unit/test_guild_ranks.gd` (10),
+  `tests/unit/test_guild_social.gd` (5),
   `tests/unit/test_guild_roster.gd` (5) and
   `tests/unit/test_guild_storage.gd` (7). `tests/capture_guild_window.gd` is the
   visual capture.
@@ -140,9 +145,11 @@ existing guild tests do.
 - A capture (or an updated `capture_guild_window.gd`) shows a leader view and an
   officer view; inspect both before claiming the UI works.
 
-## Milestone 2: MOTD and guild chat
+## Milestone 2 (DONE 2026-11-12): MOTD and guild chat
 
-After ranks are stable:
+Implemented: the record-level MOTD, the leader/officer editor, join/login
+notices, `/g` and `/guild` routing, and per-member chat events are in place and
+tested. The notes below are the agreed behaviour for future changes.
 
 - Add `motd` (max 200 characters, no newlines) to the guild record; leader and
   officers can edit it, members can read it. Show it in `GuildWindow` and in the
@@ -179,13 +186,15 @@ The roster currently shows names only. Add a small per-member profile snapshot
 
 | File | Responsibility |
 |---|---|
-| `scripts/gameplay/guilds/guild_store.gd` | Persistent guild records, ranks, invitations, storage, save/load |
-| `scripts/gameplay/world/field_simulation.gd` | Authority layer; validates guild commands and emits guild events |
-| `scripts/ui/guild_window.gd` | Roster/management UI; emits intents only |
+| `scripts/gameplay/guilds/guild_store.gd` | Persistent guild records, ranks, MOTD, invitations, storage, save/load |
+| `scripts/gameplay/world/field_simulation.gd` | Authority layer; validates guild commands and emits guild/chat events |
+| `scripts/ui/guild_window.gd` | Roster, MOTD and management UI; emits intents only |
+| `scripts/gameplay/commands/chat_commands.gd` | `/g` and `/guild` routing while preserving plain speech and `@commands` |
 | `scripts/game/field_scene.gd` | Wires window signals to simulation, `G` key, refresh on guild events |
 | `scripts/ui/storage_window.gd` | CARRIED / STORAGE / GUILD tabs and quantity controls |
 | `scripts/npc/ra_interpreter.gd` + `ra_host.gd` | `guildopenstorage` script command |
 | `tests/unit/test_guild_roster.gd` | Invite/accept/kick/leave/succession tests |
+| `tests/unit/test_guild_social.gd` | MOTD persistence/permissions and guild chat delivery tests |
 | `tests/unit/test_guild_storage.gd` | Shared-bag and one-user-at-a-time tests |
 | `tests/capture_guild_window.gd` | Visual capture; run **without** `--headless` |
 
@@ -233,7 +242,7 @@ Do not push unless the owner asks. Leave the tree clean.
 ```text
 Continue Project Twilight, a Godot 4.8 Pre-Renewal Ragnarok Online reimplementation at E:\ProjectTwilight.
 
-Read docs/DIRECTIVE_GUILD_SOCIAL.md, TODO.md and Directive.md first, then inspect the current guild code. Implement Milestone 1 only: guild ranks (leader / officer / member), officer permissions, promotion/demotion, leadership transfer and leader-only disband. Persist ranks in GuildStore with migration for existing guild files, enforce every rule in FieldSimulation, and update GuildWindow so it only shows the controls the acting player may use. Do not start MOTD, chat, roster profiles or network transport in this session.
+Read docs/DIRECTIVE_GUILD_SOCIAL.md, TODO.md and Directive.md first, then inspect the current guild code. Implement Milestone 3 only: guild roster profiles with level, job and online/offline status. Store a per-member profile snapshot in GuildStore, update it on join and on level/job changes, derive online status from FieldSimulation.units, and show the details in GuildWindow. Do not start guild storage search/sort or network transport in this session.
 
-Follow the repository rules: never modify 01_Client_Original or commit Gravity/DS/EL assets, GRFs or Resources/ contents; preserve the Twilight Glass UI; keep old saves and guild files loadable. Add focused tests for migration, permissions and persistence, register any new test file in tests/run_tests.gd, run --headless --import if you add a class_name, run the full suite, and capture the leader and officer views without --headless. Update CHANGELOG.md, README.md, Directive.md and TODO.md. Commit with the existing Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com> footer and report the exact test counts and any limitations honestly.
+Follow the repository rules: never modify 01_Client_Original or commit Gravity/DS/EL assets, GRFs or Resources/ contents; preserve the Twilight Glass UI; keep old saves and guild files loadable. Add focused tests for profile persistence and online/offline transitions, register any new test file in tests/run_tests.gd, run --headless --import if you add a class_name, run the full suite, and capture the roster views without --headless. Update CHANGELOG.md, README.md, Directive.md and TODO.md. Commit with the existing Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com> footer and report the exact test counts and any limitations honestly.
 ```

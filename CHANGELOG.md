@@ -1,8 +1,13 @@
 # Changelog
 
-## [Unreleased] - 2026-11-11
+## [Unreleased] - 2026-11-12
 
 ### Added
+- **Guild message of the day and guild chat:**
+  - The guild record keeps a one-line `motd` (max 200 characters). Leaders and officers edit it from the guild window; every member sees it there and in the feed when joining.
+  - `/g <message>` (or `/guild <message>`) sends guild chat through the simulation. One event is emitted per online guild member, so non-members neither send nor receive it. Messages are ephemeral and local; the co-op transport will carry them later.
+  - The guild window shows a wrapped read-only MOTD for members and a prefilled `MOTD` editor with SET for leaders/officers. `/g` is listed in `@help` and the chat placeholder.
+  - Tests: `test_guild_social.gd` (5). Suite: 185 passed, 0 failed, 0 skipped.
 - **Guild ranks and permissions:** every member is a leader, an officer or a member.
   - Officers can invite and can kick ordinary members. Only the leader can promote, demote, kick officers, transfer leadership and disband.
   - Transferring leadership makes the old leader an officer. Disbanding removes the guild and its storage and clears every online member's guild state.

@@ -19,6 +19,7 @@ const RANK_LEADER := "leader"
 const RANK_OFFICER := "officer"
 const RANK_MEMBER := "member"
 const RANKS := [RANK_LEADER, RANK_OFFICER, RANK_MEMBER]
+const MOTD_MAX := 200
 
 var path := PATH
 var guilds: Dictionary = {}   # gid -> {id, name, leader, members: Array, ranks: Dictionary, invites: Array, storage: Inventory}
@@ -58,7 +59,7 @@ func join(name: String, member: String) -> Dictionary:
 	if g.is_empty():
 		var inv := Inventory.new()
 		inv.max_entries = SLOTS
-		g = {"id": id_for(clean), "name": clean, "leader": member, "members": [], "ranks": {}, "invites": [], "storage": inv}
+		g = {"id": id_for(clean), "name": clean, "leader": member, "members": [], "ranks": {}, "motd": "", "invites": [], "storage": inv}
 		guilds[String(g.id)] = g
 	_add_member(g, member)
 	(g.invites as Array).erase(member)
@@ -104,6 +105,10 @@ static func can(actor_rank: String, action: String, target_rank := RANK_MEMBER) 
 			return actor_rank == RANK_OFFICER and target_rank == RANK_MEMBER
 		"promote", "demote", "transfer", "disband":
 			return actor_rank == RANK_LEADER
+		"motd":
+			return actor_rank == RANK_LEADER or actor_rank == RANK_OFFICER
+		"chat":
+			return actor_rank != ""
 	return false
 
 
@@ -229,13 +234,35 @@ func storage_of(gid: String) -> Inventory:
 	return g.get("storage") if not g.is_empty() else null
 
 
+## The guild's message of the day ("" when none is set).
+func motd_of(gid: String) -> String:
+	var g: Dictionary = get_guild(gid)
+	return String(g.get("motd", "")) if not g.is_empty() else ""
+
+
+## A one-line MOTD, capped at MOTD_MAX characters.
+static func clean_motd(text: String) -> String:
+	return text.replace("\r", " ").replace("\n", " ").strip_edges().left(MOTD_MAX)
+
+
+## Sets or clears the MOTD. The caller checks permission.
+func set_motd(gid: String, text: String) -> bool:
+	var g: Dictionary = get_guild(gid)
+	if g.is_empty():
+		return false
+	g.motd = clean_motd(text)
+	save()
+	return true
+
+
 func save() -> void:
 	var out := {}
 	for gid in guilds:
 		var g: Dictionary = guilds[gid]
 		var inv: Inventory = g.get("storage")
 		out[gid] = {"name": g.name, "leader": String(g.get("leader", "")),
-			"members": (g.members as Array).duplicate(), "ranks": (g.get("ranks", {}) as Dictionary).duplicate(), "invites": (g.get("invites", []) as Array).duplicate(),
+			"members": (g.members as Array).duplicate(), "ranks": (g.get("ranks", {}) as Dictionary).duplicate(),
+			"motd": String(g.get("motd", "")), "invites": (g.get("invites", []) as Array).duplicate(),
 			"storage": inv.to_array()}
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(path.get_base_dir()))
 	var f := FileAccess.open(path, FileAccess.WRITE)
@@ -268,6 +295,7 @@ func load_from_disk() -> void:
 		if raw_invites is Array:
 			for m in raw_invites:
 				invites.append(String(m).left(23))
+		var motd := clean_motd(String(e.get("motd", "")))
 		var leader := String(e.get("leader", ""))
 		if leader == "" and not members.is_empty():
 			leader = String(members[0])
@@ -283,4 +311,5 @@ func load_from_disk() -> void:
 		if leader != "":
 			ranks[leader] = RANK_LEADER
 		guilds[String(gid)] = {"id": String(gid), "name": String(e.get("name", "Guild")).left(24),
-			"leader": leader, "members": members, "ranks": ranks, "invites": invites, "storage": inv}
+			"leader": leader, "members": members, "ranks": ranks, "motd": motd,
+			"invites": invites, "storage": inv}

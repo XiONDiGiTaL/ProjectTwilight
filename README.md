@@ -59,6 +59,7 @@ Project Twilight **contains no Gravity game data**. On first launch you point it
 | rAthena Kafra NPCs opening the storage window (`openstorage`) | ✅ Implemented and tested |
 | Guild storage (shared 300-slot bag, `guildopenstorage`) | ✅ Implemented and tested |
 | Guild ranks (leader / officer / member) and permissions | ✅ Implemented and tested (local only, not networked) |
+| Guild message of the day and guild chat (`/g`) | ✅ Implemented and tested (local only, not networked) |
 | Job change to all six first jobs; Swordman skill tree | ✅ Implemented and tested |
 | Other first-job skill trees, magic and elements, more maps and monsters | 📋 Next |
 | First offline playable (character, map, monster, combat, save) | 📋 Planned |
@@ -139,9 +140,10 @@ git clone https://github.com/XiONDiGiTaL/ProjectTwilight.git
 - **Kafra:** item storage in Prontera, west of the hub landing point. The official rAthena Kafra NPCs (save, storage, teleport, pushcart) also work and open the same window; their fee is the one written in `kafras.txt`. Twilight's own Kafra uses `kafra_fee` in `data/config.json` or `user://server.cfg` (0 = free).
 - **Guild storage:** `@guild create <name>` founds or joins a guild, and a guild Kafra's guild-storage option opens one shared 300-slot bag for every member. Guilds and their storage live in `user://guilds.json`; character saves keep membership. Only one member can use the bag at a time. The Guild Keeper in Prontera, just east of the hub, opens it. Press `G` for the guild window: roster with rank chips, invitations with accept/decline, and leave with automatic succession (an officer first, then a member).
 - **Guild ranks:** members are a leader, officers or members. Officers can invite and kick ordinary members; only the leader can promote, demote, kick officers, transfer leadership or disband (the last two ask for confirmation). The window only shows the controls your rank allows, and the simulation enforces the same rules.
+- **Guild message and chat:** leaders and officers can set a 200-character message of the day from the guild window; every member sees it when joining. Type `/g <message>` (or `/guild <message>`) to talk to online guild members; messages appear in the normal feed and are not persisted. Guild chat is local until the co-op transport exists.
 - **Warper:** fast travel to any town, field or dungeon in your client.
 - **Stylist:** hair style, hair colour and cloth dye.
-- **Commands:** press **Enter** — `@go prontera`, `@heal`, `@rates`, `@mobinfo poring`, `@autoloot on`, `@save`, `@help`.
+- **Commands:** press **Enter** — `/g <message>` for guild chat, `@go prontera`, `@heal`, `@rates`, `@mobinfo poring`, `@autoloot on`, `@save`, `@help`.
 - Also: **Platinum Skills**, **Rental** and **Reset**.
 
 The main menu also has a **Map Viewer** (fly around any classic map) and a **Sprite Viewer** (browse animated sprites from your client).

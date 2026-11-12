@@ -18,6 +18,7 @@ signal promote_requested(name: String)
 signal demote_requested(name: String)
 signal transfer_requested(name: String)
 signal disband_requested
+signal motd_requested(text: String)
 
 const LEADER_TINT := Color(1.0, 0.8, 0.35)     # leader-only controls and the leader chip
 const DANGER_TINT := Color(1.0, 0.36, 0.38)
@@ -33,6 +34,9 @@ var _invite_row: HBoxContainer
 var _invite_input: LineEdit
 var _leave: Button
 var _disband: Button
+var _motd_label: Label
+var _motd_row: HBoxContainer
+var _motd_input: LineEdit
 var _footer: HBoxContainer
 var _confirm_row: HBoxContainer
 var _confirm_text: Label
@@ -51,6 +55,27 @@ func _ready() -> void:
 	_title = _title_bar.get_child(0) as Label
 	_status = UiTheme.label("", 10, Color(UiTheme.ACCENT, 0.85), 600, 2)
 	body.add_child(_status)
+	_motd_label = UiTheme.label("", 11, UiTheme.TEXT_DIM, 400, 1)
+	_motd_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_motd_label.custom_minimum_size = Vector2(500, 0)
+	body.add_child(_motd_label)
+	_motd_row = HBoxContainer.new()
+	_motd_row.add_theme_constant_override("separation", 6)
+	body.add_child(_motd_row)
+	var motd_caption := UiTheme.label("MOTD", 9, UiTheme.ACCENT, 600, 2)
+	motd_caption.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_motd_row.add_child(motd_caption)
+	_motd_input = LineEdit.new()
+	_motd_input.placeholder_text = "Message of the day"
+	_motd_input.max_length = GuildStore.MOTD_MAX
+	_motd_input.custom_minimum_size = Vector2(300, 26)
+	_motd_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_motd_input.text_submitted.connect(func(_t): _send_motd())
+	_motd_row.add_child(_motd_input)
+	var motd_set := _button("SET", true)
+	motd_set.custom_minimum_size = Vector2(64, 24)
+	motd_set.pressed.connect(_send_motd)
+	_motd_row.add_child(motd_set)
 	_roster_scroll = ScrollContainer.new()
 	_roster_scroll.custom_minimum_size = Vector2(500, 190)
 	_roster_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -178,6 +203,8 @@ func refresh() -> void:
 	_invite_row.visible = false
 	_roster_scroll.visible = false
 	_empty.visible = false
+	_motd_label.visible = false
+	_motd_row.visible = false
 	if _confirm_row.visible:
 		_cancel_confirm()
 	var g: Dictionary = _store.get_guild(_player.guild_id)
@@ -197,6 +224,14 @@ func refresh() -> void:
 	var leader := String(g.get("leader", ""))
 	var bag: Inventory = g.get("storage")
 	var mine := my_rank()
+	var motd := String(g.get("motd", ""))
+	_motd_label.visible = true
+	_motd_label.text = "GUILD MESSAGE   " + (motd if motd != "" else "No message set.")
+	_motd_label.add_theme_color_override("font_color", UiTheme.TEXT if motd != "" else UiTheme.TEXT_DIM)
+	_motd_row.visible = GuildStore.can(mine, "motd")
+	_motd_label.visible = not _motd_row.visible
+	if _motd_row.visible and not _motd_input.has_focus():
+		_motd_input.text = motd
 	_status.text = "LEADER  %s      MEMBERS  %d      STORAGE  %d / %d      YOUR RANK  %s" % [
 		leader, members.size(), bag.entries.size() if bag else 0, SimUnit.STORAGE_SLOTS, mine.to_upper()]
 	_roster_scroll.visible = true
@@ -242,6 +277,10 @@ func offers_invite() -> bool:
 
 func offers_disband() -> bool:
 	return _disband != null and _disband.visible and _footer.visible
+
+
+func offers_motd_edit() -> bool:
+	return _motd_row != null and _motd_row.visible
 
 
 func _member_row(gid: String, member: String) -> HBoxContainer:
@@ -326,6 +365,10 @@ func _send_invite() -> void:
 		return
 	invite_requested.emit(n)
 	_invite_input.clear()
+
+
+func _send_motd() -> void:
+	motd_requested.emit(_motd_input.text)
 
 
 func _clear(box: Node) -> void:

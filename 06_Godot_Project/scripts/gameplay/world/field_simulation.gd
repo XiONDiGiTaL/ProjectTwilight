@@ -24,6 +24,7 @@ extends RefCounted
 ##   {type: "skill_fx", id, skill, fx, element, cell, from_cell, area, hits}  (physical skill visual)
 ##   {type: "status", id, status, on: bool}   {type: "counter", id, target}
 ##   {type: "sp_heal", id, amount}   {type: "resurrect", id, by}
+##   {type: "chat", channel: "guild", id, guild_id, guild_name, from, text}
 
 const MONSTER_DB := "res://data/prerenewal/monsters.json"
 const EXP_DB := "res://data/prerenewal/exp_tables.json"
@@ -45,6 +46,7 @@ const NPC_TALK_RANGE := 2
 const NPC_TRADE_RANGE := 6
 ## Kafra storage has no weight limit: items are counted in slots only.
 const STORAGE_MAX_WEIGHT := 1 << 30
+const GUILD_CHAT_MAX := 160
 const NOVICE_FIST_BTBA := 0.5     # seconds; Medium confidence
 const MONSTER_RESPAWN_MS := 5000.0
 const PLAYER_REVIVE_MS := 3000.0
@@ -225,6 +227,7 @@ func add_player_from_save(c: Dictionary) -> SimUnit:
 	if u.guild_id != "" and u.guild_name != "":
 		var g: Dictionary = guilds.join(u.guild_name, u.name)
 		u.guild_id = String(g.get("id", u.guild_id))
+		_guild_motd_notice(u, g)
 	u.level = int(c.level)
 	u.job_level = int(c.job_level)
 	u.base_exp = int(c.base_exp)
@@ -574,6 +577,7 @@ func command_create_guild(unit_id: int, guild_name: String) -> bool:
 	u.guild_id = String(g.id)
 	u.guild_name = String(g.name)
 	events.append({"type": "guild", "id": u.id, "ok": true, "text": "Guild  %s" % u.guild_name})
+	_guild_motd_notice(u, g)
 	return true
 
 
@@ -614,6 +618,7 @@ func command_guild_accept(unit_id: int, gid: String) -> bool:
 		return _guild(u, false, "That invitation is no longer valid.")
 	u.guild_id = String(g.id)
 	u.guild_name = String(g.name)
+	_guild_motd_notice(u, g)
 	return _guild(u, true, "Joined guild %s." % u.guild_name)
 
 
@@ -660,6 +665,50 @@ func command_guild_promote(unit_id: int, target_name: String) -> bool:
 ## Leader-only: makes an officer an ordinary member again.
 func command_guild_demote(unit_id: int, target_name: String) -> bool:
 	return _guild_set_rank(unit_id, target_name, "demote", GuildStore.RANK_MEMBER)
+
+
+## Leader / officer only: set or clear the guild message of the day.
+func command_guild_set_motd(unit_id: int, text: String) -> bool:
+	var u: SimUnit = units.get(unit_id)
+	var g: Dictionary = guilds.get_guild(u.guild_id) if u != null else {}
+	if u == null:
+		return false
+	if g.is_empty():
+		return _guild(u, false, "You are not in a guild.")
+	if not GuildStore.can(guild_rank(u), "motd"):
+		return _guild(u, false, "Only the leader and officers can edit the guild message.")
+	var clean := GuildStore.clean_motd(text)
+	guilds.set_motd(u.guild_id, clean)
+	return _guild(u, true, "Guild message cleared." if clean == "" else "Guild message updated.")
+
+
+## Guild chat: one event per online member, so only members receive it.
+func command_guild_chat(unit_id: int, text: String) -> bool:
+	var u: SimUnit = units.get(unit_id)
+	var g: Dictionary = guilds.get_guild(u.guild_id) if u != null else {}
+	if u == null:
+		return false
+	if g.is_empty():
+		return _guild(u, false, "You are not in a guild.")
+	if not GuildStore.can(guild_rank(u), "chat"):
+		return _guild(u, false, "Only guild members can use guild chat.")
+	var clean := text.replace("\r", " ").replace("\n", " ").strip_edges().left(GUILD_CHAT_MAX)
+	if clean == "":
+		return _guild(u, false, "Type a message.")
+	var delivered := false
+	for other_id in units:
+		var other: SimUnit = units[other_id]
+		if other.is_player() and other.guild_id == u.guild_id:
+			events.append({"type": "chat", "channel": "guild", "id": other.id,
+				"guild_id": u.guild_id, "guild_name": String(g.name), "from": u.name, "text": clean})
+			delivered = true
+	return delivered
+
+
+func _guild_motd_notice(u: SimUnit, g: Dictionary) -> void:
+	var motd := String(g.get("motd", ""))
+	if u != null and motd != "":
+		events.append({"type": "guild", "id": u.id, "ok": true, "text": "Guild message: %s" % motd})
 
 
 func _guild_set_rank(unit_id: int, target_name: String, action: String, rank: String) -> bool:

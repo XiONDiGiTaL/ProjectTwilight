@@ -5,8 +5,7 @@ the project owner asked for, what is already done, and what still has to be
 built, in order. Tick items off (`[x]`) as you finish them, and keep this file
 current: it is the hand-off record between sessions.
 
-> **Next session:** guild MOTD and guild chat, then roster profiles and guild
-> storage search/sort. See
+> **Next session:** roster profiles and guild storage search/sort. See
 > [docs/DIRECTIVE_GUILD_SOCIAL.md](docs/DIRECTIVE_GUILD_SOCIAL.md) and
 > [TODO.md](TODO.md).
 
@@ -210,7 +209,12 @@ Owner brief: the game should run from the essential `.grf` data in a folder, wit
   - Rank-less guild files migrate on load and are saved in the new shape on the next change.
   - `GuildWindow.actions_for(name)` is the single place that decides which row buttons appear.
   - Tests: `test_guild_ranks.gd` (10). Suite: 180 passed. Captures: `guild_window_leader`, `_leader_confirm`, `_officer`, `_member`.
-- [ ] Guild MOTD and guild chat (Milestone 2), roster profiles (3), storage search / sort (4) — still open.
+- [x] Guild MOTD and guild chat (Milestone 2 of [docs/DIRECTIVE_GUILD_SOCIAL.md](docs/DIRECTIVE_GUILD_SOCIAL.md), done 2026-11-12):
+  - `GuildStore` keeps a one-line `motd` (max 200) with `motd_of` / `clean_motd` / `set_motd`; old guild files migrate with an empty message.
+  - `command_guild_set_motd` is leader/officer only; `command_guild_chat` emits one `chat` event per online guild member. `/g` and `/guild` route through `ChatCommands` into the feed.
+  - `GuildWindow` shows the message to everyone; leaders/officers get an editable MOTD field with SET.
+  - Tests: `test_guild_social.gd` (5). Suite: 185 passed. Captures: `guild_window_leader`, `_leader_confirm`, `_officer`, `_member`.
+- [ ] Roster profiles (Milestone 3), guild storage search/sort (Milestone 4) — still open.
 - [ ] `@storage` for VIP-style remote access behind a rule flag.
 
 ## Where the three play modes stand (2026-11-11)

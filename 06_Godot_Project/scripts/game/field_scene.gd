@@ -118,6 +118,7 @@ func _ready() -> void:
 	hud.guild_window.demote_requested.connect(func(n): sim.command_guild_demote(player.id, n))
 	hud.guild_window.transfer_requested.connect(func(n): sim.command_guild_transfer(player.id, n))
 	hud.guild_window.disband_requested.connect(func(): sim.command_guild_disband(player.id))
+	hud.guild_window.motd_requested.connect(func(t): sim.command_guild_set_motd(player.id, t))
 	hud.guild_window.accept_requested.connect(func(gid): sim.command_guild_accept(player.id, gid))
 	hud.guild_window.decline_requested.connect(func(gid): sim.command_guild_decline(player.id, gid))
 	hud.storage.guild_deposit_requested.connect(func(i, n): sim.command_guild_deposit(player.id, i, n))
@@ -609,6 +610,9 @@ func _consume_events() -> void:
 					hud.notify(ev.text, UiTheme.TEXT if ev.ok else UiTheme.HP_MID)
 					hud.storage.refresh()
 					inventory_changed = true
+			"chat":
+				if String(ev.get("channel", "")) == "guild" and ev.id == player.id:
+					hud.notify("[GUILD] %s: %s" % [String(ev.get("from", "?")), String(ev.get("text", ""))], UiTheme.ACCENT)
 			"guild", "guild_storage":
 				if ev.id == player.id:
 					hud.notify(ev.text, UiTheme.TEXT if ev.ok else UiTheme.HP_MID)

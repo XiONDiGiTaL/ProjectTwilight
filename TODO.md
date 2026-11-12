@@ -1,6 +1,6 @@
 # Project Twilight — TODO
 
-Updated 2026-11-12 after guild ranks (Milestone 1) · 180 tests passing.
+Updated 2026-11-12 after guild MOTD and chat (Milestone 2) · 185 tests passing.
 
 The scoped hand-off is [`docs/DIRECTIVE_GUILD_SOCIAL.md`](docs/DIRECTIVE_GUILD_SOCIAL.md).
 The project-wide rules and history are in [`Directive.md`](Directive.md).
@@ -17,14 +17,14 @@ The project-wide rules and history are in [`Directive.md`](Directive.md).
   - [x] Tests: migration, permissions, persistence, succession, disband cleanup
   - [x] Captured leader, officer and member views
   - [x] README, CHANGELOG, Directive and this file updated
-- [ ] **Guild MOTD**
-  - [ ] `motd` on the guild record, max 200 characters, no newlines
-  - [ ] Leader/officer edit, all members read
-  - [ ] Show in the guild window and on login/join
-- [ ] **Guild chat**
-  - [ ] Route through the existing chat/feed path with `channel: "guild"`
-  - [ ] Members only; ephemeral, not persisted
-  - [ ] Do not imply networked chat until co-op transport exists
+- [x] **Guild MOTD** (Milestone 2, done 2026-11-12)
+  - [x] `motd` on the guild record, max 200 characters, no newlines
+  - [x] Leader/officer edit, all members read
+  - [x] Show in the guild window and on login/join
+- [x] **Guild chat** (Milestone 2, done 2026-11-12)
+  - [x] Route through the existing chat/feed path with `channel: "guild"`
+  - [x] Members only; ephemeral, not persisted
+  - [x] Do not imply networked chat until co-op transport exists
 - [ ] **Roster profiles**
   - [ ] Store level/job snapshots per member; derive online status from the simulation
   - [ ] Show level, job and OFFLINE in the roster

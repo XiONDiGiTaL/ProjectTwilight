@@ -48,6 +48,8 @@ func _run() -> void:
 	scene.sim.command_guild_promote(scene.player.id, "Aria")
 	scene.sim.command_guild_promote(scene.player.id, "Brannoc")
 	scene.sim.command_guild_invite(scene.player.id, "Elyra")
+	scene.sim.command_guild_set_motd(scene.player.id, "Guild meeting at 20:00 - bring potions and a warp scroll.")
+	scene.sim.command_guild_chat(scene.player.id, "Guild storage is restocked.")
 	var bag: Inventory = scene.sim.guilds.storage_of(gid)
 	bag.add(501, 3, scene.sim.item_db, FieldSimulation.STORAGE_MAX_WEIGHT)
 	print("ranks: ", scene.sim.guilds.get_guild(gid).ranks)
