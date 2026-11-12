@@ -173,6 +173,14 @@ godot --headless --path 06_Godot_Project -s res://tests/run_tests.gd
 
 Unit tests use synthetic fixtures and need no game data. Client integration tests run automatically when a client folder is configured, and are skipped otherwise.
 
+For a window-by-window visual pass at 1280×720 and 1920×1080 (requires client data):
+
+```bash
+godot --path 06_Godot_Project -s res://tests/capture_ui_windows.gd
+```
+
+Screenshots and the pass/fail report go to `user://captures/ui_verify`.
+
 ## Repository structure
 
 ```text
