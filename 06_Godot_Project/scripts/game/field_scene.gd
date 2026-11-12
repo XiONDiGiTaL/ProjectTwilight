@@ -110,6 +110,12 @@ func _ready() -> void:
 	hud.shop.shop_closed.connect(func(): sim.close_shop(player.id))
 	hud.storage.deposit_requested.connect(func(i, n): sim.command_storage_deposit(player.id, i, n))
 	hud.storage.withdraw_requested.connect(func(i, n): sim.command_storage_withdraw(player.id, i, n))
+	hud.guild_window.bind(sim.guilds, player)
+	hud.guild_window.invite_requested.connect(func(n): sim.command_guild_invite(player.id, n))
+	hud.guild_window.kick_requested.connect(func(n): sim.command_guild_kick(player.id, n))
+	hud.guild_window.leave_requested.connect(func(): sim.command_leave_guild(player.id))
+	hud.guild_window.accept_requested.connect(func(gid): sim.command_guild_accept(player.id, gid))
+	hud.guild_window.decline_requested.connect(func(gid): sim.command_guild_decline(player.id, gid))
 	hud.storage.guild_deposit_requested.connect(func(i, n): sim.command_guild_deposit(player.id, i, n))
 	hud.storage.guild_withdraw_requested.connect(func(i, n): sim.command_guild_withdraw(player.id, i, n))
 	hud.storage.storage_closed.connect(func():
@@ -209,6 +215,11 @@ func _unhandled_input(e: InputEvent) -> void:
 				cycle_aura()
 			KEY_M:
 				hud.toggle_minimap()
+			KEY_G:
+				if hud.guild_window.visible:
+					hud.guild_window.toggle(false)
+				else:
+					hud.guild_window.open(sim.guilds, player)
 		return
 	if not (e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT):
 		return
@@ -599,6 +610,8 @@ func _consume_events() -> void:
 					hud.notify(ev.text, UiTheme.TEXT if ev.ok else UiTheme.HP_MID)
 					if ev.type == "guild_storage":
 						hud.storage.refresh()
+					else:
+						hud.guild_window.refresh()
 					inventory_changed = true
 			"trade":
 				if ev.id == player.id:

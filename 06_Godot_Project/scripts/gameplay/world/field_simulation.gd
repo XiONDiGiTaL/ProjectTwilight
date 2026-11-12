@@ -577,6 +577,71 @@ func command_create_guild(unit_id: int, guild_name: String) -> bool:
 	return true
 
 
+## Leader-only invitation; persists for characters who are offline.
+func command_guild_invite(unit_id: int, target_name: String) -> bool:
+	var u: SimUnit = units.get(unit_id)
+	var g: Dictionary = guilds.get_guild(u.guild_id) if u != null else {}
+	if u == null or g.is_empty():
+		return false
+	if String(g.get("leader", "")) != u.name:
+		return _guild(u, false, "Only the guild leader can invite.")
+	var target := target_name.strip_edges().left(23)
+	if target.length() < 2 or target == u.name:
+		return _guild(u, false, "That name cannot be invited.")
+	if (g.members as Array).has(target):
+		return _guild(u, false, "%s is already a member." % target)
+	for other_id in units:
+		var other: SimUnit = units[other_id]
+		if other.is_player() and other.name == target and other.guild_id != "":
+			return _guild(u, false, "%s is already in a guild." % target)
+	if not guilds.invite(u.guild_id, target):
+		return _guild(u, false, "Could not invite %s." % target)
+	return _guild(u, true, "Invited %s to %s." % [target, String(g.name)])
+
+
+func command_guild_accept(unit_id: int, gid: String) -> bool:
+	var u: SimUnit = units.get(unit_id)
+	if u == null or u.guild_id != "":
+		return false
+	var g: Dictionary = guilds.accept(gid, u.name)
+	if g.is_empty():
+		return _guild(u, false, "That invitation is no longer valid.")
+	u.guild_id = String(g.id)
+	u.guild_name = String(g.name)
+	return _guild(u, true, "Joined guild %s." % u.guild_name)
+
+
+func command_guild_decline(unit_id: int, gid: String) -> bool:
+	var u: SimUnit = units.get(unit_id)
+	if u == null or not guilds.decline(gid, u.name):
+		return false
+	return _guild(u, true, "Invitation declined.")
+
+
+## Leader-only removal; an online member loses the guild immediately.
+func command_guild_kick(unit_id: int, target_name: String) -> bool:
+	var u: SimUnit = units.get(unit_id)
+	var g: Dictionary = guilds.get_guild(u.guild_id) if u != null else {}
+	if u == null or g.is_empty():
+		return false
+	if String(g.get("leader", "")) != u.name:
+		return _guild(u, false, "Only the guild leader can remove members.")
+	var target := target_name.strip_edges().left(23)
+	if target == u.name or not (g.members as Array).has(target):
+		return _guild(u, false, "That member is not in the guild.")
+	if not guilds.kick(u.guild_id, target):
+		return _guild(u, false, "Could not remove %s." % target)
+	for other_id in units:
+		var other: SimUnit = units[other_id]
+		if other.is_player() and other.name == target and other.guild_id == u.guild_id:
+			other.guild_id = ""
+			other.guild_name = ""
+			other.open_guild_storage = ""
+			other.open_guild_npc = 0
+			events.append({"type": "guild", "id": other.id, "ok": false, "text": "You were removed from %s." % String(g.name)})
+	return _guild(u, true, "Removed %s from the guild." % target)
+
+
 func command_leave_guild(unit_id: int) -> bool:
 	var u: SimUnit = units.get(unit_id)
 	if u == null or u.guild_id == "":
@@ -671,6 +736,12 @@ func command_guild_withdraw(unit_id: int, index: int, amount: int) -> bool:
 func _guild_storage(u: SimUnit, ok: bool, text: String) -> bool:
 	if u:
 		events.append({"type": "guild_storage", "id": u.id, "ok": ok, "text": text})
+	return ok
+
+
+func _guild(u: SimUnit, ok: bool, text: String) -> bool:
+	if u:
+		events.append({"type": "guild", "id": u.id, "ok": ok, "text": text})
 	return ok
 
 

@@ -83,6 +83,9 @@ func _ready() -> void:
 	storage = StorageWindow.new()
 	_root.add_child(storage)
 	storage.position = Vector2(420, 130)
+	guild_window = GuildWindow.new()
+	_root.add_child(guild_window)
+	guild_window.position = Vector2(620, 130)
 	skill_window = SkillWindow.new()
 	_root.add_child(skill_window)
 	skill_window.position = Vector2(120, 200)
@@ -101,6 +104,7 @@ var status_window: StatusWindow
 var equipment_window: EquipmentWindow
 var shop: ShopWindow
 var storage: StorageWindow
+var guild_window: GuildWindow
 var skill_window: SkillWindow
 var hotkeys: HotkeyBar
 var dialog: NpcDialog

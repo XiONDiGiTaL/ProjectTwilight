@@ -136,7 +136,7 @@ git clone https://github.com/XiONDiGiTaL/ProjectTwilight.git
 - **Job Guide / Job Master:** first and second jobs, including Dark Knight and Shaman.
 - **Healer:** free full heal.
 - **Kafra:** item storage in Prontera, west of the hub landing point. The official rAthena Kafra NPCs (save, storage, teleport, pushcart) also work and open the same window; their fee is the one written in `kafras.txt`. Twilight's own Kafra uses `kafra_fee` in `data/config.json` or `user://server.cfg` (0 = free).
-- **Guild storage:** `@guild create <name>` founds or joins a guild, and a guild Kafra's guild-storage option opens one shared 300-slot bag for every member. Guilds and their storage live in `user://guilds.json`; character saves keep membership. Only one member can use the bag at a time. The Guild Keeper in Prontera, just east of the hub, opens it.
+- **Guild storage:** `@guild create <name>` founds or joins a guild, and a guild Kafra's guild-storage option opens one shared 300-slot bag for every member. Guilds and their storage live in `user://guilds.json`; character saves keep membership. Only one member can use the bag at a time. The Guild Keeper in Prontera, just east of the hub, opens it. Press `G` for the guild window: roster, invitations with accept/decline, invite and kick for the leader, and leave with automatic leadership succession.
 - **Warper:** fast travel to any town, field or dungeon in your client.
 - **Stylist:** hair style, hair colour and cloth dye.
 - **Commands:** press **Enter** — `@go prontera`, `@heal`, `@rates`, `@mobinfo poring`, `@autoloot on`, `@save`, `@help`.
