@@ -15,7 +15,7 @@ extends RefCounted
 const DEFAULTS_PATH := "res://data/config.json"
 const USER_PATH := "user://server.cfg"
 
-var exp_rate := 100        # percent; 100 = Pre-Renewal baseline
+var exp_rate := 100        # percent; 100 = Pre-Renewal baseline (data/config.json ships 5000 = 50x)
 var job_exp_rate := 100
 var drop_rate := 100
 var autoloot := false

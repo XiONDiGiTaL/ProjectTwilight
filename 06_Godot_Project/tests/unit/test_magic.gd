@@ -52,7 +52,7 @@ func test_matk_and_cast_time(_t) -> Variant:
 
 
 func test_bolt_cast_flow(_t) -> Variant:
-	var sim := FieldSimulation.new(_open_gat(), 21)
+	var sim := FieldSimulation.new(_open_gat(), 21, RuleConfig.new())
 	var p := _mage(sim, 30)
 	p.skills.MG_FIREBOLT = 3
 	var m := sim.add_monster("1002", Vector2i(14, 10))

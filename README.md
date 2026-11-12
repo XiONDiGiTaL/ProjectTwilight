@@ -54,7 +54,7 @@ Project Twilight **contains no Gravity game data**. On first launch you point it
 | Prontera ⇄ Prontera Field travel through warp portals | ✅ Implemented and tested |
 | CPU adventurers (2–4 per map), name tags and minimap blips | ✅ Implemented and tested |
 | Data-folder mount: GRF archives without a client executable | ✅ Implemented and tested |
-| Server rates, autoloot and `@commands` | ✅ Implemented and tested |
+| Server rates (50× Base/Job EXP and drops by default), autoloot and `@commands` | ✅ Implemented and tested |
 | Kafra storage (300 slots, persisted with the character) | ✅ Implemented and tested |
 | rAthena Kafra NPCs opening the storage window (`openstorage`) | ✅ Implemented and tested |
 | Guild storage (shared 300-slot bag, `guildopenstorage`) | ✅ Implemented and tested |

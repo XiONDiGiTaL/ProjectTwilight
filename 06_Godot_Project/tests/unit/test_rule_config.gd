@@ -47,11 +47,11 @@ func test_shipped_defaults(_t) -> Variant:
 	r._read_json(RuleConfig.DEFAULTS_PATH)
 	if not FileAccess.file_exists(RuleConfig.DEFAULTS_PATH):
 		return "data/config.json is missing"
-	if r.exp_rate != 100 or r.job_exp_rate != 100 or r.drop_rate != 100:
-		return "shipped rates should be 100: %s" % r.describe()
+	if r.exp_rate != 5000 or r.job_exp_rate != 5000 or r.drop_rate != 5000:
+		return "shipped rates should be 5000 (50x): %s" % r.describe()
 	if r.max_level != 99 or r.autoloot:
 		return "shipped caps wrong: %s" % r.describe()
-	return true if r.describe().contains("EXP x100") else "describe() missing rates"
+	return true if r.describe().contains("EXP x5000") else "describe() missing rates"
 
 
 func test_kv_overrides_and_clamps(_t) -> Variant:

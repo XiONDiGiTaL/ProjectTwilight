@@ -115,7 +115,7 @@ func test_bash_and_magnum_break(_t) -> Variant:
 
 
 func test_first_job_exp_and_points(_t) -> Variant:
-	var sim := FieldSimulation.new(_open_gat(), 13)
+	var sim := FieldSimulation.new(_open_gat(), 13, RuleConfig.new())
 	var p := _ready_novice(sim)
 	sim.command_job_change(p.id, "swordman")
 	if sim.next_job_exp(p) != 30:

@@ -2,6 +2,9 @@
 
 ## [Unreleased] - 2026-11-12
 
+### Changed
+- **50× midrate defaults:** shipped Base EXP, Job EXP and drop rates are now **5000% (50×)** in `data/config.json`, instead of the 1× Pre-Renewal baseline. Player `user://server.cfg` and rAthena/Hercules `conf/battle` overrides still take priority. Four deterministic tests now pin their simulations to an explicit 1× `RuleConfig` so they remain independent of shipped rates. Suite: 200 passed, 0 failed, 0 skipped.
+
 ### Fixed
 - **Sprite ground clipping:** character, NPC, monster and ground-item sprites now anchor the bottom of their composed image to the ground instead of the ACT foot origin. RO frames include opaque shoe pixels below that origin, which a depth-tested 3D ground cut off; overhead heights now follow the anchored texture top. Tests: one new SPR/ACT case checks the anchor and top height. Suite: 200 passed, 0 failed, 0 skipped.
 

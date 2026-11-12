@@ -53,7 +53,7 @@ func test_monsters_never_crit(_t) -> Variant:
 
 
 func test_sim_kill_exp_levelup_respawn(_t) -> Variant:
-	var sim := FieldSimulation.new(_open_gat(40, 40), 3)
+	var sim := FieldSimulation.new(_open_gat(40, 40), 3, RuleConfig.new())
 	var p := sim.add_player("Tester", Vector2i(10, 10), {"str": 5, "agi": 5, "vit": 5, "int": 1, "dex": 5, "luk": 5})
 	var m := sim.add_monster("1002", Vector2i(14, 10), 0)
 	if p == null or m == null or m.max_hp != 50:

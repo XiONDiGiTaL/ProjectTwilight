@@ -12,7 +12,7 @@ static func _open_gat(w := 40, h := 40) -> GatFile:
 
 
 static func _setup() -> Array:
-	var sim := FieldSimulation.new(_open_gat(), 31)
+	var sim := FieldSimulation.new(_open_gat(), 31, RuleConfig.new())
 	var p := sim.add_player("Tester", Vector2i(10, 10), {"str": 5, "agi": 5, "vit": 5, "int": 5, "dex": 5, "luk": 5})
 	return [sim, p]
 
