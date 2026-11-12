@@ -54,6 +54,20 @@ func _run() -> void:
 		if names.size() > 1 and not seen_client:
 			seen_client = true
 			print("HOST: players ", names)
+			# Let the guest finish attaching its replica before the one-shot event.
+			await create_timer(1.0).timeout
+			# Regression: the client must receive the host's projectile event, not
+			# just the resulting damage. Turn the host into an Archer and fire once.
+			me.job_level = 10
+			me.skills["NV_BASIC"] = 9
+			var archer_ok: bool = sim.command_job_change(me.id, "archer")
+			print("HOST: projectile regression archer=", archer_ok)
+			if archer_ok:
+				var dummy := sim.add_monster("1002", sim.pathfinder.nearest_walkable(me.walker.cell + Vector2i(5, 0), 4))
+				dummy.max_hp = 999999
+				dummy.hp = 999999
+				dummy.walker.walk_speed = 1e9
+				sim._attack(me, dummy)
 			ns.say("welcome to the session")
 		if seen_client and names.size() == 1:
 			print("HOST: client left; maps ", ns._maps.keys())

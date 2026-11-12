@@ -57,7 +57,7 @@ func build_monster(res: Node) -> bool:
 
 
 ## Weapon type -> Korean sprite suffix used by the client's job sprites.
-const WEAPON_SPRITES := {"dagger": "단검", "sword": "검", "two_hand_sword": "양손검", "axe": "도끼", "two_hand_axe": "양손도끼", "rod": "롯드", "mace": "클럽", "book": "책"}
+const WEAPON_SPRITES := {"dagger": "단검", "sword": "검", "two_hand_sword": "양손검", "axe": "도끼", "two_hand_axe": "양손도끼", "rod": "롯드", "mace": "클럽", "book": "책", "bow": "활", "instrument": "악기", "whip": "채찍"}
 const JOB_SPRITE_DIR := "data/sprite/인간족/"
 var _male := true
 var _weapon_shown := ""
@@ -83,14 +83,15 @@ func update_weapon(res: Node) -> void:
 	if not WEAPON_SPRITES.has(unit.weapon_type):
 		sprite.set_weapon(null, null)
 		return
-	var sex := "남" if _male else "여"
-	var bases: Array = [JOB_SPRITE_DIR + "%s/%s_%s_%s" % [unit.sprite, unit.sprite, sex, WEAPON_SPRITES[unit.weapon_type]]]
+	var suffix := String(WEAPON_SPRITES[unit.weapon_type])
+	var bases: Array = []
 	if body_source == "pack":
-		bases = PlayerSprites.pack_weapon_paths(PlayerSprites.jobs(), unit.job, _male, WEAPON_SPRITES[unit.weapon_type])
-	elif body_source == "sheet":
-		bases = []   # sheet bodies draw their own staff
+		bases = PlayerSprites.pack_weapon_paths(PlayerSprites.jobs(), unit.job, _male, suffix)
+		bases.append_array(PlayerSprites.weapon_paths(PlayerSprites.jobs(), unit.job, _male, suffix))
+	elif body_source != "sheet":   # sheet bodies draw their own staff
+		bases = PlayerSprites.weapon_paths(PlayerSprites.jobs(), unit.job, _male, suffix)
 	for base in bases:
-		if res.exists(base + ".spr"):
+		if res.exists(base + ".spr") and res.exists(base + ".act"):
 			sprite.set_weapon(SprFile.decode(res.read(base + ".spr")), ActFile.decode(res.read(base + ".act")))
 			return
 	sprite.set_weapon(null, null)
@@ -153,6 +154,11 @@ func _apply_name_scale() -> void:
 ## World position just above the sprite's head (for HP bars and text).
 func head_position() -> Vector3:
 	return global_position + Vector3(0, (sprite.top_height() if sprite else 8.0) + 3.5, 0)
+
+
+## Chest height used as the origin/impact point for visible projectiles.
+func projectile_origin() -> Vector3:
+	return global_position + Vector3(0, 5.5, 0)
 
 
 func _process(delta: float) -> void:

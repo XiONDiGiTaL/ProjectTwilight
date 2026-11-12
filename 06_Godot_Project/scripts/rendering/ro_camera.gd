@@ -1,7 +1,8 @@
 class_name RoCamera
 extends Camera3D
-## Classic-style isometric follow camera: fixed pitch, rotatable yaw, zoom.
-## Controls: right-drag rotates, wheel zooms, WASD/arrows pan (when no target).
+## Classic-style isometric follow camera: rotatable yaw and pitch, zoom.
+## Controls: right-drag rotates, Shift+right-drag tilts, wheel zooms,
+## PageUp/PageDown or +/- zoom, Home resets, WASD/arrows pan (when no target).
 
 @export var pitch_deg := 50.0
 @export var yaw_deg := 0.0
@@ -27,11 +28,33 @@ func _unhandled_input(e: InputEvent) -> void:
 		if e.button_index == MOUSE_BUTTON_RIGHT:
 			_rotating = e.pressed
 		elif e.pressed and e.button_index == MOUSE_BUTTON_WHEEL_UP:
-			distance = maxf(min_distance, distance * 0.9)
+			zoom_by(0.9)
 		elif e.pressed and e.button_index == MOUSE_BUTTON_WHEEL_DOWN:
-			distance = minf(max_distance, distance * 1.1)
+			zoom_by(1.1)
 	elif e is InputEventMouseMotion and _rotating:
 		yaw_deg = fposmod(yaw_deg - e.relative.x * 0.3, 360.0)
+		if e.shift_pressed:
+			pitch_deg = clampf(pitch_deg - e.relative.y * 0.2, 20.0, 80.0)
+	elif e is InputEventKey and e.pressed and not e.echo:
+		match e.keycode:
+			KEY_PAGEUP, KEY_EQUAL:
+				zoom_by(0.9)
+			KEY_PAGEDOWN, KEY_MINUS:
+				zoom_by(1.1)
+			KEY_HOME:
+				reset_view()
+
+
+## Multiplies the camera distance, clamped to its configured limits.
+func zoom_by(factor: float) -> void:
+	distance = clampf(distance * factor, min_distance, max_distance)
+
+
+## Restores the classic starting angle and zoom.
+func reset_view() -> void:
+	distance = 240.0
+	pitch_deg = 50.0
+	yaw_deg = 0.0
 
 
 func _process(delta: float) -> void:

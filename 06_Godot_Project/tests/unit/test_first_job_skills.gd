@@ -130,3 +130,86 @@ func test_first_job_skills_execute(_t) -> Variant:
 	if ttarget.hp >= thp:
 		return "envenom dealt no damage"
 	return true
+
+
+func test_other_first_job_starter_kits(_t) -> Variant:
+	var kits := {
+		"swordman": [9001, "two_hand_sword", 1],
+		"mage": [9002, "rod", 1],
+		"acolyte": [9004, "mace", 1],
+		"merchant": [9005, "axe", 1],
+		"thief": [9006, "dagger", 1],
+	}
+	for job in kits:
+		var sim := FieldSimulation.new(_gat(), 74)
+		var p := _player(sim, "novice", Vector2i(10, 10))
+		p.job_level = 10
+		p.skills["NV_BASIC"] = 9
+		if not sim.command_job_change(p.id, job):
+			return "eligible Novice could not become a %s" % job
+		var spec: Array = kits[job]
+		if int(p.equipment.get("weapon", 0)) != int(spec[0]) or String(p.weapon_type) != String(spec[1]):
+			return "%s starter weapon was not equipped" % job
+		if p.attack_range != int(spec[2]):
+			return "%s starter weapon has the wrong range" % job
+		if p.inventory.count(int(spec[0])) != 0:
+			return "%s starter weapon was not moved into the equipment slot" % job
+		var target := _dummy(sim, Vector2i(11, 10))
+		var hp := target.hp
+		for i in 5:
+			sim._attack(p, target)
+			if target.hp < hp:
+				break
+		if target.hp >= hp:
+			return "%s starter kit cannot attack" % job
+	return true
+
+
+func test_archer_starter_kit(_t) -> Variant:
+	var sim := FieldSimulation.new(_gat(), 73)
+	var p := _player(sim, "novice", Vector2i(10, 10))
+	p.job_level = 10
+	p.skills["NV_BASIC"] = 9
+	if not sim.command_job_change(p.id, "archer"):
+		return "eligible Novice could not become an Archer"
+	if String(p.job) != "archer" or String(p.weapon_type) != "bow":
+		return "Archer starter weapon was not equipped"
+	if int(p.equipment.get("weapon", 0)) != 9003 or p.attack_range != 9:
+		return "Archer did not start with a usable bow"
+	if p.inventory.count(1750) != 100 or p.inventory.count(1751) != 1:
+		return "Archer starter arrows or quiver missing"
+	var target := _dummy(sim, Vector2i(15, 10))
+	var hp := target.hp
+	sim._attack(p, target)
+	if target.hp >= hp or p.inventory.count(1750) != 99:
+		return "Archer starter kit cannot attack immediately"
+	return true
+
+
+## A real level-1 CharacterRules Novice starts with the classic Knife equipped.
+## Every first-job kit must replace that Knife with its level-1 starter weapon,
+## returning the Knife to the inventory instead of silently failing the equip.
+func test_character_rules_first_job_kits_swap_the_knife(_t) -> Variant:
+	var jobs := ["swordman", "mage", "archer", "acolyte", "merchant", "thief"]
+	for job in jobs:
+		var sim := FieldSimulation.new(_gat(), 75)
+		var ch := CharacterRules.new_character("Kit Novice", true, 2, 0, CharacterRules.stats_from_pairs(5, 5, 5))
+		ch.cell = Vector2i(10, 10)
+		var p := sim.add_player_from_save(ch)
+		if p == null or p.level != 1 or int(p.equipment.get("weapon", 0)) != 1201:
+			return "CharacterRules novice did not start with the classic Knife"
+		p.job_level = 10
+		p.skills["NV_BASIC"] = 9
+		if not sim.command_job_change(p.id, job):
+			return "level-1 Novice with the starting Knife could not become a %s" % job
+		var kit := int(FieldSimulation.FIRST_JOB_WEAPON[job])
+		var kit_def: Dictionary = sim.item_db.get(str(kit), {})
+		if int(kit_def.get("equip_level", 99)) != 1:
+			return "%s starter weapon is not level 1" % job
+		if int(p.equipment.get("weapon", 0)) != kit:
+			return "%s kit did not auto-equip its starter weapon" % job
+		if p.inventory.count(1201) != 1:
+			return "%s kit did not return the starting Knife to the inventory" % job
+		if p.inventory.count(kit) != 0:
+			return "%s starter weapon stayed in the inventory instead of being equipped" % job
+	return true

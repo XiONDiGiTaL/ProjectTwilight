@@ -1,5 +1,5 @@
 {
-  "_provenance": "Pre-Renewal item values as documented by iRO Wiki classic and the rAthena pre-re item database (facts only). resname = client resource name used for data\\sprite\\아이템\\<resname>.spr and data\\texture\\유저인터페이스\\item\\<resname>.bmp. Confidence: High for weights/prices/heals, pending Hercules cross-check. Equipment: atk/def/weight/price per Pre-Renewal item data; 'equip' is the slot, 'weapon_level' drives the DEX-based minimum weapon damage. Second-wave weapons (Katana, Claymore, Axe, Battle Axe, Club, Rod, Book): Pre-Renewal ATK/weight/level per iRO Wiki classic (Medium confidence on prices). two_handed = blocks the shield slot. Bow, instrument and whip weapons are Project Twilight additions: values follow the same Pre-Renewal weapon model and their range field enables ranged normal attacks. Arrows and quivers are Project Twilight additions: arrows are stackable ammo consumed by bow attacks and bow skills, and quivers unpack into 100 arrows.",
+  "_provenance": "Pre-Renewal item values as documented by iRO Wiki classic and the rAthena pre-re item database (facts only). resname = client resource name used for data\\sprite\\아이템\\<resname>.spr and data\\texture\\유저인터페이스\\item\\<resname>.bmp. Confidence: High for weights/prices/heals, pending Hercules cross-check. Equipment: atk/def/weight/price per Pre-Renewal item data; 'equip' is the slot, 'weapon_level' drives the DEX-based minimum weapon damage. Second-wave weapons (Katana, Claymore, Axe, Battle Axe, Club, Rod, Book): Pre-Renewal ATK/weight/level per iRO Wiki classic (Medium confidence on prices). two_handed = blocks the shield slot. Bow, instrument and whip weapons are Project Twilight additions: values follow the same Pre-Renewal weapon model and their range field enables ranged normal attacks. Arrows and quivers are Project Twilight additions: arrows are stackable ammo consumed by bow attacks and bow skills, elemental arrows set the attack element, and quivers unpack into 100 normal arrows.",
   "501": {
     "name": "Red Potion",
     "resname": "빨간포션",
@@ -286,6 +286,100 @@
     "desc": "A light bow. Arrows can be loosed from up to 9 cells away.",
     "two_handed": true
   },
+  "9001": {
+    "name": "Starter Katana",
+    "resname": "카타나",
+    "type": "weapon",
+    "equip": "weapon",
+    "weapon_type": "two_hand_sword",
+    "weapon_level": 1,
+    "atk": 60,
+    "slots": 0,
+    "weight": 120,
+    "price": 0,
+    "equip_level": 1,
+    "two_handed": true,
+    "starter": true,
+    "desc": "A level-1 guild-issue katana for a new Swordman."
+  },
+  "9002": {
+    "name": "Starter Rod",
+    "resname": "롯드",
+    "type": "weapon",
+    "equip": "weapon",
+    "weapon_type": "rod",
+    "weapon_level": 1,
+    "atk": 15,
+    "slots": 0,
+    "weight": 40,
+    "price": 0,
+    "equip_level": 1,
+    "matk_pct": 15,
+    "starter": true,
+    "desc": "A level-1 guild-issue rod for a new Mage. MATK +15%."
+  },
+  "9003": {
+    "name": "Starter Short Bow",
+    "resname": "숏보우",
+    "type": "weapon",
+    "equip": "weapon",
+    "weapon_type": "bow",
+    "weapon_level": 1,
+    "atk": 20,
+    "slots": 0,
+    "weight": 50,
+    "price": 0,
+    "equip_level": 1,
+    "range": 9,
+    "two_handed": true,
+    "starter": true,
+    "desc": "A level-1 guild-issue bow for a new Archer."
+  },
+  "9004": {
+    "name": "Starter Club",
+    "resname": "클럽",
+    "type": "weapon",
+    "equip": "weapon",
+    "weapon_type": "mace",
+    "weapon_level": 1,
+    "atk": 23,
+    "slots": 0,
+    "weight": 70,
+    "price": 0,
+    "equip_level": 1,
+    "starter": true,
+    "desc": "A level-1 guild-issue club for a new Acolyte."
+  },
+  "9005": {
+    "name": "Starter Axe",
+    "resname": "액스",
+    "type": "weapon",
+    "equip": "weapon",
+    "weapon_type": "axe",
+    "weapon_level": 1,
+    "atk": 38,
+    "slots": 0,
+    "weight": 80,
+    "price": 0,
+    "equip_level": 1,
+    "starter": true,
+    "desc": "A level-1 guild-issue axe for a new Merchant."
+  },
+  "9006": {
+    "name": "Starter Main Gauche",
+    "resname": "망고슈",
+    "type": "weapon",
+    "equip": "weapon",
+    "weapon_type": "dagger",
+    "weapon_level": 1,
+    "atk": 23,
+    "slots": 0,
+    "weight": 60,
+    "price": 0,
+    "equip_level": 1,
+    "starter": true,
+    "desc": "A level-1 guild-issue dagger for a new Thief."
+  },
   "1702": {
     "name": "Hunter Bow",
     "resname": "헌터보우",
@@ -388,7 +482,8 @@
     "type": "ammo",
     "weight": 1,
     "price": 3,
-    "desc": "A simple arrow for bows. Consumed by bow attacks and bow skills."
+    "desc": "A simple arrow for bows. Consumed by bow attacks and bow skills.",
+    "element": "neutral"
   },
   "1751": {
     "name": "Quiver",
@@ -399,6 +494,24 @@
     "use_effect": "ammo",
     "ammo_item": 1750,
     "ammo_amount": 100,
-    "desc": "A bundle of 100 arrows. Use it to unpack the arrows into your inventory."
+    "desc": "A bundle of 100 normal arrows. Use it to unpack the arrows into your inventory."
+  },
+  "1752": {
+    "name": "Fire Arrow",
+    "resname": "불화살",
+    "type": "ammo",
+    "element": "fire",
+    "weight": 1,
+    "price": 5,
+    "desc": "A fire-element arrow. Bow attacks using it deal fire damage, strong against earth."
+  },
+  "1753": {
+    "name": "Silver Arrow",
+    "resname": "은화살",
+    "type": "ammo",
+    "element": "holy",
+    "weight": 1,
+    "price": 8,
+    "desc": "A silver arrow blessed with holy power. Bow attacks using it deal holy damage, strong against undead."
   }
 }

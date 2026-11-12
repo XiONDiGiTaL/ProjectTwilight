@@ -43,6 +43,12 @@ static func _dummy(sim: FieldSimulation, cell: Vector2i) -> SimUnit:
 
 func test_weapon_data_and_permissions(_t) -> Variant:
 	var sim := FieldSimulation.new(_gat(), 81)
+	for wt in ["bow", "instrument", "whip"]:
+		if not UnitView.WEAPON_SPRITES.has(wt):
+			return "%s has no client weapon-layer suffix" % wt
+	var fallback := PlayerSprites.weapon_paths(sim.job_db, "lord_knight", true, "검")
+	if fallback.size() < 2 or not String(fallback[0]).ends_with("로드나이트_남_검") or not String(fallback[1]).ends_with("기사_남_검"):
+		return "advanced weapon layers do not fall back through the job tree"
 	for id in [BOW, 1702, 1703, INSTRUMENT, 1902, WHIP, 1952]:
 		var def: Dictionary = sim.item_db.get(str(id), {})
 		if def.is_empty() or String(def.get("equip", "")) != "weapon":
@@ -82,6 +88,34 @@ func test_weapon_data_and_permissions(_t) -> Variant:
 	if _equip(sim, dancer, INSTRUMENT):
 		return "Dancer equipped an instrument"
 	return true
+
+
+## Weapon ACTs use their own group numbering. Attack frames are on group 4
+## (body group 5), skill/cast frames on group 10 (body group 12), and idle/walk
+## reuse weapon attack frame 0. Mapping a weapon straight through the body group
+## draws an empty frame, so lock the translation down here.
+func test_weapon_act_action_groups(_t) -> Variant:
+	var sprite := CharacterSprite.new()
+	var error := ""
+	for direction in 8:
+		if sprite._weapon_action_index(5 * 8 + direction) != 4 * 8 + direction:
+			error = "attack group 5 direction %d did not map to weapon group 4" % direction
+		elif sprite._weapon_action_index(12 * 8 + direction) != 10 * 8 + direction:
+			error = "cast group 12 direction %d did not map to weapon group 10" % direction
+		else:
+			for body_group in [0, 1, 2, 3]:
+				if sprite._weapon_action_index(body_group * 8 + direction) != 4 * 8 + direction:
+					error = "looping body group %d direction %d did not reuse weapon frame 0" % [body_group, direction]
+					break
+		if error != "":
+			break
+	if error == "":
+		for body_group in [6, 8]:
+			if sprite._weapon_action_index(body_group * 8) != -1:
+				error = "body group %d should not draw a weapon frame" % body_group
+				break
+	sprite.free()
+	return true if error == "" else error
 
 
 func test_ranges_and_skill_requirements(_t) -> Variant:

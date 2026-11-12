@@ -55,13 +55,13 @@ Captured from the running game with `tests/capture_readme.gd`. The sprites, maps
 | Own body sprites for all 39 second, transcendent and third jobs | ✅ Implemented (checked against the client) |
 | Map decoding (GAT/GND/RSW) and ground rendering | ✅ Implemented and tested |
 | Map models (RSM/RSM2: buildings, trees, props) | ✅ Implemented and tested (static) |
-| Character sprites (body + head, hair dyes) and click-to-walk movement | ✅ Implemented and tested |
+| Character sprites (body + head, hair dyes, class weapon layers) and click-to-walk movement | ✅ Implemented and tested |
 | Combat (Pre-Renewal hit/flee/crit/DEF/ASPD), monsters, EXP and levels | ✅ Implemented and tested (first monsters) |
-| Twilight Glass HUD: status panel, target frame, HP bars, combat text | ✅ Implemented |
+| Twilight Glass HUD: status panel, target frame, HP bars, player nameplates, combat text | ✅ Implemented |
 | Original class insignia for all 46 classes | ✅ Generated (polish ongoing) |
 | Loot, inventory, item use, stat allocation | ✅ Implemented and tested |
 | Local save/load (versioned, validated) | ✅ Implemented and tested |
-| Equipment (weapon damage model, armor DEF, weapon sprites, bow/instrument/whip weapons, arrows and quivers) | ✅ Implemented and tested |
+| Equipment (weapon damage model, armor DEF, weapon sprites for every class, bow/instrument/whip weapons, visible bow projectiles, normal and elemental arrows, quivers, first-job starter kits) | ✅ Implemented and tested |
 | NPC merchant and shop (buy/sell, Zeny) | ✅ Implemented and tested |
 | Character select and creation (classic stat hexagon, live preview) | ✅ Implemented and tested |
 | Novice skills, skill window, F1–F9 hotkey bar, sitting and regen | ✅ Implemented and tested |
@@ -106,7 +106,9 @@ Project Twilight's HUD uses its own **Twilight Glass** UI design as the traditio
 - slanted glowing resource bars
 - condensed, letter-spaced typography
 - every gameplay window drags from its title-bar grip, snaps to screen edges and neighbouring windows, and remembers its position; a subtle edge highlight confirms a viewport-border snap, and double-clicking the title bar resets it
-- overhead name tags use a restrained 70% default scale, adjustable from 50–125% in **SETTINGS** (title screen, **Esc**, or the HUD button) with a **RESET** action back to 70%; the same scale covers NPCs, CPU players, warp labels and monster hover names, and the title-screen and in-game Settings windows each remember their own dragged position
+- player and CPU names sit directly beneath a small HP bar above their character; **SETTINGS → NAMEPLATES** can keep them visible or switch to hover-only with a fade-out after the pointer leaves, and NPC, warp and monster hover labels keep the overhead-name scale
+- overhead name tags use a restrained 70% default scale, adjustable from 50–125% in **SETTINGS** (title screen, **Esc**, or the HUD button) with a **RESET** action back to 70%; the same scale covers NPCs, warp labels and monster hover names, and the title-screen and in-game Settings windows each remember their own dragged position
+- **SETTINGS → INTERFACE HUE**, **CHAT WINDOW** and **CAMERA** adjust the HUD tint, chat width/height, and camera zoom, tilt and angle; each has a reset, and the existing **AUDIO** BGM/SFX sliders remain the volume controls
 - **SERVER RATES** in Settings switches Base EXP, Job EXP and drops between **1×, 25× and 50×**, with **DEFAULT** returning to the loaded server-config rates; the active choice is highlighted, saved with the player's settings, applies to the running field immediately with a system-feed confirmation, and a preset takes priority over server config defaults. The same choice is available from chat with `@rates 1|25|50|default`
 - **RESET UI LAYOUT** in Settings returns every glass window—inventory, status, equipment, skills, shop, storage, guild and Settings itself—to its default position; Settings re-centers, a brief feed message confirms it, and every reset is remembered
 
@@ -151,6 +153,10 @@ git clone https://github.com/XiONDiGiTaL/ProjectTwilight.git
 | Esc | Open / close Settings |
 | U | Cycle aura |
 | F12 | Save (progress also saves automatically) |
+| Mouse wheel / PageUp / PageDown / + / − | Zoom camera |
+| Right-drag | Rotate camera |
+| Shift + right-drag | Tilt camera |
+| Home | Reset camera view |
 
 A **SETTINGS** button below the minimap opens the same overlay for mouse users.
 

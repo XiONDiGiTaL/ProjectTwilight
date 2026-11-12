@@ -19,6 +19,7 @@ extends Node3D
 const PICK_RADIUS_PX := 34.0
 const ITEM_PICK_RADIUS_PX := 22.0
 const AUTOSAVE_SEC := 30.0
+const ARROW_PROJECTILE := preload("res://scripts/rendering/fx/arrow_projectile.gd")
 
 var map: RoMap
 var sim: FieldSimulation
@@ -112,6 +113,13 @@ func _ready() -> void:
 	camera = RoCamera.new()
 	camera.distance = 240.0
 	add_child(camera)
+	if settings:
+		var view: Vector3 = settings.camera_view()
+		camera.distance = view.x
+		camera.pitch_deg = view.y
+		camera.yaw_deg = view.z
+		if not settings.camera_view_changed.is_connected(_apply_camera_view):
+			settings.camera_view_changed.connect(_apply_camera_view)
 	hud = CombatHud.new()
 	add_child(hud)
 	hud.camera = camera
@@ -406,6 +414,14 @@ func _settings_autoload() -> Node:
 	return tree.root.get_node_or_null("Settings") if tree else null
 
 
+func _apply_camera_view(distance: float, pitch: float, yaw: float) -> void:
+	if camera == null:
+		return
+	camera.distance = distance
+	camera.pitch_deg = pitch
+	camera.yaw_deg = yaw
+
+
 func _unhandled_input(e: InputEvent) -> void:
 	if e is InputEventKey and e.pressed and not e.echo:
 		match e.keycode:
@@ -472,6 +488,24 @@ func monster_at_screen(p: Vector2) -> int:
 	for id in views:
 		var u: SimUnit = sim.units.get(id)
 		if u == null or u.is_player() or u.dead:
+			continue
+		var v: UnitView = views[id]
+		var feet := camera.unproject_position(v.global_position)
+		var head := camera.unproject_position(v.head_position())
+		var d := Geometry2D.get_closest_point_to_segment(p, feet, head).distance_to(p)
+		if d < best_d:
+			best_d = d
+			best = id
+	return best
+
+
+## Player id whose sprite is under the screen point, or 0.
+func player_at_screen(p: Vector2) -> int:
+	var best := 0
+	var best_d := PICK_RADIUS_PX
+	for id in views:
+		var u: SimUnit = sim.units.get(id)
+		if u == null or not u.is_player() or u.dead:
 			continue
 		var v: UnitView = views[id]
 		var feet := camera.unproject_position(v.global_position)
@@ -642,20 +676,29 @@ func _process(delta: float) -> void:
 		map.update_occlusion(camera, (views[player.id] as Node3D).global_position)
 	for v in views.values():
 		(v as UnitView).camera_yaw = camera.yaw_deg
+	for id in sim.units:
+		var pu: SimUnit = sim.units[id]
+		if pu != null and pu.is_player():
+			hud.update_player_plate(pu.id, pu.hp, pu.max_hp)
 	if not player.walker.is_moving():
 		_target_marker.visible = false
 	var mouse := get_viewport().get_mouse_position()
-	var monster := monster_at_screen(mouse)
-	if monster != 0:
-		var mv: UnitView = views[monster]
-		hud.hover_tag(mv.unit.name, camera.unproject_position(mv.head_position()), true)
+	var hovered_player := player_at_screen(mouse)
+	hud.set_hovered_player(hovered_player)
+	if hovered_player != 0:
+		hud.hover_tag("", Vector2.ZERO)
 	else:
-		var hover := item_at_screen(mouse)
-		if hover != 0:
-			var iv: GroundItemView = item_views[hover]
-			hud.hover_tag(iv.item_name, camera.unproject_position(iv.head_position()))
+		var monster := monster_at_screen(mouse)
+		if monster != 0:
+			var mv: UnitView = views[monster]
+			hud.hover_tag(mv.unit.name, camera.unproject_position(mv.head_position()), true)
 		else:
-			hud.hover_tag("", Vector2.ZERO)
+			var hover := item_at_screen(mouse)
+			if hover != 0:
+				var iv: GroundItemView = item_views[hover]
+				hud.hover_tag(iv.item_name, camera.unproject_position(iv.head_position()))
+			else:
+				hud.hover_tag("", Vector2.ZERO)
 	if hud.dialog.visible and player.walker.is_moving():
 		hud.dialog.close()
 		if _net_dialog_open:
@@ -690,14 +733,7 @@ func _consume_events() -> void:
 				if spawned != null:
 					_create_view(spawned)
 			"despawn":
-				var gone: UnitView = views.get(ev.id)
-				if gone:
-					hud.unit_died(ev.id)
-					gone.queue_free()
-					views.erase(ev.id)
-				_casts.erase(ev.id)
-				if sim is RemoteSimulation:
-					(sim as RemoteSimulation).forget_unit(int(ev.id))
+				remove_view(ev.id, true)
 			"appearance":
 				var look: UnitView = views.get(ev.id)
 				if look:
@@ -713,6 +749,11 @@ func _consume_events() -> void:
 						_audio.swing(a.weapon_type, _vol(a))
 					else:
 						_audio.monster(a.sprite, "attack", _vol(a))
+			"projectile":
+				var pv: UnitView = views.get(ev.id)
+				var tv: UnitView = views.get(ev.target)
+				if pv and tv:
+					ARROW_PROJECTILE.volley(self, pv.projectile_origin(), tv.projectile_origin(), String(ev.element), int(ev.get("hits", 1)))
 			"damage":
 				_on_damage(ev)
 				player_changed = player_changed or ev.dst == player.id
@@ -976,6 +1017,22 @@ func _vol(u: SimUnit) -> float:
 	return GameAudioFalloff.at(Vector2(u.walker.cell).distance_to(Vector2(player.walker.cell)))
 
 
+## Removes a unit's visual and every HUD element tied to it. Despawn events and
+## capture tools use this one path so a freed view cannot leave a plate anchor.
+func remove_view(unit_id: int, died := false) -> void:
+	var v: UnitView = views.get(unit_id)
+	if hud != null:
+		if died:
+			hud.unit_died(unit_id)
+		hud.remove_player_plate(unit_id)
+	if v != null:
+		v.queue_free()
+	views.erase(unit_id)
+	_casts.erase(unit_id)
+	if sim is RemoteSimulation:
+		(sim as RemoteSimulation).forget_unit(unit_id)
+
+
 func _create_view(u: SimUnit) -> void:
 	if views.has(u.id):
 		return
@@ -988,10 +1045,10 @@ func _create_view(u: SimUnit) -> void:
 		push_warning("No sprite for %s (%s)" % [u.name, u.sprite])
 	v.position = map.cell_pos_to_world(u.walker.position())
 	views[u.id] = v
-	if u.is_bot:
-		v.set_name_tag(u.name, BotBrain.ROLE_COLORS.get(u.bot_role, Color(0.72, 0.9, 1.0)))
-	elif u.is_player() and player != null and u.id != player.id:
-		v.set_name_tag(u.name, Color(1.0, 0.93, 0.7))
+	if u.is_player() and hud != null:
+		var tag_color: Color = BotBrain.ROLE_COLORS.get(u.bot_role, Color(1.0, 0.93, 0.7)) if u.is_bot else Color(1.0, 0.93, 0.7)
+		hud.add_player_plate(u.id, u.name, u.hp, u.max_hp, v.head_position, tag_color)
+	if u.is_player():
 		v.update_weapon(_res)
 
 
@@ -1129,7 +1186,9 @@ func _on_dialog_choice(i: int) -> void:
 			_dialog_state = "confirm"
 			var jn := String(sim.job_db.get(_dialog_job, {}).get("name", _dialog_job))
 			var note := "" if not (sim.job_db.get(_dialog_job, {}).get("skills", []) as Array).is_empty() else "\n\n(Its guild skills are still being prepared in this build.)"
-			hud.dialog.show_page(_dialog_npc.name, "Become a %s? This choice is permanent.%s" % [jn, note], ["Become a %s" % jn, "Go back"])
+			var kit := sim.first_job_weapon_name(_dialog_job)
+			var kit_note := "\n\nGuild issue: %s." % kit if kit != "" else ""
+			hud.dialog.show_page(_dialog_npc.name, "Become a %s? This choice is permanent.%s%s" % [jn, note, kit_note], ["Become a %s" % jn, "Go back"])
 		"choose2":
 			if i >= _dialog_choices.size():
 				hud.dialog.close()

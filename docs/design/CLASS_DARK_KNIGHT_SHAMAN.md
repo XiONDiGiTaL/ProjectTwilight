@@ -91,7 +91,8 @@ Mace Mastery, Axe Mastery and Dagger Mastery use the existing weapon-specific `m
   - Two-handed weapons remove and block the shield.
   - New items: Katana, Claymore, Axe, Battle Axe, Club, Rod (MATK +15%), Book, Short Bow, Hunter Bow, Great Bow, Lute, Harp, Whip and Chain Whip, sold by the Prontera Weapon Dealer.
   - Bows give 9-cell normal attack range; instruments and whips give 2 cells. Archer/Hunter/Sniper/Ranger skills require a bow, Bard/Clown/Minstrel skills an instrument, and Dancer/Gypsy/Wanderer skills a whip.
-  - The Prontera Weapon Dealer also sells Arrows (weight 1, 3 Zeny) and Quivers (weight 100, 250 Zeny). A normal bow attack or bow skill consumes one Arrow; using a Quiver unpacks 100 Arrows within the carry limit.
+  - The Prontera Weapon Dealer also sells Arrows (weight 1, 3 Zeny), Fire Arrows (5 Zeny), Silver Arrows (8 Zeny) and Quivers (weight 100, 250 Zeny). A normal bow attack or bow skill consumes one Arrow; using a Quiver unpacks 100 normal Arrows within the carry limit.
+  - Fire Arrows make a bow shot fire-element and Silver Arrows make it holy-element, so they exploit earth and undead targets. Weapon enchantments take priority over the arrow element.
 
 ## Dark Knight
 
@@ -301,4 +302,4 @@ Every canonical first job now reaches a second job, a transcendent class and a t
 
 **Art.** Third-job class registry entries have no dedicated emblem yet, so `ClassInsignia` draws the `third`-tier shield fallback (teal body, gold rim). Canonical jobs reuse their first-job body sprite, and the custom lines reuse the Knight / Priest bodies, until dedicated class art exists.
 
-**Tests.** `tests/unit/test_third_jobs.gd` (6 cases) covers all 13 canonical paths plus both custom paths, third-job data, caps, skill trees, EXP and save validation. `tests/unit/test_rank_skills.gd` (2 cases) verifies every second-job, transcendent and custom transcendent rank exposes two matching skills and exercises physical, magic and healing skills. `tests/unit/test_first_job_skills.gd` (2 cases) covers the Archer, Acolyte, Merchant and Thief trees, learning and representative use, and `tests/unit/test_weapon_types.gd` (2 cases) covers bow/instrument/whip data, permissions, range and skill gates, and `tests/unit/test_ammo.gd` (3 cases) covers arrows, quivers, carry weight and bow ammunition. The full suite is 220 passed, 0 failed, 0 skipped.
+**Tests.** `tests/unit/test_third_jobs.gd` (6 cases) covers all 13 canonical paths plus both custom paths, third-job data, caps, skill trees, EXP and save validation. `tests/unit/test_rank_skills.gd` (2 cases) verifies every second-job, transcendent and custom transcendent rank exposes two matching skills and exercises physical, magic and healing skills. `tests/unit/test_first_job_skills.gd` (2 cases) covers the Archer, Acolyte, Merchant and Thief trees, learning and representative use, `tests/unit/test_weapon_types.gd` (2 cases) covers bow/instrument/whip data, permissions, range and skill gates, and `tests/unit/test_ammo.gd` (4 cases) covers arrows, quivers, carry weight, bow ammunition and elemental arrow damage. The full suite is 229 passed, 0 failed, 0 skipped.

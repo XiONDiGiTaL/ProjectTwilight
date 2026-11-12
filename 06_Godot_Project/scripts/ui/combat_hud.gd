@@ -6,6 +6,7 @@ extends CanvasLayer
 ## FieldSimulation events and unit state.
 
 const WORLD_BAR_SIZE := Vector2(92, 10)
+const PLAYER_BAR_SIZE := Vector2(88, 7)
 const BAR_FADE_AFTER_DEATH := 0.9
 const SETTINGS_WINDOW := preload("res://scripts/ui/settings_window.gd")
 
@@ -32,6 +33,11 @@ var _cast_anchor: Callable
 var _cast_total := 0.0     # ms
 var _cast_elapsed := 0.0   # ms
 var _cast_out := -1.0      # fade-out timer (s), -1 = not fading
+var _player_plates: Dictionary = {}   # unit id -> {node, bar, label, anchor, alpha}
+var _hovered_player_id := 0
+var _names_hover_only := false
+var _names_fade_seconds := 1.2
+var _ui_settings: Node
 
 
 func _ready() -> void:
@@ -96,6 +102,15 @@ func _ready() -> void:
 	settings_window.storage_key = SETTINGS_WINDOW.GAME_STORAGE_KEY
 	_root.add_child(settings_window)
 	settings_window.reset_layout_requested.connect(reset_ui_layout)
+	_ui_settings = get_node_or_null("/root/Settings")
+	if _ui_settings:
+		_root.modulate = _ui_settings.ui_tint()
+		_ui_settings.ui_hue_changed.connect(_on_ui_hue_changed)
+		_ui_settings.chat_size_changed.connect(_apply_chat_size)
+		_ui_settings.name_display_changed.connect(_on_name_display_changed)
+		_names_hover_only = _ui_settings.names_hover_only()
+		_names_fade_seconds = _ui_settings.names_fade_seconds()
+		_apply_chat_size(_ui_settings.chat_size())
 
 
 ## Adds a draggable window at its default position. Saved positions win.
@@ -325,6 +340,22 @@ func _build_chat() -> void:
 	chat.offset_top = -54
 
 
+func _apply_chat_size(size: Vector2) -> void:
+	if chat == null:
+		return
+	chat.offset_right = chat.offset_left + size.x
+	chat.offset_top = chat.offset_bottom - size.y
+
+
+func _on_ui_hue_changed(tint: Color) -> void:
+	_root.modulate = tint
+
+
+func _on_name_display_changed(hover_only: bool, fade_seconds: float) -> void:
+	_names_hover_only = hover_only
+	_names_fade_seconds = fade_seconds
+
+
 ## Shows a small name tag at a screen position (ground item or monster hover);
 ## "" hides it. `overhead` opts into the user's overhead-name scale.
 func hover_tag(text: String, screen_pos: Vector2, overhead := false) -> void:
@@ -401,6 +432,48 @@ func unit_died(unit_id: int) -> void:
 
 func has_world_bar(unit_id: int) -> bool:
 	return _world_bars.has(unit_id)
+
+
+## Player nameplate: an always-visible HP bar with the name underneath it.
+## The name itself can fade while the bar stays visible.
+func add_player_plate(unit_id: int, name: String, hp: int, max_hp: int, anchor: Callable, color := Color(1.0, 0.93, 0.7)) -> void:
+	if _player_plates.has(unit_id):
+		return
+	var box := VBoxContainer.new()
+	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	box.add_theme_constant_override("separation", 1)
+	var bar := GlassBar.new()
+	bar.ticks = 0.0
+	bar.glow_px = 1.5
+	bar.custom_minimum_size = PLAYER_BAR_SIZE
+	bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	box.add_child(bar)
+	var label := UiTheme.label(name.to_upper(), 10, color, 600, 2)
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	box.add_child(label)
+	_root.add_child(box)
+	_root.move_child(box, 0)
+	bar.snap(hp, max_hp)
+	var alpha := 1.0 if not _names_hover_only else 0.0
+	label.modulate.a = alpha
+	_player_plates[unit_id] = {"node": box, "bar": bar, "label": label, "anchor": anchor, "alpha": alpha}
+
+
+func update_player_plate(unit_id: int, hp: int, max_hp: int) -> void:
+	if _player_plates.has(unit_id):
+		(_player_plates[unit_id].bar as GlassBar).set_value(hp, max_hp)
+
+
+func remove_player_plate(unit_id: int) -> void:
+	if _player_plates.has(unit_id):
+		(_player_plates[unit_id].node as Node).queue_free()
+		_player_plates.erase(unit_id)
+
+
+## FieldScene gives the player under the pointer; -1/0 clears the hover.
+func set_hovered_player(unit_id: int) -> void:
+	_hovered_player_id = unit_id
 
 
 func target_id() -> int:
@@ -633,6 +706,24 @@ func _process(delta: float) -> void:
 		node.visible = true
 		node.reset_size()
 		node.position = camera.unproject_position(anchor) - Vector2(node.size.x / 2.0, node.size.y)
+	for id in _player_plates.keys():
+		var plate: Dictionary = _player_plates[id]
+		var plate_node: Control = plate.node
+		var plate_label: Label = plate.label
+		var target_alpha := 1.0 if not _names_hover_only or _hovered_player_id == int(id) else 0.0
+		if target_alpha > float(plate.alpha):
+			plate.alpha = minf(target_alpha, float(plate.alpha) + delta * 8.0)
+		else:
+			var fade := maxf(_names_fade_seconds, 0.01)
+			plate.alpha = maxf(target_alpha, float(plate.alpha) - delta / fade)
+		plate_label.modulate.a = float(plate.alpha)
+		var plate_anchor: Vector3 = (plate.anchor as Callable).call()
+		if camera.is_position_behind(plate_anchor):
+			plate_node.visible = false
+			continue
+		plate_node.visible = true
+		plate_node.reset_size()
+		plate_node.position = camera.unproject_position(plate_anchor) - Vector2(plate_node.size.x / 2.0, plate_node.size.y)
 
 
 const RING_SHADER := """

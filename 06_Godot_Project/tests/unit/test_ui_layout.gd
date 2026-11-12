@@ -310,6 +310,63 @@ func _feed_texts(hud: CombatHud) -> Array:
 	return texts
 
 
+func test_presentation_settings_reach_the_hud(t: SceneTree) -> Variant:
+	var settings = t.root.get_node_or_null("/root/Settings")
+	if settings == null:
+		return "Settings autoload is missing"
+	var old_hue: float = settings.ui_hue()
+	var old_chat: Vector2 = settings.chat_size()
+	var old_hover: bool = settings.names_hover_only()
+	var old_fade: float = settings.names_fade_seconds()
+	var old_camera: Vector3 = settings.camera_view()
+	var hud := CombatHud.new()
+	t.root.add_child(hud)
+	await t.process_frame
+	settings.set_ui_hue(0.25)
+	settings.set_chat_size(Vector2(480, 80))
+	settings.set_names_hover_only(true)
+	settings.set_camera_view(300, 60, 90)
+	var tint_ok: bool = not hud._root.modulate.is_equal_approx(Color.WHITE)
+	var chat_ok: bool = is_equal_approx(hud.chat.offset_right, 496.0) and is_equal_approx(hud.chat.offset_top, -96.0)
+	var names_ok: bool = hud._names_hover_only and is_equal_approx(hud._names_fade_seconds, settings.names_fade_seconds())
+	var camera_ok: bool = settings.camera_view().is_equal_approx(Vector3(300, 60, 90))
+	hud.add_player_plate(77, "Tester", 60, 100, func(): return Vector3.ZERO)
+	var plate: Dictionary = hud._player_plates.get(77, {})
+	var plate_ok := false
+	if not plate.is_empty():
+		var box: VBoxContainer = plate.node
+		plate_ok = box.get_child(0) is GlassBar and (box.get_child(1) as Label).text == "TESTER"
+	hud.remove_player_plate(77)
+	var camera := RoCamera.new()
+	t.root.add_child(camera)
+	await t.process_frame
+	camera.zoom_by(0.5)
+	var zoom_ok: bool = camera.distance < 240.0
+	camera.reset_view()
+	var reset_ok: bool = is_equal_approx(camera.distance, 240.0) and is_equal_approx(camera.pitch_deg, 50.0)
+	camera.queue_free()
+	hud.queue_free()
+	settings.set_ui_hue(old_hue)
+	settings.set_chat_size(old_chat)
+	settings.set_names_hover_only(old_hover)
+	settings.set_names_fade_seconds(old_fade)
+	settings.set_camera_view(old_camera.x, old_camera.y, old_camera.z)
+	await t.process_frame
+	if not tint_ok:
+		return "the UI hue slider should tint the HUD"
+	if not chat_ok:
+		return "the chat resize setting should update the console bounds"
+	if not names_ok:
+		return "the hover-only name setting should reach the HUD"
+	if not plate_ok:
+		return "a player plate should draw its HP bar above its name"
+	if not camera_ok:
+		return "the camera settings should persist through Settings"
+	if not zoom_ok or not reset_ok:
+		return "zoom keys and camera reset should change the RoCamera distance"
+	return true
+
+
 func test_hud_settings_button_toggles_overlay(t: SceneTree) -> Variant:
 	var hud := CombatHud.new()
 	t.root.add_child(hud)

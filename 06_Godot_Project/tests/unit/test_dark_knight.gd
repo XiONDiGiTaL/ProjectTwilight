@@ -18,6 +18,8 @@ static func _dk(sim: FieldSimulation, advance := true) -> SimUnit:
 	p.job_level = 10
 	p.skills.NV_BASIC = 9
 	sim.command_job_change(p.id, "swordman")
+	# Dark Knight tests supply their own weapon; start from a bare-handed state.
+	sim.command_unequip(p.id, "weapon")
 	p.job_level = 40
 	if advance:
 		sim.command_job_change(p.id, "dark_knight")

@@ -19,12 +19,43 @@ const OVERHEAD_NAME_MAX := 1.25
 const OVERHEAD_NAME_DEFAULT := 0.7
 const OVERHEAD_NAME_STEP := 0.05
 
+## In-game presentation options. A negative hue means "keep the default UI".
+const UI_HUE_DEFAULT := -1.0
+const CHAT_WIDTH_MIN := 320.0
+const CHAT_WIDTH_MAX := 720.0
+const CHAT_WIDTH_DEFAULT := 372.0
+const CHAT_WIDTH_STEP := 8.0
+const CHAT_HEIGHT_MIN := 42.0
+const CHAT_HEIGHT_MAX := 120.0
+const CHAT_HEIGHT_DEFAULT := 42.0
+const CHAT_HEIGHT_STEP := 4.0
+const NAMES_FADE_DEFAULT := 1.2
+const NAMES_FADE_MIN := 0.0
+const NAMES_FADE_MAX := 4.0
+const NAMES_FADE_STEP := 0.1
+const CAMERA_DISTANCE_MIN := 80.0
+const CAMERA_DISTANCE_MAX := 520.0
+const CAMERA_DISTANCE_DEFAULT := 240.0
+const CAMERA_DISTANCE_STEP := 10.0
+const CAMERA_PITCH_MIN := 25.0
+const CAMERA_PITCH_MAX := 75.0
+const CAMERA_PITCH_DEFAULT := 50.0
+const CAMERA_PITCH_STEP := 1.0
+const CAMERA_YAW_MIN := 0.0
+const CAMERA_YAW_MAX := 360.0
+const CAMERA_YAW_DEFAULT := 0.0
+const CAMERA_YAW_STEP := 5.0
+
 ## Server-rate presets offered in Settings, as effective multipliers.
 ## RuleConfig stores percentages, so 25 here means 2500 (25x).
 const RATE_PRESETS := [1, 25, 50]
 const RATE_PRESET_NONE := 0
 
 signal overhead_name_scale_changed(scale: float)
+signal ui_hue_changed(tint: Color)
+signal chat_size_changed(size: Vector2)
+signal name_display_changed(hover_only: bool, fade_seconds: float)
+signal camera_view_changed(distance: float, pitch: float, yaw: float)
 signal rate_preset_changed(multiplier: int)
 
 var _cfg := ConfigFile.new()
@@ -68,6 +99,87 @@ func overhead_name_font(base: float, minimum := 8) -> int:
 
 func overhead_name_outline(base: float, minimum := 4) -> int:
 	return maxi(minimum, roundi(base * overhead_name_scale()))
+
+
+## UI hue tint. -1 means the untouched Twilight Glass palette.
+func ui_hue() -> float:
+	return clampf(float(get_value("ui", "hue", UI_HUE_DEFAULT)), -1.0, 1.0)
+
+
+func ui_tint() -> Color:
+	var hue := ui_hue()
+	return Color.WHITE if hue < 0.0 else Color.from_hsv(hue, 0.32, 1.0)
+
+
+func set_ui_hue(value: float) -> void:
+	var hue := clampf(value, -1.0, 1.0)
+	if hue >= 0.0:
+		hue = snappedf(hue, 0.01)
+	if is_equal_approx(hue, ui_hue()):
+		return
+	set_value("ui", "hue", hue)
+	ui_hue_changed.emit(ui_tint())
+
+
+func chat_size() -> Vector2:
+	return Vector2(
+		clampf(snappedf(float(get_value("ui", "chat_width", CHAT_WIDTH_DEFAULT)), CHAT_WIDTH_STEP), CHAT_WIDTH_MIN, CHAT_WIDTH_MAX),
+		clampf(snappedf(float(get_value("ui", "chat_height", CHAT_HEIGHT_DEFAULT)), CHAT_HEIGHT_STEP), CHAT_HEIGHT_MIN, CHAT_HEIGHT_MAX))
+
+
+func set_chat_size(size: Vector2) -> void:
+	var next := Vector2(
+		clampf(snappedf(size.x, CHAT_WIDTH_STEP), CHAT_WIDTH_MIN, CHAT_WIDTH_MAX),
+		clampf(snappedf(size.y, CHAT_HEIGHT_STEP), CHAT_HEIGHT_MIN, CHAT_HEIGHT_MAX))
+	if next.is_equal_approx(chat_size()):
+		return
+	set_value("ui", "chat_width", next.x)
+	set_value("ui", "chat_height", next.y)
+	chat_size_changed.emit(next)
+
+
+func names_hover_only() -> bool:
+	return bool(get_value("ui", "names_hover_only", false))
+
+
+func names_fade_seconds() -> float:
+	return clampf(snappedf(float(get_value("ui", "names_fade_seconds", NAMES_FADE_DEFAULT)), NAMES_FADE_STEP), NAMES_FADE_MIN, NAMES_FADE_MAX)
+
+
+func set_names_hover_only(enabled: bool) -> void:
+	if enabled == names_hover_only():
+		return
+	set_value("ui", "names_hover_only", enabled)
+	name_display_changed.emit(enabled, names_fade_seconds())
+
+
+func set_names_fade_seconds(seconds: float) -> void:
+	var value := clampf(snappedf(seconds, NAMES_FADE_STEP), NAMES_FADE_MIN, NAMES_FADE_MAX)
+	if is_equal_approx(value, names_fade_seconds()):
+		return
+	set_value("ui", "names_fade_seconds", value)
+	name_display_changed.emit(names_hover_only(), value)
+
+
+func camera_view() -> Vector3:
+	return Vector3(
+		clampf(snappedf(float(get_value("camera", "distance", CAMERA_DISTANCE_DEFAULT)), CAMERA_DISTANCE_STEP), CAMERA_DISTANCE_MIN, CAMERA_DISTANCE_MAX),
+		clampf(snappedf(float(get_value("camera", "pitch", CAMERA_PITCH_DEFAULT)), CAMERA_PITCH_STEP), CAMERA_PITCH_MIN, CAMERA_PITCH_MAX),
+		fposmod(float(get_value("camera", "yaw", CAMERA_YAW_DEFAULT)), 360.0))
+
+
+func set_camera_view(distance: float, pitch: float, yaw: float) -> void:
+	var next := Vector3(
+		clampf(snappedf(distance, CAMERA_DISTANCE_STEP), CAMERA_DISTANCE_MIN, CAMERA_DISTANCE_MAX),
+		clampf(snappedf(pitch, CAMERA_PITCH_STEP), CAMERA_PITCH_MIN, CAMERA_PITCH_MAX),
+		fposmod(yaw, 360.0))
+	var current := camera_view()
+	if next.is_equal_approx(current):
+		return
+	set_value("camera", "distance", next.x)
+	set_value("camera", "pitch", next.y)
+	set_value("camera", "yaw", next.z)
+	camera_view_changed.emit(next.x, next.y, next.z)
 
 
 ## The stored UI preset, or RATE_PRESET_NONE when the loaded server rule

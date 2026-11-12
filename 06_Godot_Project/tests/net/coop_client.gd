@@ -102,6 +102,7 @@ func _run() -> void:
 	_check("private state: starter potions and gear", me.inventory.count(501) == 3 and int(me.equipment.get("weapon", 0)) == 1201,
 		"potions=%d eq=%s" % [me.inventory.count(501), me.equipment])
 	_check("host greeting arrives as chat", await _wait(func(): return not chats.is_empty(), 5000), str(chats))
+	_check("host bow projectile event reaches the client", int(seen_events.get("projectile", 0)) > 0, str(seen_events))
 
 	# Movement is decided by the host and comes back as unit state.
 	var start := me.walker.cell

@@ -64,8 +64,12 @@ Implementation: `scripts/gameplay/items/inventory.gd`, `field_simulation.gd`, `d
 | Armor | Equipment DEF is summed into hard DEF (percentage reduction) | High |
 | Ranged/music weapon range | Bow 9 cells; instrument and whip 2 cells; normal attacks use the equipped weapon's `range` | Project Twilight item addition |
 | Bow ammunition | Normal bow attacks and bow skills consume one Arrow; without arrows the attack fails without spending SP | Project Twilight |
-| Ammo weight and stock | Arrows weigh 1 and stack; a Quiver weighs 100, costs 250 Zeny, and unpacks into 100 Arrows if they fit within the carry limit | Project Twilight |
+| Bow projectiles | Every bow attack and bow skill launches a visible arrow; the projectile takes the consumed arrow's element and one staggered arrow is shown per hit | Project Twilight |
+| First-job starter kits | A Novice who takes a first job receives and auto-equips a level-1 Starter weapon (9001–9006): Starter Katana (Swordman), Starter Rod (Mage), Starter Short Bow (Archer), Starter Club (Acolyte), Starter Axe (Merchant) or Starter Main Gauche (Thief); the Job Guide confirmation names the weapon first and the Archer also receives 100 Arrows and a Quiver | Project Twilight |
+| Ammo weight and stock | Arrows weigh 1 and stack; a Quiver weighs 100, costs 250 Zeny, and unpacks into 100 normal Arrows if they fit within the carry limit | Project Twilight |
+| Elemental ammo | Fire Arrow (5 Zeny) and Silver Arrow (8 Zeny) also weigh 1 and stack; Fire deals fire damage and Silver deals holy damage | Project Twilight |
 | Weapon equip gate | The class `btba` table must contain the weapon type: bow for Archer/Hunter/Sniper/Ranger, instrument for Bard/Clown/Minstrel, whip for Dancer/Gypsy/Wanderer | Project Twilight |
+| Weapon layers | A class draws its own weapon layer, then its parent jobs; missing client book/instrument/whip layers use the owning class or the other sex instead of disappearing. Weapon ACTs use attack group 4 and skill group 10 instead of the body's 5/12; idle and walk reuse weapon attack frame 0 so the item stays visible. `tests/capture_weapons.gd` captures every job/weapon tier and an Archer volley. | Project Twilight |
 | Novice BTBA | Fist 0.5 s, dagger 0.65 s | Medium |
 | NPC prices | Buy at the item price; sell at floor(price / 2) | High (without Discount/Overcharge) |
 | Interaction range | Talk within 2 cells; trades rejected beyond 6 cells | Medium |
@@ -121,7 +125,7 @@ Implementation: `scripts/gameplay/combat/element_rules_prerenewal.gd`, cast hand
 |---|---|---|
 | Element table | 10 attack elements × 10 defence elements × defence levels 1–4 (iRO Wiki classic / rAthena pre-re attr_fix) | Medium, cross-check pending |
 | Negative modifiers | The original heals the target; this build clamps the damage to 0 | Simplification |
-| Physical attacks | Weapon element (neutral for now) vs. monster element; Magnum Break is fire | High |
+| Physical attacks | Weapon element vs. monster element; bow shots use the consumed arrow's element unless a weapon enchantment overrides it; Magnum Break is fire | High |
 | MATK | min INT + ⌊INT/7⌋², max INT + ⌊INT/5⌋² | High |
 | Magic damage | rand(MATK) × skill% × (100 − hard MDEF)% − soft MDEF (INT + VIT/2), at least 1, then × element; never misses | Medium-high |
 | Cast time | base × (1 − DEX/150); instant at 150 DEX | High |
@@ -133,7 +137,7 @@ Implementation: `scripts/gameplay/combat/element_rules_prerenewal.gd`, cast hand
 
 ## Statuses and advanced jobs
 
-Class details and skill lists are in `docs/design/CLASS_DARK_KNIGHT_SHAMAN.md`; exact per-skill numbers live in `data/prerenewal/skills.json`. Implementation: `StatusRules`, `FieldSimulation` (class skills section). Tests: `test_dark_knight.gd`, `test_shaman.gd`, `test_third_jobs.gd` for the canonical and custom transcendent/third-job paths, `test_rank_skills.gd` for the second-job/transcendent trees, `test_first_job_skills.gd` for the Archer/Acolyte/Merchant/Thief trees, `test_weapon_types.gd` for bows, instruments and whips, and `test_ammo.gd` for arrows, quivers and bow ammunition.
+Class details and skill lists are in `docs/design/CLASS_DARK_KNIGHT_SHAMAN.md`; exact per-skill numbers live in `data/prerenewal/skills.json`. Implementation: `StatusRules`, `FieldSimulation` (class skills section). Tests: `test_dark_knight.gd`, `test_shaman.gd`, `test_third_jobs.gd` for the canonical and custom transcendent/third-job paths, `test_rank_skills.gd` for the second-job/transcendent trees, `test_first_job_skills.gd` for the Archer/Acolyte/Merchant/Thief trees and first-job starter kits, `test_weapon_types.gd` for bows, instruments, whips and weapon layers, and `test_ammo.gd` for arrows, quivers, elemental arrows, bow ammunition and visible projectiles.
 
 | Rule | Value | Confidence |
 |---|---|---|

@@ -51,11 +51,12 @@ With the real game scenes (two windows, not headless; screenshots go to `user://
 
 Result on 2026-11-12: host 10 checks and client 10 checks, 0 failed: the host scene presents and walks a map ticked by NetSession; the guest joins through the character select code path, plays on a replica, sees the host, damages a monster, chats, follows a host-ordered transfer to Prontera, opens a remote NPC dialog and keeps its own save; the host follows by a real map travel and both meet in Prontera.
 
-Transport only (headless) — result on 2026-11-12: `CLIENT RESULT: 16 passed, 0 failed`, with no errors on either side. The checks cover:
+Transport only (headless) — result on 2026-11-12: `CLIENT RESULT: 17 passed, 0 failed`, with no errors on either side. The checks cover:
 
 - a malformed code is refused locally; join and HMAC handshake; snapshot (own unit, the host player, monsters);
 - private state (starter potions and gear);
 - chat both ways; an `@command` answered privately;
+- the host's bow `projectile` event reaching the client (not just its damage);
 - movement decided by the host; combat damage events;
 - map transfer to Prontera with script NPCs in the new snapshot;
 - a remote NPC dialog round trip (Stylist menu → answer → next page → cancel).

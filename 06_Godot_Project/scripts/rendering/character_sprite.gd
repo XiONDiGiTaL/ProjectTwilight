@@ -157,6 +157,22 @@ func _action_index() -> int:
 	return clampi(group * 8 + direction, 0, body_act.actions.size() - 1)
 
 
+## Weapon ACTs use different action groups from the body.  Their attack and skill
+## animations live at groups 4 and 10 (the body uses 5 and 12); the first weapon
+## frame is reused while idle or walking so the equipped item stays visible.
+func _weapon_action_index(body_act_idx: int) -> int:
+	var group := body_act_idx / 8
+	var dir := body_act_idx % 8
+	match group:
+		5:
+			return 4 * 8 + dir
+		12:
+			return 10 * 8 + dir
+		0, 1, 2, 3:
+			return 4 * 8 + dir
+	return -1
+
+
 func _refresh() -> void:
 	if body_act == null or body_spr == null:
 		texture = null
@@ -194,11 +210,15 @@ func _compose(act_idx: int, f: int) -> Dictionary:
 			if not body_frame.anchors.is_empty() and not head_frame.anchors.is_empty():
 				shift = body_frame.anchors[0] - head_frame.anchors[0]
 			_collect(parts, head_spr, head_frame, shift, hair_palette)
-	if weapon_spr and weapon_act and act_idx < weapon_act.actions.size():
-		var wframes: Array = weapon_act.actions[act_idx].frames
+	var w_act_idx := _weapon_action_index(act_idx)
+	if weapon_spr and weapon_act and w_act_idx >= 0 and w_act_idx < weapon_act.actions.size():
+		var wframes: Array = weapon_act.actions[w_act_idx].frames
 		if not wframes.is_empty():
+			var wframe := f
+			if act_idx / 8 <= 3:
+				wframe = 0
 			var wparts: Array = []
-			_collect(wparts, weapon_spr, wframes[f % wframes.size()], Vector2i.ZERO, PackedByteArray())
+			_collect(wparts, weapon_spr, wframes[wframe % wframes.size()], Vector2i.ZERO, PackedByteArray())
 			# Weapon goes behind the body when the character faces away (N, NE, NW).
 			var dir := act_idx % 8
 			if dir >= 3 and dir <= 5:

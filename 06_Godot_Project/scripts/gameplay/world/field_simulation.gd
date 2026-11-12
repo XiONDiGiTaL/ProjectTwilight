@@ -22,6 +22,7 @@ extends RefCounted
 ##   {type: "cast_end", id, skill, ok: bool}   (ok = false: interrupted)
 ##   {type: "magic", id, skill, element, target, hits, cell, splash, fx}   (spell released)
 ##   {type: "skill_fx", id, skill, fx, element, cell, from_cell, area, hits}  (physical skill visual)
+##   {type: "projectile", id, target, element, hits}  (visible arrow volley)
 ##   {type: "status", id, status, on: bool}   {type: "counter", id, target}
 ##   {type: "sp_heal", id, amount}   {type: "resurrect", id, by}
 ##   {type: "despawn", id}   (a unit left this map)
@@ -37,6 +38,17 @@ const SHOP_DB := "res://data/prerenewal/shops.json"
 const EQUIP_SLOTS := ["head_top", "head_mid", "head_low", "weapon", "shield", "body", "garment", "shoes", "acc1", "acc2"]
 ## Novice base weapon delay (BTBA, seconds) per weapon type. Medium confidence.
 const NOVICE_BTBA := {"fist": 0.5, "dagger": 0.65}
+## Level-1 class weapons handed out by the guild on a first job change. These
+## are separate items from the level-gated shop weapons so every kit can be
+## equipped by a freshly changed level-1 character.
+const FIRST_JOB_WEAPON := {
+	"swordman": 9001,   # Starter Katana
+	"mage": 9002,       # Starter Rod
+	"archer": 9003,     # Starter Short Bow
+	"acolyte": 9004,    # Starter Club
+	"merchant": 9005,   # Starter Axe
+	"thief": 9006,      # Starter Main Gauche
+}
 const SKILL_DB := "res://data/prerenewal/skills.json"
 const MAP_DB := "res://data/prerenewal/maps.json"
 const JOB_DB := "res://data/prerenewal/jobs.json"
@@ -968,10 +980,33 @@ func command_job_change(unit_id: int, job: String) -> bool:
 	if u.equipment.has("weapon") and not (j.btba as Dictionary).has(String(item_db.get(str(u.equipment.weapon), {}).get("weapon_type", ""))):
 		command_unequip(u.id, "weapon")
 	_recalc_player(u)
+	_grant_first_job_kit(u, job)
 	u.hp = clampi(roundi(u.max_hp * hp_frac), 1, u.max_hp)
 	events.append({"type": "job_change", "id": u.id, "job": job})
 	events.append({"type": "skills", "id": u.id})
 	return true
+
+
+## Display name of the guild-issued first-job weapon, or "" for other jobs.
+func first_job_weapon_name(job: String) -> String:
+	var weapon_id := int(FIRST_JOB_WEAPON.get(job, 0))
+	return String(item_db.get(str(weapon_id), {}).get("name", "")) if weapon_id != 0 else ""
+
+
+## First-job equipment supplied by the guild so the new class can fight at once.
+func _grant_first_job_kit(u: SimUnit, job: String) -> void:
+	var weapon_id := int(FIRST_JOB_WEAPON.get(job, 0))
+	if weapon_id == 0:
+		return
+	var max_w := u.max_weight() - u.equipment_weight(item_db)
+	u.inventory.add(weapon_id, 1, item_db, max_w)
+	if job == "archer":
+		u.inventory.add(1750, 100, item_db, max_w)   # Arrows
+		u.inventory.add(1751, 1, item_db, max_w)     # Quiver
+	for i in range(u.inventory.entries.size()):
+		if int(u.inventory.entries[i].id) == weapon_id:
+			command_equip(u.id, i)
+			return
 
 
 ## "" if `u` may change to `job` now, else the reason.
@@ -1246,9 +1281,11 @@ func _pay(u: SimUnit, s: Dictionary, level: int) -> bool:
 
 ## Physical skill on `t`: hits rolled one by one, optional splash / pierce,
 ## element override, life steal and status chance.
-func _physical_strike(u: SimUnit, t: SimUnit, s: Dictionary, code: String, level: int) -> void:
+func _physical_strike(u: SimUnit, t: SimUnit, s: Dictionary, code: String, level: int, element_override := "") -> void:
 	var prof := _skill_profile(u, s, level)
-	var element := String(s.get("element", u.weapon_element()))
+	var element := String(s.get("element", ""))
+	if element == "":
+		element = element_override if element_override != "" else u.weapon_element()
 	var victims: Array[SimUnit] = [t]
 	var splash := int(per_level(s, "splash", level, 0.0))
 	if splash > 0:
@@ -1948,23 +1985,39 @@ func spawn_ground_item(item_id: int, amount: int, cell: Vector2i) -> int:
 	return gid
 
 
-## Bow attacks consume one Arrow (item 1750) from the inventory.
+## Bow attacks consume the first ammo stack in the inventory. Enchantments keep
+## priority; otherwise the consumed arrow supplies the attack element.
 func _needs_ammo(u: SimUnit, sk: Dictionary = {}) -> bool:
 	if not u.is_player() or u.weapon_type != "bow":
 		return false
 	return sk.is_empty() or (sk.get("weapon", []) as Array).has("bow")
 
 
+func _is_ammo(item_id: int) -> bool:
+	return String(item_db.get(str(item_id), {}).get("type", "")) == "ammo"
+
+
 func _has_ammo(u: SimUnit) -> bool:
-	return u.inventory.count(1750) > 0
-
-
-func _consume_ammo(u: SimUnit) -> bool:
-	for i in range(u.inventory.entries.size()):
-		if int(u.inventory.entries[i].id) == 1750:
-			u.inventory.remove_at(i, 1)
+	for e in u.inventory.entries:
+		if _is_ammo(int(e.id)):
 			return true
 	return false
+
+
+func _consume_ammo(u: SimUnit) -> Dictionary:
+	for i in range(u.inventory.entries.size()):
+		var item_id := int(u.inventory.entries[i].id)
+		if _is_ammo(item_id):
+			u.inventory.remove_at(i, 1)
+			return item_db.get(str(item_id), {})
+	return {}
+
+
+func _attack_element(u: SimUnit, ammo: Dictionary) -> String:
+	var enchanted := u.weapon_element()
+	if enchanted != "neutral":
+		return enchanted
+	return String(ammo.get("element", "neutral"))
 
 
 func _attack(u: SimUnit, t: SimUnit) -> void:
@@ -1980,12 +2033,17 @@ func _attack(u: SimUnit, t: SimUnit) -> void:
 				_skill_fail(u, "You have no arrows.")
 				return
 			if _pay(u, sk, level):
+				var shot_ammo: Dictionary = {}
 				if _needs_ammo(u, sk):
-					_consume_ammo(u)
+					shot_ammo = _consume_ammo(u)
+				var shot_element := _attack_element(u, shot_ammo) if not shot_ammo.is_empty() else ""
+				if not shot_ammo.is_empty():
+					events.append({"type": "projectile", "id": u.id, "target": t.id, "element": shot_element,
+						"hits": maxi(1, int(per_level(sk, "hits", level, 1.0)))})
 				events.append({"type": "skill", "id": u.id, "skill": code, "text": String(sk.name)})
 				events.append({"type": "skill_hit", "id": u.id, "skill": code, "cell": t.walker.cell})
 				events.append({"type": "attack", "id": u.id, "target": t.id})
-				_physical_strike(u, t, sk, code, level)
+				_physical_strike(u, t, sk, code, level, shot_element)
 				return
 		elif level > 0 and _weapon_unmet(u, sk) != "":
 			_skill_fail(u, _weapon_unmet(u, sk))
@@ -1998,11 +2056,17 @@ func _attack(u: SimUnit, t: SimUnit) -> void:
 		cp.force_crit = true
 		_apply_hit(t, u, CombatRulesPreRenewal.resolve_attack(cp, u.combat_profile(), rng), t.weapon_element())
 		return
-	if _needs_ammo(u) and not _consume_ammo(u):
-		_skill_fail(u, "You have no arrows.")
-		return
+	var ammo: Dictionary = {}
+	if _needs_ammo(u):
+		ammo = _consume_ammo(u)
+		if ammo.is_empty():
+			_skill_fail(u, "You have no arrows.")
+			return
+	var element := _attack_element(u, ammo) if u.is_player() else "neutral"
+	if not ammo.is_empty():
+		events.append({"type": "projectile", "id": u.id, "target": t.id, "element": element, "hits": 1})
 	events.append({"type": "attack", "id": u.id, "target": t.id})
-	_apply_hit(u, t, CombatRulesPreRenewal.resolve_attack(prof, t.combat_profile(), rng), u.weapon_element() if u.is_player() else "neutral")
+	_apply_hit(u, t, CombatRulesPreRenewal.resolve_attack(prof, t.combat_profile(), rng), element)
 
 
 func _apply_hit(u: SimUnit, t: SimUnit, r: Dictionary, element := "neutral") -> void:

@@ -13,6 +13,9 @@ extends RefCounted
 
 const BODY_DIR := "data/sprite/인간족/몸통/"
 const PAL_DIR := "data/palette/몸/"
+## Client jobs that ship no weapon layer for a whole weapon type fall back to
+## the class that actually owns the books, instruments or whips.
+const WEAPON_DONOR := {"책": "priest", "악기": "bard", "채찍": "dancer"}
 
 static var _sheet_cache: Dictionary = {}   # file -> [SprFile, ActFile]
 static var _jobs: Dictionary = {}
@@ -48,6 +51,36 @@ static func body_for(res: Node, job_db: Dictionary, job: String, client_sprite: 
 	var cact := ActFile.decode(res.read(cbase + ".act"))
 	return {"spr": cspr, "act": cact, "sprite": client_sprite,
 		"source": "client" if pack.is_empty() else "fallback", "has_head": true}
+
+
+## Weapon-layer paths for a class, falling back through its parent jobs when an
+## advanced body has no dedicated weapon sprite. `res.exists` decides which
+## candidate actually exists, so every class can keep its weapon animation.
+static func weapon_paths(job_db: Dictionary, job: String, male: bool, weapon_suffix: String) -> Array:
+	var out: Array = []
+	var seen := {}
+	var current := job
+	while current != "" and not seen.has(current):
+		seen[current] = true
+		_append_weapon_base(out, job_db, current, male, weapon_suffix)
+		current = String(job_db.get(current, {}).get("parent", ""))
+	# Some client job/sex combinations have no weapon layer at all.  A donor of
+	# the same weapon keeps it visible instead of silently dropping the layer.
+	var donor := String(WEAPON_DONOR.get(weapon_suffix, ""))
+	if donor != "":
+		_append_weapon_base(out, job_db, donor, male, weapon_suffix)
+	_append_weapon_base(out, job_db, job, not male, weapon_suffix)
+	return out
+
+
+static func _append_weapon_base(out: Array, job_db: Dictionary, job: String, male: bool, weapon_suffix: String) -> void:
+	var sprite := String(job_db.get(job, {}).get("sprite", ""))
+	if sprite == "":
+		return
+	var sex := "남" if male else "여"
+	var base := "data/sprite/인간족/%s/%s_%s_%s" % [sprite, sprite, sex, weapon_suffix]
+	if not out.has(base):
+		out.append(base)
 
 
 ## Weapon layer for pack bodies (e.g. 운영자_남_검); "" when none.
