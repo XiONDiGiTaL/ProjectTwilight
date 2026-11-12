@@ -126,6 +126,7 @@ func _open_settings() -> void:
 
 func _reset_ui_layout() -> void:
 	_settings_window.center_position()
+	_status.text = "UI layout reset."
 
 
 func _on_mount() -> void:
