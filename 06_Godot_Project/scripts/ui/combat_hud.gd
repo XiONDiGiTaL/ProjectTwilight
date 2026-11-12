@@ -68,33 +68,34 @@ func _ready() -> void:
 	_hover_tag.add_child(_hover_label)
 	_root.add_child(_hover_tag)
 	_hover_tag.visible = false
+	# Place defaults before entering the tree: GlassWindow restores a saved
+	# position in _ready(), and assigning defaults afterwards would erase it.
 	inventory = InventoryWindow.new()
-	_root.add_child(inventory)
-	inventory.position = Vector2(860, 120)
+	_add_window(inventory, Vector2(860, 120))
 	status_window = StatusWindow.new()
-	_root.add_child(status_window)
-	status_window.position = Vector2(400, 160)
+	_add_window(status_window, Vector2(400, 160))
 	equipment_window = EquipmentWindow.new()
-	_root.add_child(equipment_window)
-	equipment_window.position = Vector2(500, 120)
+	_add_window(equipment_window, Vector2(500, 120))
 	shop = ShopWindow.new()
-	_root.add_child(shop)
-	shop.position = Vector2(380, 140)
+	_add_window(shop, Vector2(380, 140))
 	storage = StorageWindow.new()
-	_root.add_child(storage)
-	storage.position = Vector2(420, 130)
+	_add_window(storage, Vector2(420, 130))
 	guild_window = GuildWindow.new()
-	_root.add_child(guild_window)
-	guild_window.position = Vector2(620, 130)
+	_add_window(guild_window, Vector2(620, 130))
 	skill_window = SkillWindow.new()
-	_root.add_child(skill_window)
-	skill_window.position = Vector2(120, 200)
+	_add_window(skill_window, Vector2(120, 200))
 	hotkeys = HotkeyBar.new()
 	_root.add_child(hotkeys)
 	dialog = NpcDialog.new()
 	_root.add_child(dialog)
 	_build_minimap()
 	_build_chat()
+
+
+## Adds a draggable window at its default position. Saved positions win.
+func _add_window(window: GlassWindow, at: Vector2) -> void:
+	window.position = at
+	_root.add_child(window)
 
 
 # --- System feed and hover tag ---------------------------------------------------

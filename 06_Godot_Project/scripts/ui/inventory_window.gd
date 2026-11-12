@@ -38,7 +38,7 @@ func _ready() -> void:
 		b.text = TABS[i][0]
 		b.toggle_mode = true
 		b.focus_mode = Control.FOCUS_NONE
-		b.custom_minimum_size = Vector2(80, 24)
+		b.custom_minimum_size = Vector2(80, 28)
 		b.add_theme_font_override("font", UiTheme.font(600, 3))
 		b.add_theme_font_size_override("font_size", 11)
 		b.add_theme_color_override("font_color", UiTheme.TEXT_DIM)
@@ -83,6 +83,10 @@ func _tab_style(active: bool, hover := false) -> StyleBoxFlat:
 	sb.border_color = Color(UiTheme.ACCENT, 0.7 if active else 0.25)
 	sb.border_width_bottom = 2 if active else 1
 	sb.set_corner_radius_all(2)
+	sb.content_margin_left = 14
+	sb.content_margin_right = 14
+	sb.content_margin_top = 4
+	sb.content_margin_bottom = 4
 	return sb
 
 

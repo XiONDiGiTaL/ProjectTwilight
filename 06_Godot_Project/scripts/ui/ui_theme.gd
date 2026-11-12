@@ -69,6 +69,9 @@ static func label(text: String, size: int, color := TEXT, weight := 400, spacing
 	var l := Label.new()
 	l.text = text
 	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# Rows mix labels, chips and buttons; centring by default keeps every
+	# baseline together instead of leaving short labels pinned to the top.
+	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	var s := LabelSettings.new()
 	s.font = font(weight, spacing)
 	s.font_size = size
@@ -90,6 +93,9 @@ static func label(text: String, size: int, color := TEXT, weight := 400, spacing
 static func style_button(b: BaseButton, primary := false, danger := false, font_size := 13) -> void:
 	var accent := HP_LOW if danger else ACCENT
 	b.focus_mode = Control.FOCUS_NONE
+	if b.custom_minimum_size.y < 28.0:
+		b.custom_minimum_size.y = 28.0
+	b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	b.add_theme_font_override("font", font(600, 3))
 	b.add_theme_font_size_override("font_size", font_size)
 	b.add_theme_color_override("font_color", TEXT if primary else TEXT_DIM)
@@ -102,10 +108,10 @@ static func style_button(b: BaseButton, primary := false, danger := false, font_
 		sb.border_color = Color(accent, border_a)
 		sb.set_border_width_all(1)
 		sb.set_corner_radius_all(2)
-		sb.content_margin_left = 16
-		sb.content_margin_right = 16
-		sb.content_margin_top = 6
-		sb.content_margin_bottom = 6
+		sb.content_margin_left = 14
+		sb.content_margin_right = 14
+		sb.content_margin_top = 5
+		sb.content_margin_bottom = 5
 		return sb
 	b.add_theme_stylebox_override("normal", make.call(0.2 if primary else 0.05, 0.75 if primary else 0.3))
 	b.add_theme_stylebox_override("hover", make.call(0.35 if primary else 0.14, 0.95))
@@ -118,7 +124,7 @@ static func style_button(b: BaseButton, primary := false, danger := false, font_
 ## Glass-styled single-line text input.
 static func style_line_edit(e: LineEdit) -> void:
 	e.add_theme_font_override("font", font(600, 1))
-	e.add_theme_font_size_override("font_size", 16)
+	e.add_theme_font_size_override("font_size", 14)
 	e.add_theme_color_override("font_color", TEXT)
 	e.add_theme_color_override("font_placeholder_color", Color(TEXT_DIM, 0.5))
 	e.add_theme_color_override("caret_color", ACCENT)
@@ -132,8 +138,8 @@ static func style_line_edit(e: LineEdit) -> void:
 		sb.border_width_top = 1
 		sb.content_margin_left = 10
 		sb.content_margin_right = 10
-		sb.content_margin_top = 6
-		sb.content_margin_bottom = 6
+		sb.content_margin_top = 5
+		sb.content_margin_bottom = 5
 		e.add_theme_stylebox_override(state, sb)
 
 

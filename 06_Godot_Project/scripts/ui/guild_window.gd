@@ -52,8 +52,9 @@ func _init() -> void:
 
 func _ready() -> void:
 	super._ready()
-	_title = _title_bar.get_child(0) as Label
+	_title = title_label
 	_status = UiTheme.label("", 10, Color(UiTheme.ACCENT, 0.85), 600, 2)
+	_status.custom_minimum_size = Vector2(500, 18)
 	body.add_child(_status)
 	_motd_label = UiTheme.label("", 11, UiTheme.TEXT_DIM, 400, 1)
 	_motd_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -68,12 +69,12 @@ func _ready() -> void:
 	_motd_input = LineEdit.new()
 	_motd_input.placeholder_text = "Message of the day"
 	_motd_input.max_length = GuildStore.MOTD_MAX
-	_motd_input.custom_minimum_size = Vector2(300, 26)
+	_motd_input.custom_minimum_size = Vector2(300, 28)
 	_motd_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_motd_input.text_submitted.connect(func(_t): _send_motd())
 	_motd_row.add_child(_motd_input)
 	var motd_set := _button("SET", true)
-	motd_set.custom_minimum_size = Vector2(64, 24)
+	motd_set.custom_minimum_size = Vector2(64, 28)
 	motd_set.pressed.connect(_send_motd)
 	_motd_row.add_child(motd_set)
 	_roster_scroll = ScrollContainer.new()
@@ -81,7 +82,7 @@ func _ready() -> void:
 	_roster_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	body.add_child(_roster_scroll)
 	_roster = VBoxContainer.new()
-	_roster.add_theme_constant_override("separation", 3)
+	_roster.add_theme_constant_override("separation", 4)
 	_roster.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_roster_scroll.add_child(_roster)
 	_empty = UiTheme.label("", 12, UiTheme.TEXT_DIM, 400, 2)
@@ -94,7 +95,7 @@ func _ready() -> void:
 	body.add_child(_invite_row)
 	_invite_input = LineEdit.new()
 	_invite_input.placeholder_text = "Invite by name"
-	_invite_input.custom_minimum_size = Vector2(220, 26)
+	_invite_input.custom_minimum_size = Vector2(220, 28)
 	_invite_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_invite_input.text_submitted.connect(func(_t): _send_invite())
 	_invite_row.add_child(_invite_input)
@@ -164,19 +165,35 @@ func _button(text: String, primary: bool, tint := UiTheme.ACCENT) -> Button:
 	var b := Button.new()
 	b.text = text
 	b.focus_mode = Control.FOCUS_NONE
-	b.custom_minimum_size = Vector2(92, 24)
+	b.custom_minimum_size = Vector2(92, 28)
+	b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	b.add_theme_font_override("font", UiTheme.font(600, 3))
-	b.add_theme_font_size_override("font_size", 10)
+	b.add_theme_font_size_override("font_size", 11)
 	b.add_theme_color_override("font_color", UiTheme.TEXT)
+	b.add_theme_color_override("font_hover_color", Color.WHITE)
+	b.add_theme_color_override("font_pressed_color", Color.WHITE)
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = Color(tint, 0.22 if primary else 0.08)
 	sb.border_color = Color(tint, 0.8 if primary else 0.45)
 	sb.set_border_width_all(1)
 	sb.set_corner_radius_all(2)
+	sb.content_margin_left = 9
+	sb.content_margin_right = 9
+	sb.content_margin_top = 5
+	sb.content_margin_bottom = 5
 	b.add_theme_stylebox_override("normal", sb)
 	var hover := sb.duplicate() as StyleBoxFlat
 	hover.bg_color = Color(tint, 0.4 if primary else 0.2)
 	b.add_theme_stylebox_override("hover", hover)
+	var pressed := sb.duplicate() as StyleBoxFlat
+	pressed.bg_color = Color(tint, 0.5 if primary else 0.28)
+	b.add_theme_stylebox_override("pressed", pressed)
+	b.add_theme_stylebox_override("hover_pressed", pressed)
+	var disabled := sb.duplicate() as StyleBoxFlat
+	disabled.bg_color = Color(tint, 0.03)
+	disabled.border_color = Color(tint, 0.16)
+	b.add_theme_stylebox_override("disabled", disabled)
+	b.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 	return b
 
 
@@ -232,7 +249,7 @@ func refresh() -> void:
 	_motd_label.visible = not _motd_row.visible
 	if _motd_row.visible and not _motd_input.has_focus():
 		_motd_input.text = motd
-	_status.text = "LEADER  %s      MEMBERS  %d      STORAGE  %d / %d      YOUR RANK  %s" % [
+	_status.text = "LEADER  %s      MEMBERS  %d      STORAGE  %d / %d      RANK  %s" % [
 		leader, members.size(), bag.entries.size() if bag else 0, SimUnit.STORAGE_SLOTS, mine.to_upper()]
 	_roster_scroll.visible = true
 	# Leader first, then officers, then members (roster order within a rank).
@@ -285,7 +302,7 @@ func offers_motd_edit() -> bool:
 
 func _member_row(gid: String, member: String) -> HBoxContainer:
 	var row := HBoxContainer.new()
-	row.custom_minimum_size = Vector2(480, 28)
+	row.custom_minimum_size = Vector2(480, 30)
 	row.add_theme_constant_override("separation", 6)
 	var name := UiTheme.label(member + ("   (YOU)" if member == _player.name else ""), 12, UiTheme.TEXT, 600, 1)
 	name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -315,7 +332,7 @@ func _action_button(action: String, member: String) -> Button:
 			b = _button("KICK", false)
 			b.tooltip_text = "Remove %s from the guild." % member
 			b.pressed.connect(func(): kick_requested.emit(member))
-	b.custom_minimum_size = Vector2(50 if action == "KICK" else 74, 22)
+	b.custom_minimum_size = Vector2(50 if action == "KICK" else 74, 26)
 	return b
 
 
@@ -332,7 +349,8 @@ func _rank_chip(rank: String) -> Label:
 		color = UiTheme.ACCENT
 	var chip := UiTheme.label(rank.to_upper(), 10, color, 600, 2)
 	chip.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	chip.custom_minimum_size = Vector2(66, 18)
+	chip.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	chip.custom_minimum_size = Vector2(66, 20)
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = Color(color, 0.12)
 	sb.border_color = Color(color, 0.55)
@@ -344,16 +362,16 @@ func _rank_chip(rank: String) -> Label:
 
 func _invite_row_for(inv: Dictionary) -> HBoxContainer:
 	var row := HBoxContainer.new()
-	row.custom_minimum_size = Vector2(360, 28)
+	row.custom_minimum_size = Vector2(360, 30)
 	var name := UiTheme.label(String(inv.get("name", "Guild")), 12, UiTheme.TEXT, 600, 1)
 	name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(name)
 	var accept := _button("ACCEPT", true)
-	accept.custom_minimum_size = Vector2(64, 22)
+	accept.custom_minimum_size = Vector2(64, 26)
 	accept.pressed.connect(func(): accept_requested.emit(String(inv.id)))
 	row.add_child(accept)
 	var decline := _button("DECLINE", false)
-	decline.custom_minimum_size = Vector2(64, 22)
+	decline.custom_minimum_size = Vector2(64, 26)
 	decline.pressed.connect(func(): decline_requested.emit(String(inv.id)))
 	row.add_child(decline)
 	return row

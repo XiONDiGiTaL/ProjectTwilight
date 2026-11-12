@@ -49,7 +49,8 @@ func _ready() -> void:
 		var b := Button.new()
 		b.text = "+"
 		b.focus_mode = Control.FOCUS_NONE
-		b.custom_minimum_size = Vector2(24, 22)
+		b.custom_minimum_size = Vector2(26, 24)
+		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		b.add_theme_font_override("font", UiTheme.font(600))
 		b.add_theme_color_override("font_color", UiTheme.TEXT)
 		b.add_theme_color_override("font_disabled_color", Color(UiTheme.TEXT_DIM, 0.35))
@@ -58,6 +59,10 @@ func _ready() -> void:
 		sb.border_color = Color(UiTheme.ACCENT, 0.55)
 		sb.set_border_width_all(1)
 		sb.set_corner_radius_all(2)
+		sb.content_margin_left = 4
+		sb.content_margin_right = 4
+		sb.content_margin_top = 3
+		sb.content_margin_bottom = 3
 		b.add_theme_stylebox_override("normal", sb)
 		var sbh := sb.duplicate() as StyleBoxFlat
 		sbh.bg_color = Color(UiTheme.ACCENT, 0.3)

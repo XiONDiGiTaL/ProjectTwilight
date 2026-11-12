@@ -90,6 +90,7 @@ Project Twilight's HUD uses its own **Twilight Glass** design language, a sleek 
 - frosted panels with chamfered corners and hairline borders
 - slanted glowing resource bars
 - condensed, letter-spaced typography
+- every gameplay window drags from its title-bar grip and remembers its position
 
 Classic information stays where veterans expect it: the status window is top-left. It fades when you aren't using it, wakes up when your HP or SP changes, and can be collapsed.
 

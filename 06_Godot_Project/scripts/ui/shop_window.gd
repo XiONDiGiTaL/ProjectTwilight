@@ -77,6 +77,10 @@ func _ready() -> void:
 	sb.border_color = Color(UiTheme.ACCENT, 0.8)
 	sb.set_border_width_all(1)
 	sb.set_corner_radius_all(2)
+	sb.content_margin_left = 12
+	sb.content_margin_right = 12
+	sb.content_margin_top = 5
+	sb.content_margin_bottom = 5
 	_confirm.add_theme_stylebox_override("normal", sb)
 	var sbh := sb.duplicate() as StyleBoxFlat
 	sbh.bg_color = Color(UiTheme.ACCENT, 0.4)
@@ -103,7 +107,7 @@ func _tab(text: String, sell: bool) -> Button:
 	b.text = text
 	b.toggle_mode = true
 	b.focus_mode = Control.FOCUS_NONE
-	b.custom_minimum_size = Vector2(90, 24)
+	b.custom_minimum_size = Vector2(90, 28)
 	b.add_theme_font_override("font", UiTheme.font(600, 3))
 	b.add_theme_font_size_override("font_size", 11)
 	b.add_theme_color_override("font_color", UiTheme.TEXT_DIM)
@@ -114,6 +118,11 @@ func _tab(text: String, sell: bool) -> Button:
 		sb.bg_color = Color(UiTheme.ACCENT, 0.16 if active else 0.04)
 		sb.border_color = Color(UiTheme.ACCENT, 0.7 if active else 0.25)
 		sb.border_width_bottom = 2 if active else 1
+		sb.set_corner_radius_all(2)
+		sb.content_margin_left = 14
+		sb.content_margin_right = 14
+		sb.content_margin_top = 4
+		sb.content_margin_bottom = 4
 		b.add_theme_stylebox_override(state, sb)
 	b.pressed.connect(func(): _set_mode(sell))
 	return b
@@ -122,7 +131,7 @@ func _tab(text: String, sell: bool) -> Button:
 ## Opens the shop for a unit with the NPC's catalog.
 func open(npc_name: String, greeting: String, catalog: Array, u: SimUnit, db: Dictionary) -> void:
 	title = "SHOP  ·  " + npc_name.to_upper()
-	(_title_bar.get_child(0) as Label).text = title
+	set_title(title)
 	_greeting.text = "“%s”" % greeting if greeting != "" else ""
 	_catalog = catalog
 	_unit = u

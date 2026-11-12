@@ -3,6 +3,7 @@
 ## [Unreleased] - 2026-11-12
 
 ### Added
+- **Refined window layout and repositioning:** Twilight Glass labels now centre vertically by default, buttons share a consistent 28 px rhythm and content padding, and window title bars have a drag grip that keeps tracking the pointer outside the bar. Saved window positions are restored before `CombatHud`'s defaults, so dragging a window to a new spot survives reopening and restarting.
 - **Guild message of the day and guild chat:**
   - The guild record keeps a one-line `motd` (max 200 characters). Leaders and officers edit it from the guild window; every member sees it there and in the feed when joining.
   - `/g <message>` (or `/guild <message>`) sends guild chat through the simulation. One event is emitted per online guild member, so non-members neither send nor receive it. Messages are ephemeral and local; the co-op transport will carry them later.
