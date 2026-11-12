@@ -55,3 +55,8 @@
 *.import.tmp
 /06_Godot_Project/twilight.local.cfg
 __pycache__/
+
+# Launcher build output
+/tools/launcher/src-tauri/target/
+/tools/launcher/src-tauri/gen/
+/tools/launcher/node_modules/

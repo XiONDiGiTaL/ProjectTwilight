@@ -1,0 +1,31 @@
+[package]
+name = "project-twilight-launcher"
+version = "0.1.0"
+description = "Launcher for Project Twilight"
+edition = "2021"
+publish = false
+
+[[bin]]
+name = "ProjectTwilight"
+path = "src/main.rs"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+rfd = { version = "0.15", default-features = false, features = ["tokio"] }
+
+[features]
+# Serve the embedded interface (production). Plain `cargo build --release` is enough; no Node tooling is needed.
+default = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]
+
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1
+strip = true
+panic = "abort"

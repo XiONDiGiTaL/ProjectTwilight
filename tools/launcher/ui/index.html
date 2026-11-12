@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Project Twilight</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<!-- Background: a blurred, darkened loop of the game (recorded by tests/capture_launcher_bg.gd). -->
+<video id="bg" class="bg-video" autoplay muted loop playsinline preload="auto" src="assets/background.webm" aria-hidden="true"></video>
+<div class="bg-tint" aria-hidden="true"></div>
+<div class="bg-grid" aria-hidden="true"></div>
+<div class="bg-vignette" aria-hidden="true"></div>
+
+<header class="topbar" data-tauri-drag-region>
+  <div class="brand" data-tauri-drag-region>
+    <span class="brand-mark" aria-hidden="true"></span>
+    <span class="brand-name" data-tauri-drag-region>PROJECT&nbsp;TWILIGHT</span>
+  </div>
+  <nav class="rail" aria-label="Setup status">
+    <button class="chip" id="chip-engine" data-open="godot"><span class="chip-n">1</span><span class="chip-k">ENGINE</span><span class="chip-v">…</span></button>
+    <button class="chip" id="chip-project" data-open="project"><span class="chip-n">2</span><span class="chip-k">GAME</span><span class="chip-v">…</span></button>
+    <button class="chip" id="chip-data" data-open="data"><span class="chip-n">3</span><span class="chip-k">DATA</span><span class="chip-v">…</span></button>
+    <button class="chip" id="chip-saves" data-target="saves"><span class="chip-n">4</span><span class="chip-k">SAVES</span><span class="chip-v">…</span></button>
+  </nav>
+  <div class="top-actions">
+    <button class="ghost" data-target="changelog">CHANGELOG</button>
+    <button class="ghost" data-target="github">GITHUB</button>
+    <button class="ghost" id="open-settings" title="Settings">SETTINGS</button>
+    <button class="winbtn" id="win-min" title="Minimize" aria-label="Minimize"><svg viewBox="0 0 12 12"><path d="M2 6.5h8" /></svg></button>
+    <button class="winbtn close" id="win-close" title="Close" aria-label="Close"><svg viewBox="0 0 12 12"><path d="M2.5 2.5l7 7M9.5 2.5l-7 7" /></svg></button>
+  </div>
+</header>
+
+<main class="stage">
+  <section class="hero">
+    <img class="logo" src="assets/logo.png" alt="Project: Twilight — Ragnarok Redefined" draggable="false">
+    <p class="tagline">Classic Ragnarok's soul, modern presentation, native PC.</p>
+
+    <div class="callout" id="callout" hidden>
+      <div class="callout-text"><b id="callout-title"></b><span id="callout-body"></span></div>
+      <div class="callout-actions">
+        <button class="pill small primary" id="callout-fix"></button>
+        <button class="pill small" id="callout-alt" hidden></button>
+      </div>
+    </div>
+
+    <div class="play-row">
+      <button class="play" id="play" disabled>
+        <span class="play-sheen" aria-hidden="true"></span>
+        <span class="play-label" id="play-label">PLAY</span>
+        <span class="play-sub" id="play-sub">CHECKING…</span>
+      </button>
+      <div class="play-side">
+        <button class="pill" data-target="coop" title="How to host or join a private session">CO-OP GUIDE</button>
+        <button class="pill" data-target="project" title="Open the game folder">GAME FOLDER</button>
+      </div>
+    </div>
+
+    <div class="launch">
+      <div class="bar launch-bar" id="launch-bar" style="--v:0"><i class="trail"></i><i class="fill"></i><i class="ticks"></i></div>
+      <div class="launch-meta"><span id="launch-status">Checking your setup…</span><span id="launch-pct" class="mono"></span></div>
+    </div>
+  </section>
+
+  <aside class="side">
+    <section class="panel">
+      <header class="panel-head"><h2>CHARACTERS</h2><button class="link" data-target="saves">OPEN SAVES</button></header>
+      <div class="chars" id="chars"></div>
+    </section>
+    <section class="panel">
+      <header class="panel-head"><h2>SYSTEM CHECK</h2><button class="link" id="recheck">RE-CHECK</button></header>
+      <div class="checks" id="checks"></div>
+    </section>
+  </aside>
+</main>
+
+<footer class="statusbar">
+  <span class="sb"><i class="dot" id="sb-dot"></i><b>status</b> <span id="sb-status">checking</span></span>
+  <span class="sb"><b>engine</b> <span id="sb-engine">-</span></span>
+  <span class="sb"><b>build</b> <span id="sb-build">-</span></span>
+  <span class="sb grow"></span>
+  <span class="sb"><b>no game data is bundled</b> · your client is opened read-only</span>
+  <span class="sb" id="sb-version"></span>
+</footer>
+
+<!-- Settings sheet -->
+<div class="scrim" id="scrim" hidden></div>
+<aside class="sheet" id="sheet" aria-hidden="true">
+  <header class="sheet-head">
+    <h2>SETTINGS</h2>
+    <button class="winbtn" id="sheet-close" aria-label="Close settings"><svg viewBox="0 0 12 12"><path d="M2.5 2.5l7 7M9.5 2.5l-7 7" /></svg></button>
+  </header>
+  <div class="sheet-body">
+    <div class="field" id="field-godot">
+      <label for="in-godot">GODOT ENGINE <span class="req">required</span></label>
+      <p class="hint">Project Twilight runs on Godot 4.8. Point this at the Godot executable, or let the launcher look for it.</p>
+      <div class="input-row">
+        <input id="in-godot" type="text" spellcheck="false" placeholder="Found automatically">
+        <button class="pill small primary" data-browse="godot">BROWSE…</button>
+      </div>
+      <div class="field-foot">
+        <span class="state" id="st-godot"></span>
+        <span class="foot-actions">
+          <button class="link" id="auto-godot">AUTO-DETECT</button>
+          <button class="link" data-target="godot">DOWNLOAD GODOT</button>
+        </span>
+      </div>
+    </div>
+
+    <div class="field" id="field-project">
+      <label for="in-project">GAME FOLDER</label>
+      <p class="hint">The folder that contains <span class="mono">06_Godot_Project</span>. Leave empty when the launcher sits in the Project Twilight folder.</p>
+      <div class="input-row">
+        <input id="in-project" type="text" spellcheck="false" placeholder="Found next to the launcher">
+        <button class="pill small" data-browse="project">BROWSE…</button>
+      </div>
+      <div class="field-foot"><span class="state" id="st-project"></span><span class="foot-actions"><button class="link" data-clear="project">USE AUTOMATIC</button></span></div>
+    </div>
+
+    <div class="field" id="field-data">
+      <label for="in-data">RAGNAROK DATA FOLDER <span class="opt">optional</span></label>
+      <p class="hint">Your own client folder, or any folder with <span class="mono">data.grf</span>. It is only passed to the game as a path; you can also set it on the game's title screen.</p>
+      <div class="input-row">
+        <input id="in-data" type="text" spellcheck="false" placeholder="Use what the game has stored">
+        <button class="pill small" data-browse="data">BROWSE…</button>
+      </div>
+      <div class="field-foot"><span class="state" id="st-data"></span><span class="foot-actions"><button class="link" data-clear="data">CLEAR</button></span></div>
+    </div>
+
+    <div class="field" id="field-theme">
+      <label for="in-hue">INTERFACE THEME <span class="opt">launcher only</span></label>
+      <p class="hint">Shift the launcher's glass accents. The game has its own UI hue slider in Settings.</p>
+      <div class="hue-row">
+        <input id="in-hue" type="range" min="0" max="360" step="1" value="200" aria-label="Interface theme hue">
+        <output id="hue-value" for="in-hue">200°</output>
+        <button class="link" id="hue-reset">DEFAULT</button>
+      </div>
+    </div>
+
+    <div class="toggles">
+      <label class="toggle"><input type="checkbox" id="tg-fullscreen"><span class="sw"></span><span>Start in fullscreen</span></label>
+      <label class="toggle"><input type="checkbox" id="tg-close"><span class="sw"></span><span>Close the launcher when the game starts</span></label>
+      <label class="toggle"><input type="checkbox" id="tg-console"><span class="sw"></span><span>Show the engine console (for bug reports)</span></label>
+    </div>
+  </div>
+  <footer class="sheet-foot">
+    <button class="link" data-target="config">OPEN SETTINGS FILE FOLDER</button>
+    <button class="pill small primary" id="sheet-done">DONE</button>
+  </footer>
+</aside>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script src="app.js"></script>
+</body>
+</html>
