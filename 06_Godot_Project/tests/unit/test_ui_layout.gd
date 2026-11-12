@@ -62,3 +62,41 @@ func test_window_drag_tracks_pointer_and_clamps(t: SceneTree) -> Variant:
 	w.queue_free()
 	await t.process_frame
 	return true
+
+
+func test_dragging_snaps_to_screen_edges(t: SceneTree) -> Variant:
+	var w := GlassWindow.new()
+	t.root.add_child(w)
+	await t.process_frame
+	w.size = Vector2(300, 200)
+	w.position = Vector2(100, 100)
+	var max_pos := (w.get_viewport_rect().size - w.size).max(Vector2.ZERO)
+	w.start_drag(w.global_position)
+	w.drag_to(Vector2(max_pos.x - 4.0, max_pos.y - 4.0))
+	if not w.global_position.is_equal_approx(max_pos):
+		return "dragging near the bottom-right should snap to both edges: %s" % w.global_position
+	w.drag_to(Vector2(4, 4))
+	if w.global_position != Vector2.ZERO:
+		return "dragging near the top-left should snap to both edges: %s" % w.global_position
+	w.end_drag()
+	w.queue_free()
+	await t.process_frame
+	return true
+
+
+func test_double_click_resets_position(t: SceneTree) -> Variant:
+	var w := GlassWindow.new()
+	w.position = Vector2(110, 80)
+	t.root.add_child(w)
+	await t.process_frame
+	w.position = Vector2(420, 300)
+	var e := InputEventMouseButton.new()
+	e.button_index = MOUSE_BUTTON_LEFT
+	e.pressed = true
+	e.double_click = true
+	w._on_title_input(e)
+	var got := w.global_position
+	var ok := got.is_equal_approx(Vector2(110, 80))
+	w.queue_free()
+	await t.process_frame
+	return true if ok else "a title-bar double-click should restore the default position: %s" % got

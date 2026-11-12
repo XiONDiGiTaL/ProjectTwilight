@@ -3,12 +3,14 @@ extends GlassPanel
 ## Draggable glass window with a title bar and close button. Subclasses add
 ## their content to `body`. Position is remembered per window in settings.
 ## Drag capture continues while the pointer leaves the title bar, so windows
-## can be repositioned like the classic client instead of snapping back.
+## can be repositioned like the classic client. Dragging snaps to the viewport
+## edges, and a title-bar double-click returns the window to its default spot.
 
 signal closed
 
 const TITLE_HEIGHT := 30.0
 const CLOSE_SIZE := Vector2(26, 24)
+const SNAP_DISTANCE := 14.0
 
 var title := "WINDOW"
 var body: VBoxContainer
@@ -17,12 +19,14 @@ var title_label: Label
 
 var _dragging := false
 var _drag_offset := Vector2.ZERO
+var _default_position := Vector2.ZERO
 var _title_bar: HBoxContainer
 var _drag_grip: Label
 
 
 func _ready() -> void:
 	super._ready()
+	_default_position = position
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	var col := VBoxContainer.new()
 	col.name = "Frame"
@@ -35,14 +39,14 @@ func _ready() -> void:
 	_title_bar.add_theme_constant_override("separation", 5)
 	_title_bar.mouse_filter = Control.MOUSE_FILTER_STOP
 	_title_bar.mouse_default_cursor_shape = Control.CURSOR_MOVE
-	_title_bar.tooltip_text = "Drag to move this window"
+	_title_bar.tooltip_text = "Drag to move  ·  double-click to reset"
 	_title_bar.gui_input.connect(_on_title_input)
 	col.add_child(_title_bar)
 	# A quiet grip makes the draggable surface obvious without adding chrome.
 	_drag_grip = UiTheme.label("⋮⋮", 10, Color(UiTheme.ACCENT, 0.62), 600, 1)
 	_drag_grip.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_drag_grip.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	_drag_grip.tooltip_text = "Drag to move"
+	_drag_grip.tooltip_text = "Drag to move  ·  double-click to reset"
 	_title_bar.add_child(_drag_grip)
 	title_label = UiTheme.label("◆  " + title, 13, UiTheme.TEXT, 600, 3)
 	title_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -107,6 +111,7 @@ func drag_to(at: Vector2) -> void:
 	if not _dragging:
 		return
 	global_position = at - _drag_offset
+	_snap_to_edges()
 	_clamp_to_screen()
 
 
@@ -118,8 +123,23 @@ func end_drag() -> void:
 	_save_position()
 
 
+## Returns the window to the position it was created at, then remembers it.
+func reset_position() -> void:
+	_dragging = false
+	position = _default_position
+	_clamp_to_screen()
+	_save_position()
+	# A short glow confirms the reset without adding a transient label.
+	set_glow(0.6)
+	create_tween().tween_method(func(v: float): set_glow(v), 0.6, 0.0, 0.28)
+
+
 func _on_title_input(e: InputEvent) -> void:
 	if e is InputEventMouseButton and e.button_index == MOUSE_BUTTON_LEFT:
+		if e.pressed and e.double_click:
+			reset_position()
+			_title_bar.accept_event()
+			return
 		if e.pressed:
 			start_drag(get_global_mouse_position())
 		else:
@@ -145,6 +165,20 @@ func _input(e: InputEvent) -> void:
 func _clamp_to_screen() -> void:
 	var vp := get_viewport_rect().size
 	global_position = global_position.clamp(Vector2.ZERO, (vp - size).max(Vector2.ZERO))
+
+
+func _snap_to_edges() -> void:
+	var max_pos := (get_viewport_rect().size - size).max(Vector2.ZERO)
+	var p := global_position
+	if p.x <= SNAP_DISTANCE:
+		p.x = 0.0
+	elif p.x >= max_pos.x - SNAP_DISTANCE:
+		p.x = max_pos.x
+	if p.y <= SNAP_DISTANCE:
+		p.y = 0.0
+	elif p.y >= max_pos.y - SNAP_DISTANCE:
+		p.y = max_pos.y
+	global_position = p.clamp(Vector2.ZERO, max_pos)
 
 
 func _settings() -> Node:
