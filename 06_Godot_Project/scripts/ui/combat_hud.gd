@@ -7,6 +7,7 @@ extends CanvasLayer
 
 const WORLD_BAR_SIZE := Vector2(92, 10)
 const BAR_FADE_AFTER_DEATH := 0.9
+const SETTINGS_WINDOW := preload("res://scripts/ui/settings_window.gd")
 
 var camera: Camera3D
 var numbers: DamageNumbers
@@ -90,6 +91,8 @@ func _ready() -> void:
 	_root.add_child(dialog)
 	_build_minimap()
 	_build_chat()
+	settings_window = SETTINGS_WINDOW.new()
+	_root.add_child(settings_window)
 
 
 ## Adds a draggable window at its default position. Saved positions win.
@@ -111,6 +114,7 @@ var hotkeys: HotkeyBar
 var dialog: NpcDialog
 var minimap: Minimap
 var chat: ChatConsole
+var settings_window: GlassWindow
 var _minimap_panel: GlassPanel
 var _minimap_title: Label
 var _feed: VBoxContainer
@@ -311,11 +315,15 @@ func hover_tag(text: String, screen_pos: Vector2, overhead := false) -> void:
 	var font_size := 11
 	if overhead:
 		var s := get_node_or_null("/root/Settings")
-		var scale: float = s.overhead_name_scale() if s else 1.0
-		font_size = maxi(8, roundi(14.0 * scale))
+		font_size = s.overhead_name_font(14, 8) if s else 14
 	_hover_label.label_settings.font_size = font_size
 	_hover_tag.reset_size()
 	_hover_tag.position = screen_pos - Vector2(_hover_tag.size.x / 2.0, _hover_tag.size.y + 6.0)
+
+
+## Opens or closes the in-game Settings overlay (Esc in the field).
+func toggle_settings() -> void:
+	settings_window.toggle()
 
 
 # --- World HP bars ------------------------------------------------------------

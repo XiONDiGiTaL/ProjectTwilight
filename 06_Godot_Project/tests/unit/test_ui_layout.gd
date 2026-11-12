@@ -4,6 +4,7 @@ extends RefCounted
 ## hardcoded default after they enter the tree.
 
 const TEST_WINDOW := "__ui_layout_test"
+const SETTINGS_WINDOW := preload("res://scripts/ui/settings_window.gd")
 
 
 func test_labels_are_vertically_centred(_t) -> Variant:
@@ -155,4 +156,33 @@ func test_overhead_name_scale_is_clamped(t: SceneTree) -> Variant:
 		return "overhead name scale should clamp to 50%"
 	if not high_ok:
 		return "overhead name scale should clamp to 125%"
+	return true
+
+
+func test_settings_window_updates_scale_live(t: SceneTree) -> Variant:
+	var settings = t.root.get_node_or_null("/root/Settings")
+	if settings == null:
+		return "Settings autoload is missing"
+	var old: float = settings.overhead_name_scale()
+	var w = SETTINGS_WINDOW.new()
+	t.root.add_child(w)
+	await t.process_frame
+	var starts_hidden: bool = not w.visible
+	w.toggle()
+	await t.process_frame
+	var opens: bool = w.visible
+	w.slider.value = 0.55
+	await t.process_frame
+	var updates: bool = is_equal_approx(settings.overhead_name_scale(), 0.55) \
+		and w.value_label.text == "55%"
+	w.toggle(false)
+	w.queue_free()
+	settings.set_overhead_name_scale(old)
+	await t.process_frame
+	if not starts_hidden:
+		return "SettingsWindow should start hidden"
+	if not opens:
+		return "SettingsWindow.toggle() should open it"
+	if not updates:
+		return "the Settings slider should update and display the live scale"
 	return true

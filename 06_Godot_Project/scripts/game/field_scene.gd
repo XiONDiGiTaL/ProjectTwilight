@@ -6,7 +6,7 @@ extends Node3D
 ## Controls: left-click monster = attack, item = pick up, ground = walk.
 ## I / Alt+E = inventory, Alt+A / S = status, Q / Alt+Q = equipment, K / Alt+S = skills,
 ## F1-F9 = hotkey bar, Insert = sit / stand, U = cycle aura, M = minimap,
-## Enter = chat / @commands, F12 = save now.
+## Enter = chat / @commands, Esc = Settings, F12 = save now.
 
 @export var map_name := "prt_fild08"
 @export var start_cell := Vector2i(170, 200)
@@ -193,6 +193,10 @@ func _on_chat_submit(text: String) -> void:
 func _unhandled_input(e: InputEvent) -> void:
 	if e is InputEventKey and e.pressed and not e.echo:
 		match e.keycode:
+			KEY_ESCAPE:
+				if not hud.chat.is_open():
+					hud.toggle_settings()
+					get_viewport().set_input_as_handled()
 			KEY_I:
 				hud.inventory.toggle()
 			KEY_E:

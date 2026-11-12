@@ -4,6 +4,7 @@ extends Control
 const CHARACTER_SELECT := "res://scenes/ui/character_select.tscn"
 const SPRITE_VIEWER := "res://scenes/tools/sprite_viewer.tscn"
 const MAP_VIEWER := "res://scenes/tools/map_viewer.tscn"
+const SETTINGS_WINDOW := preload("res://scripts/ui/settings_window.gd")
 
 var _status: Label
 var _path_edit: LineEdit
@@ -116,51 +117,9 @@ func _update_status() -> void:
 
 func _open_settings() -> void:
 	if _settings_window == null:
-		_build_settings()
-	if _settings_window.visible:
-		_settings_window.toggle(false)
-		return
-	_settings_window.toggle(true)
-	_settings_window.reset_size()
-	await get_tree().process_frame
-	var at := ((get_viewport_rect().size - _settings_window.size) / 2.0).max(Vector2.ZERO)
-	_settings_window.position = at
-	_settings_window.set_home_position(at)
-
-
-func _build_settings() -> void:
-	var settings := get_node("/root/Settings")
-	_settings_window = GlassWindow.new()
-	_settings_window.visible = false
-	_settings_window.title = "SETTINGS"
-	_settings_window.custom_minimum_size = Vector2(410, 0)
-	_settings_window.padding = Vector4(18, 12, 18, 16)
-	add_child(_settings_window)
-	var caption := UiTheme.label("OVERHEAD NAME SCALE", 11, UiTheme.ACCENT, 700, 3)
-	_settings_window.body.add_child(caption)
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 10)
-	_settings_window.body.add_child(row)
-	var slider := HSlider.new()
-	var limits: Vector2 = settings.overhead_name_scale_range()
-	slider.min_value = limits.x
-	slider.max_value = limits.y
-	slider.step = Settings.OVERHEAD_NAME_STEP
-	slider.value = settings.overhead_name_scale()
-	slider.custom_minimum_size = Vector2(260, 24)
-	slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	slider.tooltip_text = "Scale overhead names from 50%% to 125%%"
-	UiTheme.style_slider(slider)
-	row.add_child(slider)
-	var value_label := UiTheme.label("%d%%" % roundi(slider.value * 100.0), 13, UiTheme.TEXT, 600, 2)
-	value_label.custom_minimum_size = Vector2(44, 0)
-	value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	row.add_child(value_label)
-	slider.value_changed.connect(func(v: float) -> void:
-		settings.set_overhead_name_scale(v)
-		value_label.text = "%d%%" % roundi(v * 100.0))
-	var hint := UiTheme.label("NPC · MONSTER · PLAYER NAMES", 9, UiTheme.TEXT_DIM, 400, 2)
-	_settings_window.body.add_child(hint)
+		_settings_window = SETTINGS_WINDOW.new()
+		add_child(_settings_window)
+	_settings_window.toggle()
 
 
 func _on_mount() -> void:

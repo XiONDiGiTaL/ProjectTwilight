@@ -56,6 +56,14 @@ func set_overhead_name_scale(value: float) -> void:
 	overhead_name_scale_changed.emit(scaled)
 
 
+func overhead_name_font(base: float, minimum := 8) -> int:
+	return maxi(minimum, roundi(base * overhead_name_scale()))
+
+
+func overhead_name_outline(base: float, minimum := 4) -> int:
+	return maxi(minimum, roundi(base * overhead_name_scale()))
+
+
 func client_path() -> String:
 	var p: String = _cfg.get_value("resources", "client_path", "")
 	if p != "" and DirAccess.dir_exists_absolute(p):

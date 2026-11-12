@@ -31,17 +31,33 @@ func setup(warp: Dictionary, map: RoMap) -> void:
 	_tag = Label3D.new()
 	_tag.text = "▸  " + String(warp.get("label", warp.to_map)).to_upper()
 	_tag.font = UiTheme.font(600, 2)
-	var settings := get_node_or_null("/root/Settings")
-	var name_scale: float = settings.overhead_name_scale() if settings else 1.0
-	_tag.font_size = maxi(10, roundi(40.0 * name_scale))
+	_apply_name_scale()
 	_tag.pixel_size = 0.06
 	_tag.modulate = UiTheme.ACCENT
-	_tag.outline_size = maxi(6, roundi(10.0 * name_scale))
 	_tag.outline_modulate = Color(0.0, 0.03, 0.06, 0.85)
 	_tag.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	_tag.no_depth_test = true
 	_tag.position = Vector3(0, 22, 0)
 	add_child(_tag)
+	var settings := get_node_or_null("/root/Settings")
+	if settings and not settings.overhead_name_scale_changed.is_connected(_on_name_scale_changed):
+		settings.overhead_name_scale_changed.connect(_on_name_scale_changed)
+
+
+func _on_name_scale_changed(_scale: float) -> void:
+	_apply_name_scale()
+
+
+func _apply_name_scale() -> void:
+	if _tag == null:
+		return
+	var settings := get_node_or_null("/root/Settings")
+	if settings:
+		_tag.font_size = settings.overhead_name_font(40, 10)
+		_tag.outline_size = settings.overhead_name_outline(10, 6)
+	else:
+		_tag.font_size = 40
+		_tag.outline_size = 10
 
 
 static func _mat(code: String) -> ShaderMaterial:
