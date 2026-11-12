@@ -35,6 +35,9 @@ var _target_marker: MeshInstance3D
 var _res: Node
 var _autosave_in := AUTOSAVE_SEC
 var _casts: Dictionary = {}        # unit id -> CastingCircle
+var _config_exp_rate := 100
+var _config_job_exp_rate := 100
+var _config_drop_rate := 100
 
 
 func _ready() -> void:
@@ -70,6 +73,9 @@ func _ready() -> void:
 		push_error("Could not load map %s" % map_name)
 		return
 	sim = FieldSimulation.new(map.gat, sim_seed)
+	_config_exp_rate = sim.rules.exp_rate
+	_config_job_exp_rate = sim.rules.job_exp_rate
+	_config_drop_rate = sim.rules.drop_rate
 	var settings := get_node_or_null("/root/Settings")
 	if settings:
 		settings.rate_preset_changed.connect(_apply_rate_preset)
@@ -367,9 +373,14 @@ func attack(target_id: int) -> bool:
 # --- Saving --------------------------------------------------------------------
 
 ## Settings presets override server config rates for this field, live while the
-## window is open. RATE_PRESET_NONE leaves RuleConfig's loaded values alone.
+## window is open. RATE_PRESET_NONE restores the rates loaded at field start.
 func _apply_rate_preset(multiplier: int) -> void:
-	if sim == null or multiplier <= 0:
+	if sim == null:
+		return
+	if multiplier <= 0:
+		sim.rules.exp_rate = _config_exp_rate
+		sim.rules.job_exp_rate = _config_job_exp_rate
+		sim.rules.drop_rate = _config_drop_rate
 		return
 	sim.rules.apply_rate_multiplier(multiplier)
 

@@ -54,7 +54,7 @@ Project Twilight **contains no Gravity game data**. On first launch you point it
 | Prontera ⇄ Prontera Field travel through warp portals | ✅ Implemented and tested |
 | CPU adventurers (2–4 per map), name tags and minimap blips | ✅ Implemented and tested |
 | Data-folder mount: GRF archives without a client executable | ✅ Implemented and tested |
-| Server rates (50× default, 1×/25×/50× Settings presets), autoloot and `@commands` | ✅ Implemented and tested |
+| Server rates (50× default, 1×/25×/50×/DEFAULT Settings presets), autoloot and `@commands` | ✅ Implemented and tested |
 | Kafra storage (300 slots, persisted with the character) | ✅ Implemented and tested |
 | rAthena Kafra NPCs opening the storage window (`openstorage`) | ✅ Implemented and tested |
 | Guild storage (shared 300-slot bag, `guildopenstorage`) | ✅ Implemented and tested |
@@ -92,7 +92,7 @@ Project Twilight's HUD uses its own **Twilight Glass** design language, a sleek 
 - condensed, letter-spaced typography
 - every gameplay window drags from its title-bar grip, snaps to screen edges and neighbouring windows, and remembers its position; a subtle edge highlight confirms a viewport-border snap, and double-clicking the title bar resets it
 - overhead name tags use a restrained 70% default scale, adjustable from 50–125% in **SETTINGS** (title screen, **Esc**, or the HUD button) with a **RESET** action back to 70%; the same scale covers NPCs, CPU players, warp labels and monster hover names, and the title-screen and in-game Settings windows each remember their own dragged position
-- **SERVER RATES** in Settings switches Base EXP, Job EXP and drops between **1×, 25× and 50×**; the active preset is highlighted, saved with the player's settings, applies to the running field immediately, and takes priority over server config defaults
+- **SERVER RATES** in Settings switches Base EXP, Job EXP and drops between **1×, 25× and 50×**, with **DEFAULT** returning to the loaded server-config rates; the active choice is highlighted, saved with the player's settings, applies to the running field immediately, and a preset takes priority over server config defaults
 - **RESET UI LAYOUT** in Settings returns every glass window—inventory, status, equipment, skills, shop, storage, guild and Settings itself—to its default position; Settings re-centers, a brief feed message confirms it, and every reset is remembered
 
 Classic information stays where veterans expect it: the status window is top-left. It fades when you aren't using it, wakes up when your HP or SP changes, and can be collapsed.

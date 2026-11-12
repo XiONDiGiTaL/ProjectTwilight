@@ -77,9 +77,12 @@ func rate_preset() -> int:
 	return preset if RATE_PRESETS.has(preset) else RATE_PRESET_NONE
 
 
-## Remembers the chosen preset; the field applies it live and on every load.
+## Remembers the chosen preset, or clears it for DEFAULT; the field applies the
+## result live and on every load.
 func set_rate_preset(multiplier: int) -> void:
-	if not RATE_PRESETS.has(multiplier) or multiplier == rate_preset():
+	if multiplier != RATE_PRESET_NONE and not RATE_PRESETS.has(multiplier):
+		return
+	if multiplier == rate_preset():
 		return
 	set_value("rules", "rate_preset", multiplier)
 	rate_preset_changed.emit(multiplier)

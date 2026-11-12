@@ -209,7 +209,7 @@ func test_settings_window_rate_presets(t: SceneTree) -> Variant:
 	var labels: Array = []
 	for b in w.rate_buttons:
 		labels.append(b.text)
-	var labels_ok: bool = labels == ["1×", "25×", "50×"]
+	var labels_ok: bool = labels == ["1×", "25×", "50×", "DEFAULT"]
 	for b in w.rate_buttons:
 		if int(b.get_meta("rate_multiplier", 0)) == 25:
 			b.pressed.emit()
@@ -222,18 +222,31 @@ func test_settings_window_rate_presets(t: SceneTree) -> Variant:
 	var live_rule := RuleConfig.new()
 	live_rule.apply_rate_multiplier(settings.rate_preset())
 	var rates_ok: bool = live_rule.exp_rate == 2500 and live_rule.drop_rate == 2500
+	for b in w.rate_buttons:
+		if int(b.get_meta("rate_multiplier", -1)) == 0:
+			b.pressed.emit()
+	await t.process_frame
+	var cleared: bool = settings.rate_preset() == Settings.RATE_PRESET_NONE
+	var default_selected := false
+	for b in w.rate_buttons:
+		if int(b.get_meta("rate_multiplier", -1)) == 0:
+			default_selected = b.button_pressed
 	w.toggle(false)
 	w.queue_free()
 	settings.set_value("rules", "rate_preset", old)
 	await t.process_frame
 	if not labels_ok:
-		return "Settings should offer 1x, 25x and 50x presets: %s" % [labels]
+		return "Settings should offer 1x, 25x, 50x and DEFAULT: %s" % [labels]
 	if not stored:
 		return "choosing a preset should persist it"
 	if not selected:
 		return "the chosen preset button should stay highlighted"
 	if not rates_ok:
 		return "a 25x preset should become 2500%% for EXP and drops"
+	if not cleared:
+		return "DEFAULT should clear the stored rate preset"
+	if not default_selected:
+		return "the DEFAULT button should stay highlighted after clearing the preset"
 	return true
 
 
