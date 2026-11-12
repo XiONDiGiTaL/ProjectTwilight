@@ -5,6 +5,10 @@ the project owner asked for, what is already done, and what still has to be
 built, in order. Tick items off (`[x]`) as you finish them, and keep this file
 current: it is the hand-off record between sessions.
 
+> **Next session:** guild ranks and officer permissions. See
+> [docs/DIRECTIVE_GUILD_SOCIAL.md](docs/DIRECTIVE_GUILD_SOCIAL.md) and
+> [TODO.md](TODO.md).
+
 ## Ground rules (never break these)
 
 - **Never modify the original client** (`01_Client_Original`, the user's kRO folder). Read-only access only.
@@ -198,7 +202,8 @@ Owner brief: the game should run from the essential `.grf` data in a folder, wit
 - [x] rAthena Kafra NPCs: `openstorage` (+ `storage` alias), `close3`, `implode` and `F_CanOpenStorage` are implemented; `kafras.txt` + `functions_kafras.txt` load by default. Their scripted fee is charged (40z in Prontera); Twilight's Kafra uses `kafra_fee` (0 by default). Tested against the real Prontera Kafra.
 - [x] Guild storage: `GuildStore` (`user://guilds.json`) keeps one 300-slot bag per guild; `guildopenstorage` opens it, one member at a time; `@guild create` / `leave` manage membership; saves v7 keep the guild. Tests: `test_guild_storage.gd` (7), including the Prontera Guild Keeper.
 - [x] Guild roster window (`G`): roster with leader, invite by name, accept / decline invitations, leader-only kick, leave with succession. Tests: `test_guild_roster.gd` (5).
-- [ ] Storage search / sort, and guild ranks / permissions.
+- [ ] Guild ranks and officer permissions — scoped in [docs/DIRECTIVE_GUILD_SOCIAL.md](docs/DIRECTIVE_GUILD_SOCIAL.md).
+- [ ] Storage search / sort.
 - [ ] `@storage` for VIP-style remote access behind a rule flag.
 
 ## Where the three play modes stand (2026-11-11)
