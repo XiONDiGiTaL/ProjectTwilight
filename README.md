@@ -36,7 +36,7 @@ Captured from the running game with `tests/capture_readme.gd`. The sprites, maps
 | ![Prontera, the hub](docs/screenshots/prontera_hub.jpg) **Prontera, the hub.** Thirteen classes with their own body sprites, hair colours and cloth dyes: sitting, walking and blessing each other in the plaza. | ![A CPU Priest heals the player](docs/screenshots/priest_heals_player.jpg) **CPU adventurers.** A Priest notices the player is hurt mid-fight, casts Heal (the green +751) and follows up with Angelus. |
 | ![Sonic Blow](docs/screenshots/sonic_blow.jpg) **Sonic Blow.** An Assassin's multi-hit skill: the small numbers are the hits, the glowing blue number is the built-up total. | ![Bowling Bash](docs/screenshots/combat_bowling_bash.jpg) **Area combat.** A Knight's Bowling Bash splashing a pack, with engaged HP bars and the target frame. |
 | ![Casting Fire Bolt](docs/screenshots/magic_casting.jpg) **Magic.** Casting circles take the colour of the spell's element; the cast bar sits over the caster. | ![Private co-op](docs/screenshots/coop_host.jpg) **Private co-op.** The host's view of Prontera with a friend who joined by invitation code. |
-| ![Character select](docs/screenshots/character_select.jpg) **Character select.** PLAY offline, HOST CO-OP, or paste a code and JOIN. | |
+| ![Character select](docs/screenshots/character_select.jpg) **Character select.** PLAY offline, HOST CO-OP, or paste a code and JOIN. | ![Launcher](docs/screenshots/launcher.jpg) **Launcher.** Finds Godot and the game, lists your characters and starts the game; the background is a blurred loop of Prontera. |
 
 ## Development status
 
@@ -133,7 +133,7 @@ git clone https://github.com/XiONDiGiTaL/ProjectTwilight.git
    [resources]
    client_path="D:/Games/RagnarokOnline"
    ```
-3. Choose **PLAY** and create a character. You start in the Novice Training Grounds, where the Training Guide offers the classic training or a skip straight to Prontera, the hub. On Windows you can also double-click `Play-ProjectTwilight.bat`. It finds Godot 4 by itself in this folder, on your PATH, or in a `Godot` folder on any drive; otherwise set the `GODOT` environment variable, or put the full path to the Godot executable in a `godot_path.txt` file next to the launcher. If it cannot find Godot it says so and waits instead of closing.
+3. Choose **PLAY** and create a character. You start in the Novice Training Grounds, where the Training Guide offers the classic training or a skip straight to Prontera, the hub. On Windows you can also use the **launcher** (`ProjectTwilight.exe`, built from [tools/launcher](tools/launcher/README.md)): it finds Godot and the game, has **SETTINGS → GODOT ENGINE → BROWSE…** for when Godot is somewhere unusual, an interface theme-hue slider, lists your characters and starts the game. Without it, double-click `Play-ProjectTwilight.bat`. It finds Godot 4 by itself in this folder, on your PATH, or in a `Godot` folder on any drive; otherwise set the `GODOT` environment variable, or put the full path to the Godot executable in a `godot_path.txt` file next to the launcher. If it cannot find Godot it says so and waits instead of closing.
 
 **Controls**
 
