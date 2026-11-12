@@ -5,7 +5,8 @@ the project owner asked for, what is already done, and what still has to be
 built, in order. Tick items off (`[x]`) as you finish them, and keep this file
 current: it is the hand-off record between sessions.
 
-> **Next session:** guild ranks and officer permissions. See
+> **Next session:** guild MOTD and guild chat, then roster profiles and guild
+> storage search/sort. See
 > [docs/DIRECTIVE_GUILD_SOCIAL.md](docs/DIRECTIVE_GUILD_SOCIAL.md) and
 > [TODO.md](TODO.md).
 
@@ -210,7 +211,6 @@ Owner brief: the game should run from the essential `.grf` data in a folder, wit
   - `GuildWindow.actions_for(name)` is the single place that decides which row buttons appear.
   - Tests: `test_guild_ranks.gd` (10). Suite: 180 passed. Captures: `guild_window_leader`, `_leader_confirm`, `_officer`, `_member`.
 - [ ] Guild MOTD and guild chat (Milestone 2), roster profiles (3), storage search / sort (4) — still open.
-- [ ] Storage search / sort.
 - [ ] `@storage` for VIP-style remote access behind a rule flag.
 
 ## Where the three play modes stand (2026-11-11)

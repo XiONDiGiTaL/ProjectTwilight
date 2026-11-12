@@ -1,6 +1,6 @@
 # Directive: guild social layer (next session)
 
-**Status:** hand-off after commit `9e899a5` · **Suite:** 170 passed, 0 failed, 0 skipped
+**Status:** hand-off after commit `af50281` · **Suite:** 180 passed, 0 failed, 0 skipped
 **Scope:** turn the guild window into a complete social layer: ranks, officer
 permissions, a message of the day, guild chat, richer roster rows and guild
 storage search/sort.
@@ -13,20 +13,25 @@ does not replace the main directive.
 
 - `GuildStore` (`06_Godot_Project/scripts/gameplay/guilds/guild_store.gd`) is the
   shared registry, persisted to `user://guilds.json`. A record contains
-  `id`, `name`, `leader`, `members`, `invites` and one 300-slot `storage` bag.
+  `id`, `name`, `leader`, `members`, `ranks`, `invites` and one 300-slot
+  `storage` bag. `rank_of()` is the persisted rank lookup; `can()` is the
+  permission matrix.
 - `FieldSimulation` owns every guild mutation and validates it:
   `command_create_guild`, `command_guild_invite`, `command_guild_accept`,
-  `command_guild_decline`, `command_guild_kick`, `command_leave_guild`,
-  `command_open_guild_storage`, `command_guild_deposit` and
-  `command_guild_withdraw`.
-- `GuildWindow` (`G`) shows the roster, leader/member badges, leader-only invite
-  and kick, leave with succession, and accept/decline for guildless characters.
-  It only emits intents; it never edits `GuildStore` directly.
+  `command_guild_decline`, `command_guild_kick`, `command_guild_promote`,
+  `command_guild_demote`, `command_guild_transfer`, `command_guild_disband`,
+  `command_leave_guild`, `command_open_guild_storage`,
+  `command_guild_deposit` and `command_guild_withdraw`.
+- `GuildWindow` (`G`) shows the roster with rank chips, leader / officer /
+  member controls gated by `GuildStore.can()`, invitations, leave and
+  confirmation for transfer or disband. It only emits intents; it never edits
+  `GuildStore` directly.
 - `StorageWindow` has a GUILD tab; the Prontera Guild Keeper and rAthena
   `guildopenstorage` both open it. One member may use the bag at a time.
 - Character saves (v7) keep only `guild_id` / `guild_name`; the guild record is
   authoritative for membership.
-- Tests: `tests/unit/test_guild_roster.gd` (5) and
+- Tests: `tests/unit/test_guild_ranks.gd` (10),
+  `tests/unit/test_guild_roster.gd` (5) and
   `tests/unit/test_guild_storage.gd` (7). `tests/capture_guild_window.gd` is the
   visual capture.
 - **Guilds are local-only today.** There is no co-op transport or MMO packet
