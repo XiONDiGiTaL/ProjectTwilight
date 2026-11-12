@@ -1,22 +1,22 @@
 # Project Twilight — TODO
 
-Updated 2026-11-12 after `9e899a5` · 170 tests passing.
+Updated 2026-11-12 after guild ranks (Milestone 1) · 180 tests passing.
 
 The scoped hand-off is [`docs/DIRECTIVE_GUILD_SOCIAL.md`](docs/DIRECTIVE_GUILD_SOCIAL.md).
 The project-wide rules and history are in [`Directive.md`](Directive.md).
 
 ## Now — guild social layer
 
-- [ ] **Ranks and officer permissions** (Milestone 1)
-  - [ ] `ranks` map (`leader` / `officer` / `member`) in `GuildStore`, with migration for existing `user://guilds.json`
-  - [ ] Leader can promote, demote, transfer leadership and disband; only the leader can do these
-  - [ ] Officers can invite and kick ordinary members; members cannot
-  - [ ] `FieldSimulation` validates every action and emits guild events
-  - [ ] `GuildWindow` rank chips and permission-gated controls; confirm transfer and disband
-  - [ ] Leader leaving promotes an officer first, then a member
-  - [ ] Tests: migration, permissions, persistence, succession, disband cleanup
-  - [ ] Capture leader and officer views
-  - [ ] Update README, CHANGELOG, Directive and this file
+- [x] **Ranks and officer permissions** (Milestone 1, done 2026-11-12; `test_guild_ranks.gd`, 10 tests)
+  - [x] `ranks` map (`leader` / `officer` / `member`) in `GuildStore`, with migration for existing `user://guilds.json`
+  - [x] Leader can promote, demote, transfer leadership and disband; only the leader can do these
+  - [x] Officers can invite and kick ordinary members; members cannot
+  - [x] `FieldSimulation` validates every action and emits guild events
+  - [x] `GuildWindow` rank chips and permission-gated controls; transfer and disband ask for confirmation
+  - [x] Leader leaving promotes an officer first, then a member
+  - [x] Tests: migration, permissions, persistence, succession, disband cleanup
+  - [x] Captured leader, officer and member views
+  - [x] README, CHANGELOG, Directive and this file updated
 - [ ] **Guild MOTD**
   - [ ] `motd` on the guild record, max 200 characters, no newlines
   - [ ] Leader/officer edit, all members read

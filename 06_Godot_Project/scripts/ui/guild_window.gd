@@ -1,14 +1,26 @@
 class_name GuildWindow
 extends GlassWindow
-## Guild roster and management: members, pending invitations, invite, kick
-## and leave. This window only emits intents; FieldSimulation validates and
-## applies them through GuildStore, like every other gameplay action.
+## Guild roster and management: members with rank chips, pending
+## invitations, invite, kick, promote / demote, transfer, disband and leave.
+## This window only emits intents; FieldSimulation validates and applies them
+## through GuildStore, like every other gameplay action. Controls appear only
+## when GuildStore.can() allows them for the local player's rank:
+##   officer-level (invite, kick a member)   blue accent buttons
+##   leader-only (promote, demote, transfer, disband)   gold buttons
+## Transfer and disband ask for confirmation before the intent is emitted.
 
 signal invite_requested(name: String)
 signal kick_requested(name: String)
 signal leave_requested
 signal accept_requested(gid: String)
 signal decline_requested(gid: String)
+signal promote_requested(name: String)
+signal demote_requested(name: String)
+signal transfer_requested(name: String)
+signal disband_requested
+
+const LEADER_TINT := Color(1.0, 0.8, 0.35)     # leader-only controls and the leader chip
+const DANGER_TINT := Color(1.0, 0.36, 0.38)
 
 var _store: GuildStore
 var _player: SimUnit
@@ -20,6 +32,11 @@ var _invites_box: VBoxContainer
 var _invite_row: HBoxContainer
 var _invite_input: LineEdit
 var _leave: Button
+var _disband: Button
+var _footer: HBoxContainer
+var _confirm_row: HBoxContainer
+var _confirm_text: Label
+var _confirm_action: Callable
 var _empty: Label
 
 
@@ -35,7 +52,7 @@ func _ready() -> void:
 	_status = UiTheme.label("", 10, Color(UiTheme.ACCENT, 0.85), 600, 2)
 	body.add_child(_status)
 	_roster_scroll = ScrollContainer.new()
-	_roster_scroll.custom_minimum_size = Vector2(380, 190)
+	_roster_scroll.custom_minimum_size = Vector2(500, 190)
 	_roster_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	body.add_child(_roster_scroll)
 	_roster = VBoxContainer.new()
@@ -59,13 +76,66 @@ func _ready() -> void:
 	var invite := _button("INVITE", true)
 	invite.pressed.connect(_send_invite)
 	_invite_row.add_child(invite)
+	_footer = HBoxContainer.new()
+	_footer.add_theme_constant_override("separation", 8)
+	body.add_child(_footer)
 	_leave = _button("LEAVE GUILD", false)
 	_leave.pressed.connect(func(): leave_requested.emit())
-	body.add_child(_leave)
+	_footer.add_child(_leave)
+	_disband = _button("DISBAND", false, DANGER_TINT)
+	_disband.tooltip_text = "Leader only. Removes the guild and its storage for good."
+	_disband.pressed.connect(_ask_disband)
+	_footer.add_child(_disband)
+	# Inline confirmation for irreversible actions.
+	_confirm_row = HBoxContainer.new()
+	_confirm_row.add_theme_constant_override("separation", 8)
+	body.add_child(_confirm_row)
+	_confirm_text = UiTheme.label("", 11, LEADER_TINT, 600, 1)
+	_confirm_text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_confirm_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_confirm_text.custom_minimum_size = Vector2(300, 0)
+	_confirm_row.add_child(_confirm_text)
+	var yes := _button("CONFIRM", true, DANGER_TINT)
+	yes.pressed.connect(confirm_pending)
+	_confirm_row.add_child(yes)
+	var no := _button("CANCEL", false)
+	no.pressed.connect(_cancel_confirm)
+	_confirm_row.add_child(no)
+	_confirm_row.visible = false
 	visible = false
 
 
-func _button(text: String, primary: bool) -> Button:
+func _ask_disband() -> void:
+	_ask("Disband the guild and destroy its storage? This cannot be undone.", func(): disband_requested.emit())
+
+
+## Shows the confirmation bar; `action` runs only on CONFIRM.
+func _ask(text: String, action: Callable) -> void:
+	_confirm_text.text = text
+	_confirm_action = action
+	_confirm_row.visible = true
+	reset_size()
+
+
+func _cancel_confirm() -> void:
+	_confirm_action = Callable()
+	_confirm_row.visible = false
+	reset_size()
+
+
+func is_confirming() -> bool:
+	return _confirm_row != null and _confirm_row.visible
+
+
+## CONFIRM: runs the pending irreversible action (also used by tests / captures).
+func confirm_pending() -> void:
+	var act := _confirm_action
+	_cancel_confirm()
+	if act.is_valid():
+		act.call()
+
+
+func _button(text: String, primary: bool, tint := UiTheme.ACCENT) -> Button:
 	var b := Button.new()
 	b.text = text
 	b.focus_mode = Control.FOCUS_NONE
@@ -74,13 +144,13 @@ func _button(text: String, primary: bool) -> Button:
 	b.add_theme_font_size_override("font_size", 10)
 	b.add_theme_color_override("font_color", UiTheme.TEXT)
 	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(UiTheme.ACCENT, 0.22 if primary else 0.08)
-	sb.border_color = Color(UiTheme.ACCENT, 0.8 if primary else 0.4)
+	sb.bg_color = Color(tint, 0.22 if primary else 0.08)
+	sb.border_color = Color(tint, 0.8 if primary else 0.45)
 	sb.set_border_width_all(1)
 	sb.set_corner_radius_all(2)
 	b.add_theme_stylebox_override("normal", sb)
 	var hover := sb.duplicate() as StyleBoxFlat
-	hover.bg_color = Color(UiTheme.ACCENT, 0.4 if primary else 0.18)
+	hover.bg_color = Color(tint, 0.4 if primary else 0.2)
 	b.add_theme_stylebox_override("hover", hover)
 	return b
 
@@ -103,10 +173,13 @@ func refresh() -> void:
 		return
 	_clear(_roster)
 	_clear(_invites_box)
-	_leave.visible = false
+	_footer.visible = false
+	_disband.visible = false
 	_invite_row.visible = false
 	_roster_scroll.visible = false
 	_empty.visible = false
+	if _confirm_row.visible:
+		_cancel_confirm()
 	var g: Dictionary = _store.get_guild(_player.guild_id)
 	if g.is_empty():
 		_title.text = "◆  GUILD"
@@ -123,30 +196,111 @@ func refresh() -> void:
 	var members: Array = g.get("members", [])
 	var leader := String(g.get("leader", ""))
 	var bag: Inventory = g.get("storage")
-	_status.text = "LEADER  %s        MEMBERS  %d        STORAGE  %d / %d" % [
-		leader, members.size(), bag.entries.size() if bag else 0, SimUnit.STORAGE_SLOTS]
+	var mine := my_rank()
+	_status.text = "LEADER  %s      MEMBERS  %d      STORAGE  %d / %d      YOUR RANK  %s" % [
+		leader, members.size(), bag.entries.size() if bag else 0, SimUnit.STORAGE_SLOTS, mine.to_upper()]
 	_roster_scroll.visible = true
-	for m in members:
-		_roster.add_child(_member_row(String(m), leader))
-	_leave.visible = true
-	_invite_row.visible = leader == _player.name
+	# Leader first, then officers, then members (roster order within a rank).
+	for wanted in GuildStore.RANKS:
+		for m in members:
+			if _store.rank_of(String(g.id), String(m)) == wanted:
+				_roster.add_child(_member_row(String(g.id), String(m)))
+	_footer.visible = true
+	_disband.visible = GuildStore.can(mine, "disband")
+	_invite_row.visible = GuildStore.can(mine, "invite")
 
 
-func _member_row(member: String, leader: String) -> HBoxContainer:
+## The local player's rank in their guild ("" when guildless).
+func my_rank() -> String:
+	return _store.rank_of(_player.guild_id, _player.name) if _store != null and _player != null else ""
+
+
+## Button captions offered for `member` to the local player (tests read this).
+func actions_for(member: String) -> Array:
+	var out: Array = []
+	if _store == null or _player == null or member == _player.name:
+		return out
+	var mine := my_rank()
+	var theirs := _store.rank_of(_player.guild_id, member)
+	if theirs == "":
+		return out
+	if GuildStore.can(mine, "promote") and theirs == GuildStore.RANK_MEMBER:
+		out.append("PROMOTE")
+	if GuildStore.can(mine, "demote") and theirs == GuildStore.RANK_OFFICER:
+		out.append("DEMOTE")
+	if GuildStore.can(mine, "transfer"):
+		out.append("TRANSFER")
+	if GuildStore.can(mine, "kick", theirs):
+		out.append("KICK")
+	return out
+
+
+## True when the invite row / disband button are offered (tests read these).
+func offers_invite() -> bool:
+	return _invite_row != null and _invite_row.visible
+
+
+func offers_disband() -> bool:
+	return _disband != null and _disband.visible and _footer.visible
+
+
+func _member_row(gid: String, member: String) -> HBoxContainer:
 	var row := HBoxContainer.new()
-	row.custom_minimum_size = Vector2(360, 28)
+	row.custom_minimum_size = Vector2(480, 28)
+	row.add_theme_constant_override("separation", 6)
 	var name := UiTheme.label(member + ("   (YOU)" if member == _player.name else ""), 12, UiTheme.TEXT, 600, 1)
 	name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(name)
-	var is_leader := member == leader
-	row.add_child(UiTheme.label("LEADER" if is_leader else "MEMBER", 10,
-		Color(UiTheme.ACCENT, 0.9) if is_leader else UiTheme.TEXT_DIM, 600, 2))
-	if leader == _player.name and member != _player.name:
-		var kick := _button("KICK", false)
-		kick.custom_minimum_size = Vector2(54, 22)
-		kick.pressed.connect(func(): kick_requested.emit(member))
-		row.add_child(kick)
+	row.add_child(_rank_chip(_store.rank_of(gid, member)))
+	for action in actions_for(member):
+		row.add_child(_action_button(String(action), member))
 	return row
+
+
+func _action_button(action: String, member: String) -> Button:
+	var b: Button
+	match action:
+		"PROMOTE":
+			b = _button("PROMOTE", false, LEADER_TINT)
+			b.tooltip_text = "Leader only: make %s an officer." % member
+			b.pressed.connect(func(): promote_requested.emit(member))
+		"DEMOTE":
+			b = _button("DEMOTE", false, LEADER_TINT)
+			b.tooltip_text = "Leader only: make %s an ordinary member." % member
+			b.pressed.connect(func(): demote_requested.emit(member))
+		"TRANSFER":
+			b = _button("TRANSFER", false, LEADER_TINT)
+			b.tooltip_text = "Leader only: hand the guild to %s." % member
+			b.pressed.connect(_ask_transfer.bind(member))
+		_:
+			b = _button("KICK", false)
+			b.tooltip_text = "Remove %s from the guild." % member
+			b.pressed.connect(func(): kick_requested.emit(member))
+	b.custom_minimum_size = Vector2(50 if action == "KICK" else 74, 22)
+	return b
+
+
+func _ask_transfer(member: String) -> void:
+	_ask("Make %s the guild leader? You will become an officer." % member, func(): transfer_requested.emit(member))
+
+
+## Rank chip: gold for the leader, accent for officers, dim for members.
+func _rank_chip(rank: String) -> Label:
+	var color := UiTheme.TEXT_DIM
+	if rank == GuildStore.RANK_LEADER:
+		color = LEADER_TINT
+	elif rank == GuildStore.RANK_OFFICER:
+		color = UiTheme.ACCENT
+	var chip := UiTheme.label(rank.to_upper(), 10, color, 600, 2)
+	chip.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	chip.custom_minimum_size = Vector2(66, 18)
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(color, 0.12)
+	sb.border_color = Color(color, 0.55)
+	sb.set_border_width_all(1)
+	sb.set_corner_radius_all(2)
+	chip.add_theme_stylebox_override("normal", sb)
+	return chip
 
 
 func _invite_row_for(inv: Dictionary) -> HBoxContainer:

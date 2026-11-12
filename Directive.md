@@ -202,7 +202,14 @@ Owner brief: the game should run from the essential `.grf` data in a folder, wit
 - [x] rAthena Kafra NPCs: `openstorage` (+ `storage` alias), `close3`, `implode` and `F_CanOpenStorage` are implemented; `kafras.txt` + `functions_kafras.txt` load by default. Their scripted fee is charged (40z in Prontera); Twilight's Kafra uses `kafra_fee` (0 by default). Tested against the real Prontera Kafra.
 - [x] Guild storage: `GuildStore` (`user://guilds.json`) keeps one 300-slot bag per guild; `guildopenstorage` opens it, one member at a time; `@guild create` / `leave` manage membership; saves v7 keep the guild. Tests: `test_guild_storage.gd` (7), including the Prontera Guild Keeper.
 - [x] Guild roster window (`G`): roster with leader, invite by name, accept / decline invitations, leader-only kick, leave with succession. Tests: `test_guild_roster.gd` (5).
-- [ ] Guild ranks and officer permissions — scoped in [docs/DIRECTIVE_GUILD_SOCIAL.md](docs/DIRECTIVE_GUILD_SOCIAL.md).
+- [x] Guild ranks and officer permissions (Milestone 1 of [docs/DIRECTIVE_GUILD_SOCIAL.md](docs/DIRECTIVE_GUILD_SOCIAL.md), done 2026-11-12):
+  - `GuildStore` keeps a `ranks` map (name → leader / officer / member) next to the canonical `leader` field; `GuildStore.can(actor_rank, action, target_rank)` is the permission matrix.
+  - `FieldSimulation` derives the actor's rank from the record and enforces it in `command_guild_invite` / `kick` / `promote` / `demote` / `transfer` / `disband`.
+  - Design choices: a transfer makes the old leader an **officer**; a guild whose last member leaves is **removed** (with its storage); `@guild create <existing name>` still joins as a member.
+  - Rank-less guild files migrate on load and are saved in the new shape on the next change.
+  - `GuildWindow.actions_for(name)` is the single place that decides which row buttons appear.
+  - Tests: `test_guild_ranks.gd` (10). Suite: 180 passed. Captures: `guild_window_leader`, `_leader_confirm`, `_officer`, `_member`.
+- [ ] Guild MOTD and guild chat (Milestone 2), roster profiles (3), storage search / sort (4) — still open.
 - [ ] Storage search / sort.
 - [ ] `@storage` for VIP-style remote access behind a rule flag.
 

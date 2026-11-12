@@ -102,9 +102,8 @@ func test_leader_leaving_promotes_next(_t) -> Variant:
 		return "leadership was not promoted: %s" % [g.leader]
 	if not sim.command_leave_guild(member.id):
 		return "last member could not leave"
-	g = sim.guilds.get_guild(gid)
-	if not (g.members as Array).is_empty() or String(g.leader) != "":
-		return "an empty guild should have no leader"
+	if not sim.guilds.get_guild(gid).is_empty():
+		return "an empty guild should be removed"
 	if not sim.command_create_guild(member.id, "Twilight Guard"):
 		return "the former member could not return"
 	g = sim.guilds.get_guild(gid)

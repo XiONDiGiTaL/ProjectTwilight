@@ -32,7 +32,9 @@ does not replace the main directive.
 - **Guilds are local-only today.** There is no co-op transport or MMO packet
   adapter; do not present guild features as networked.
 
-## Milestone 1 (do next): ranks and officer permissions
+## Milestone 1 (DONE 2026-11-12): ranks and officer permissions
+
+Implemented as specified. Choices made: a transfer makes the old leader an officer; an emptied guild is removed. Next is Milestone 2.
 
 ### Goal
 

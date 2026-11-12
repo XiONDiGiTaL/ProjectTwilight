@@ -3,6 +3,14 @@
 ## [Unreleased] - 2026-11-11
 
 ### Added
+- **Guild ranks and permissions:** every member is a leader, an officer or a member.
+  - Officers can invite and can kick ordinary members. Only the leader can promote, demote, kick officers, transfer leadership and disband.
+  - Transferring leadership makes the old leader an officer. Disbanding removes the guild and its storage and clears every online member's guild state.
+  - When the leader leaves, the first officer succeeds, otherwise the first member; a guild with nobody left is removed.
+  - `FieldSimulation` enforces every rule from the guild record (`command_guild_promote` / `demote` / `transfer` / `disband`, rank-aware invite and kick). Rejected actions explain themselves and change nothing.
+  - The guild window shows a rank chip per member and only the controls your rank allows: gold leader-only buttons, blue officer-level ones, and a confirmation bar for transfer and disband.
+  - Existing `user://guilds.json` files load unchanged: the recorded leader becomes the leader, everyone else a member.
+  - Tests: `test_guild_ranks.gd` (10). Suite: 180 passed, 0 failed, 0 skipped.
 - **A living world — CPU adventurers:**
   - Two to four CPU players populate every map, acting only through the same simulation commands a human client sends (move, attack, use skill, pick up, sit).
   - Roles: melee hunters (Swordman, Dark Knight, Merchant, Thief, Novice), casters that pick the element the target is weakest to, and healer Shamans that heal, buff and resurrect nearby players — including the player.

@@ -577,14 +577,20 @@ func command_create_guild(unit_id: int, guild_name: String) -> bool:
 	return true
 
 
-## Leader-only invitation; persists for characters who are offline.
+## The acting unit's rank in its own guild, read from the guild record (never
+## from the client): "leader" / "officer" / "member", or "" when guildless.
+func guild_rank(u: SimUnit) -> String:
+	return guilds.rank_of(u.guild_id, u.name) if u != null and u.guild_id != "" else ""
+
+
+## Leader / officer invitation; persists for characters who are offline.
 func command_guild_invite(unit_id: int, target_name: String) -> bool:
 	var u: SimUnit = units.get(unit_id)
 	var g: Dictionary = guilds.get_guild(u.guild_id) if u != null else {}
 	if u == null or g.is_empty():
 		return false
-	if String(g.get("leader", "")) != u.name:
-		return _guild(u, false, "Only the guild leader can invite.")
+	if not GuildStore.can(guild_rank(u), "invite"):
+		return _guild(u, false, "Only the leader and officers can invite.")
 	var target := target_name.strip_edges().left(23)
 	if target.length() < 2 or target == u.name:
 		return _guild(u, false, "That name cannot be invited.")
@@ -618,17 +624,21 @@ func command_guild_decline(unit_id: int, gid: String) -> bool:
 	return _guild(u, true, "Invitation declined.")
 
 
-## Leader-only removal; an online member loses the guild immediately.
+## Removal by rank: the leader may remove officers and members, officers only
+## ordinary members. An online member loses the guild immediately.
 func command_guild_kick(unit_id: int, target_name: String) -> bool:
 	var u: SimUnit = units.get(unit_id)
 	var g: Dictionary = guilds.get_guild(u.guild_id) if u != null else {}
 	if u == null or g.is_empty():
 		return false
-	if String(g.get("leader", "")) != u.name:
-		return _guild(u, false, "Only the guild leader can remove members.")
+	var rank := guild_rank(u)
+	if not GuildStore.can(rank, "invite"):   # members have no removal rights at all
+		return _guild(u, false, "Only the leader and officers can remove members.")
 	var target := target_name.strip_edges().left(23)
 	if target == u.name or not (g.members as Array).has(target):
 		return _guild(u, false, "That member is not in the guild.")
+	if not GuildStore.can(rank, "kick", guilds.rank_of(u.guild_id, target)):
+		return _guild(u, false, "Officers can only remove ordinary members.")
 	if not guilds.kick(u.guild_id, target):
 		return _guild(u, false, "Could not remove %s." % target)
 	for other_id in units:
@@ -642,11 +652,94 @@ func command_guild_kick(unit_id: int, target_name: String) -> bool:
 	return _guild(u, true, "Removed %s from the guild." % target)
 
 
+## Leader-only: makes a member an officer.
+func command_guild_promote(unit_id: int, target_name: String) -> bool:
+	return _guild_set_rank(unit_id, target_name, "promote", GuildStore.RANK_OFFICER)
+
+
+## Leader-only: makes an officer an ordinary member again.
+func command_guild_demote(unit_id: int, target_name: String) -> bool:
+	return _guild_set_rank(unit_id, target_name, "demote", GuildStore.RANK_MEMBER)
+
+
+func _guild_set_rank(unit_id: int, target_name: String, action: String, rank: String) -> bool:
+	var u: SimUnit = units.get(unit_id)
+	var g: Dictionary = guilds.get_guild(u.guild_id) if u != null else {}
+	if u == null or g.is_empty():
+		return false
+	if not GuildStore.can(guild_rank(u), action):
+		return _guild(u, false, "Only the guild leader can %s members." % action)
+	var target := target_name.strip_edges().left(23)
+	if target == u.name or not (g.members as Array).has(target):
+		return _guild(u, false, "%s is not a member of the guild." % (target if target != "" else "That name"))
+	if not guilds.set_rank(u.guild_id, target, rank):
+		return _guild(u, false, "%s is already %s." % [target, "an officer" if rank == GuildStore.RANK_OFFICER else "an ordinary member"])
+	var text := "%s is now %s of %s." % [target, "an officer" if rank == GuildStore.RANK_OFFICER else "a member", String(g.name)]
+	_guild_tell(u.guild_id, target, true, "You are now %s of %s." % ["an officer" if rank == GuildStore.RANK_OFFICER else "a member", String(g.name)])
+	return _guild(u, true, text)
+
+
+## Leader-only: hands the guild to another member; the old leader becomes an officer.
+func command_guild_transfer(unit_id: int, target_name: String) -> bool:
+	var u: SimUnit = units.get(unit_id)
+	var g: Dictionary = guilds.get_guild(u.guild_id) if u != null else {}
+	if u == null or g.is_empty():
+		return false
+	if not GuildStore.can(guild_rank(u), "transfer"):
+		return _guild(u, false, "Only the guild leader can transfer leadership.")
+	var target := target_name.strip_edges().left(23)
+	if target == u.name or not (g.members as Array).has(target):
+		return _guild(u, false, "%s is not a member of the guild." % (target if target != "" else "That name"))
+	if not guilds.transfer(u.guild_id, target):
+		return _guild(u, false, "Could not transfer leadership to %s." % target)
+	_guild_tell(u.guild_id, target, true, "You are now the leader of %s." % String(g.name))
+	return _guild(u, true, "%s now leads %s. You are an officer." % [target, String(g.name)])
+
+
+## Leader-only and irreversible: removes the guild, its storage and every
+## online member's guild state.
+func command_guild_disband(unit_id: int) -> bool:
+	var u: SimUnit = units.get(unit_id)
+	var g: Dictionary = guilds.get_guild(u.guild_id) if u != null else {}
+	if u == null or g.is_empty():
+		return false
+	if not GuildStore.can(guild_rank(u), "disband"):
+		return _guild(u, false, "Only the guild leader can disband the guild.")
+	var gid := u.guild_id
+	var gname := String(g.name)
+	if not guilds.disband(gid):
+		return _guild(u, false, "Could not disband the guild.")
+	for other_id in units:
+		var other: SimUnit = units[other_id]
+		if other.is_player() and other.guild_id == gid:
+			other.guild_id = ""
+			other.guild_name = ""
+			other.open_guild_storage = ""
+			other.open_guild_npc = 0
+			if other.id != u.id:
+				events.append({"type": "guild", "id": other.id, "ok": false, "text": "%s was disbanded." % gname})
+	return _guild(u, true, "You disbanded %s." % gname)
+
+
+## Guild notice to one online member by name (no-op when they are offline).
+func _guild_tell(gid: String, member: String, ok: bool, text: String) -> void:
+	for other_id in units:
+		var other: SimUnit = units[other_id]
+		if other.is_player() and other.name == member and other.guild_id == gid:
+			events.append({"type": "guild", "id": other.id, "ok": ok, "text": text})
+
+
 func command_leave_guild(unit_id: int) -> bool:
 	var u: SimUnit = units.get(unit_id)
 	if u == null or u.guild_id == "":
 		return false
+	var was_leader := guild_rank(u) == GuildStore.RANK_LEADER
+	var left_gid := u.guild_id
 	guilds.leave(u.guild_id, u.name)
+	if was_leader:
+		var after: Dictionary = guilds.get_guild(left_gid)
+		if not after.is_empty():
+			_guild_tell(left_gid, String(after.leader), true, "You are now the leader of %s." % String(after.name))
 	u.open_guild_storage = ""
 	u.open_guild_npc = 0
 	u.guild_id = ""

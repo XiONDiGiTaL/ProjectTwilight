@@ -28,6 +28,9 @@ func _run() -> void:
 		print("field failed to load")
 		quit(1)
 		return
+	# Start from a clean guild file: a stale one would make the invitations below fail.
+	if FileAccess.file_exists("user://captures/guilds_capture.json"):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path("user://captures/guilds_capture.json"))
 	scene.sim.guilds = GuildStore.new("user://captures/guilds_capture.json", scene.sim.item_db)
 	scene.player.guild_id = ""
 	scene.player.guild_name = ""
@@ -36,14 +39,33 @@ func _run() -> void:
 		quit(1)
 		return
 	var gid: String = scene.player.guild_id
-	scene.sim.command_guild_invite(scene.player.id, "Aria")
-	var aria: SimUnit = scene.sim.add_player("Aria", Vector2i(154, 191), {"str": 5, "agi": 5, "vit": 5, "int": 5, "dex": 5, "luk": 5})
-	scene.sim.command_guild_accept(aria.id, gid)
+	var flat := {"str": 5, "agi": 5, "vit": 5, "int": 5, "dex": 5, "luk": 5}
+	var others := {}
+	for n in ["Aria", "Brannoc", "Celwyn", "Dario"]:
+		scene.sim.command_guild_invite(scene.player.id, n)
+		others[n] = scene.sim.add_player(n, Vector2i(154, 191), flat)
+		scene.sim.command_guild_accept((others[n] as SimUnit).id, gid)
+	scene.sim.command_guild_promote(scene.player.id, "Aria")
+	scene.sim.command_guild_promote(scene.player.id, "Brannoc")
+	scene.sim.command_guild_invite(scene.player.id, "Elyra")
 	var bag: Inventory = scene.sim.guilds.storage_of(gid)
 	bag.add(501, 3, scene.sim.item_db, FieldSimulation.STORAGE_MAX_WEIGHT)
-	print("guild storage ", bag.entries.size())
+	print("ranks: ", scene.sim.guilds.get_guild(gid).ranks)
+	# Leader view: promote / demote / transfer / kick on every row, invite and disband.
 	scene.hud.guild_window.open(scene.sim.guilds, scene.player)
-	print("guild roster: ", (scene.sim.guilds.get_guild(gid).members as Array))
 	await create_timer(0.5).timeout
-	await _shot("roster")
+	await _shot("leader")
+	# Leader view with the disband confirmation open.
+	scene.hud.guild_window._ask_disband()
+	await create_timer(0.2).timeout
+	await _shot("leader_confirm")
+	scene.hud.guild_window._cancel_confirm()
+	# Officer view: the same roster seen by Aria (kick on ordinary members only, invite, no leader controls).
+	scene.hud.guild_window.open(scene.sim.guilds, others["Aria"])
+	await create_timer(0.3).timeout
+	await _shot("officer")
+	# Member view: no management controls at all.
+	scene.hud.guild_window.open(scene.sim.guilds, others["Dario"])
+	await create_timer(0.3).timeout
+	await _shot("member")
 	quit(0)

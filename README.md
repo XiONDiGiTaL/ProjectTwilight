@@ -58,6 +58,7 @@ Project Twilight **contains no Gravity game data**. On first launch you point it
 | Kafra storage (300 slots, persisted with the character) | ✅ Implemented and tested |
 | rAthena Kafra NPCs opening the storage window (`openstorage`) | ✅ Implemented and tested |
 | Guild storage (shared 300-slot bag, `guildopenstorage`) | ✅ Implemented and tested |
+| Guild ranks (leader / officer / member) and permissions | ✅ Implemented and tested (local only, not networked) |
 | Job change to all six first jobs; Swordman skill tree | ✅ Implemented and tested |
 | Other first-job skill trees, magic and elements, more maps and monsters | 📋 Next |
 | First offline playable (character, map, monster, combat, save) | 📋 Planned |
@@ -136,7 +137,8 @@ git clone https://github.com/XiONDiGiTaL/ProjectTwilight.git
 - **Job Guide / Job Master:** first and second jobs, including Dark Knight and Shaman.
 - **Healer:** free full heal.
 - **Kafra:** item storage in Prontera, west of the hub landing point. The official rAthena Kafra NPCs (save, storage, teleport, pushcart) also work and open the same window; their fee is the one written in `kafras.txt`. Twilight's own Kafra uses `kafra_fee` in `data/config.json` or `user://server.cfg` (0 = free).
-- **Guild storage:** `@guild create <name>` founds or joins a guild, and a guild Kafra's guild-storage option opens one shared 300-slot bag for every member. Guilds and their storage live in `user://guilds.json`; character saves keep membership. Only one member can use the bag at a time. The Guild Keeper in Prontera, just east of the hub, opens it. Press `G` for the guild window: roster, invitations with accept/decline, invite and kick for the leader, and leave with automatic leadership succession.
+- **Guild storage:** `@guild create <name>` founds or joins a guild, and a guild Kafra's guild-storage option opens one shared 300-slot bag for every member. Guilds and their storage live in `user://guilds.json`; character saves keep membership. Only one member can use the bag at a time. The Guild Keeper in Prontera, just east of the hub, opens it. Press `G` for the guild window: roster with rank chips, invitations with accept/decline, and leave with automatic succession (an officer first, then a member).
+- **Guild ranks:** members are a leader, officers or members. Officers can invite and kick ordinary members; only the leader can promote, demote, kick officers, transfer leadership or disband (the last two ask for confirmation). The window only shows the controls your rank allows, and the simulation enforces the same rules.
 - **Warper:** fast travel to any town, field or dungeon in your client.
 - **Stylist:** hair style, hair colour and cloth dye.
 - **Commands:** press **Enter** — `@go prontera`, `@heal`, `@rates`, `@mobinfo poring`, `@autoloot on`, `@save`, `@help`.

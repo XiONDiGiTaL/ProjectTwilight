@@ -102,7 +102,7 @@ static func execute(sim: FieldSimulation, u: SimUnit, line: String) -> Dictionar
 				if not g.is_empty():
 					members = (g.members as Array).size()
 					stored = (g.get("storage") as Inventory).entries.size()
-				return _ok("Guild: %s   Members: %d   Storage: %d / %d" % [u.guild_name, members, stored, SimUnit.STORAGE_SLOTS])
+				return _ok("Guild: %s   Rank: %s   Members: %d   Storage: %d / %d" % [u.guild_name, sim.guild_rank(u).capitalize(), members, stored, SimUnit.STORAGE_SLOTS])
 			var sub := String(args[0]).to_lower()
 			if sub == "create":
 				if args.size() < 2:

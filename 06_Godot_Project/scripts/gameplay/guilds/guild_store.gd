@@ -5,12 +5,23 @@ extends RefCounted
 ## Offline mode owns this table; a co-op host or dedicated server would keep
 ## the same records server-side. Storage is one 300-slot bag per guild, shared
 ## by every member and saved independently of character saves.
+##
+## Ranks: every member has one of "leader" / "officer" / "member" in the
+## record's `ranks` map (name -> rank). `leader` stays the canonical leader
+## name and always agrees with the single "leader" entry. Files written
+## before ranks existed load with the recorded leader as leader and everyone
+## else as member. This class only stores; FieldSimulation checks who may do
+## what (see can()).
 
 const PATH := "user://guilds.json"
 const SLOTS := 300
+const RANK_LEADER := "leader"
+const RANK_OFFICER := "officer"
+const RANK_MEMBER := "member"
+const RANKS := [RANK_LEADER, RANK_OFFICER, RANK_MEMBER]
 
 var path := PATH
-var guilds: Dictionary = {}   # gid -> {id, name, leader, members: Array, invites: Array, storage: Inventory}
+var guilds: Dictionary = {}   # gid -> {id, name, leader, members: Array, ranks: Dictionary, invites: Array, storage: Inventory}
 var _item_db: Dictionary = {}
 
 
@@ -47,25 +58,113 @@ func join(name: String, member: String) -> Dictionary:
 	if g.is_empty():
 		var inv := Inventory.new()
 		inv.max_entries = SLOTS
-		g = {"id": id_for(clean), "name": clean, "leader": member, "members": [], "invites": [], "storage": inv}
+		g = {"id": id_for(clean), "name": clean, "leader": member, "members": [], "ranks": {}, "invites": [], "storage": inv}
 		guilds[String(g.id)] = g
+	_add_member(g, member)
+	(g.invites as Array).erase(member)
+	save()
+	return g
+
+
+## Adds a member with the right rank: leader if the guild has none, else member.
+func _add_member(g: Dictionary, member: String) -> void:
 	if not (g.members as Array).has(member):
 		g.members.append(member)
 	if String(g.get("leader", "")) == "":
 		g.leader = member
-	(g.invites as Array).erase(member)
+	var ranks: Dictionary = g.ranks
+	if String(g.leader) == member:
+		ranks[member] = RANK_LEADER
+	elif not ranks.has(member):
+		ranks[member] = RANK_MEMBER
+
+
+## "leader" / "officer" / "member", or "" for non-members.
+func rank_of(gid: String, member: String) -> String:
+	var g: Dictionary = get_guild(gid)
+	if g.is_empty() or not (g.members as Array).has(member):
+		return ""
+	if String(g.get("leader", "")) == member:
+		return RANK_LEADER
+	var r := String((g.ranks as Dictionary).get(member, RANK_MEMBER))
+	return r if r == RANK_OFFICER else RANK_MEMBER
+
+
+## The permission matrix. action: invite | kick | promote | demote |
+## transfer | disband | storage. `target_rank` matters for kick only.
+static func can(actor_rank: String, action: String, target_rank := RANK_MEMBER) -> bool:
+	match action:
+		"storage":
+			return actor_rank != ""
+		"invite":
+			return actor_rank == RANK_LEADER or actor_rank == RANK_OFFICER
+		"kick":
+			if actor_rank == RANK_LEADER:
+				return target_rank != RANK_LEADER
+			return actor_rank == RANK_OFFICER and target_rank == RANK_MEMBER
+		"promote", "demote", "transfer", "disband":
+			return actor_rank == RANK_LEADER
+	return false
+
+
+## Sets a member's rank to officer or member (never the leader's). The caller
+## checks permissions. False when nothing would change.
+func set_rank(gid: String, member: String, rank: String) -> bool:
+	var g: Dictionary = get_guild(gid)
+	if g.is_empty() or not (g.members as Array).has(member) or String(g.leader) == member:
+		return false
+	if rank != RANK_OFFICER and rank != RANK_MEMBER:
+		return false
+	if rank_of(gid, member) == rank:
+		return false
+	g.ranks[member] = rank
 	save()
-	return g
+	return true
+
+
+## Hands leadership to another member. The old leader becomes an officer.
+func transfer(gid: String, new_leader: String) -> bool:
+	var g: Dictionary = get_guild(gid)
+	if g.is_empty() or not (g.members as Array).has(new_leader) or String(g.leader) == new_leader:
+		return false
+	var old := String(g.leader)
+	g.leader = new_leader
+	g.ranks[new_leader] = RANK_LEADER
+	if (g.members as Array).has(old):
+		g.ranks[old] = RANK_OFFICER
+	save()
+	return true
+
+
+## Removes the guild and its storage for good.
+func disband(gid: String) -> bool:
+	if not guilds.has(gid):
+		return false
+	guilds.erase(gid)
+	save()
+	return true
 
 
 func leave(gid: String, member: String) -> void:
 	var g: Dictionary = get_guild(gid)
 	if g.is_empty():
 		return
+	var was_leader := String(g.get("leader", "")) == member
 	(g.members as Array).erase(member)
 	(g.invites as Array).erase(member)
-	if String(g.get("leader", "")) == member:
-		g.leader = String((g.members as Array)[0]) if not (g.members as Array).is_empty() else ""
+	(g.ranks as Dictionary).erase(member)
+	if (g.members as Array).is_empty():
+		g.leader = ""
+		guilds.erase(gid)   # nobody left: the guild is gone
+	elif was_leader:
+		# Succession: the first officer, otherwise the first member.
+		var heir := String((g.members as Array)[0])
+		for m in g.members:
+			if String((g.ranks as Dictionary).get(m, RANK_MEMBER)) == RANK_OFFICER:
+				heir = String(m)
+				break
+		g.leader = heir
+		g.ranks[heir] = RANK_LEADER
 	save()
 
 
@@ -87,10 +186,7 @@ func accept(gid: String, member: String) -> Dictionary:
 	if g.is_empty() or not (g.invites as Array).has(member):
 		return {}
 	(g.invites as Array).erase(member)
-	if not (g.members as Array).has(member):
-		g.members.append(member)
-	if String(g.get("leader", "")) == "":
-		g.leader = member
+	_add_member(g, member)
 	save()
 	return g
 
@@ -113,6 +209,7 @@ func kick(gid: String, member: String) -> bool:
 		return false
 	(g.members as Array).erase(member)
 	(g.invites as Array).erase(member)
+	(g.ranks as Dictionary).erase(member)
 	save()
 	return true
 
@@ -138,7 +235,7 @@ func save() -> void:
 		var g: Dictionary = guilds[gid]
 		var inv: Inventory = g.get("storage")
 		out[gid] = {"name": g.name, "leader": String(g.get("leader", "")),
-			"members": (g.members as Array).duplicate(), "invites": (g.get("invites", []) as Array).duplicate(),
+			"members": (g.members as Array).duplicate(), "ranks": (g.get("ranks", {}) as Dictionary).duplicate(), "invites": (g.get("invites", []) as Array).duplicate(),
 			"storage": inv.to_array()}
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(path.get_base_dir()))
 	var f := FileAccess.open(path, FileAccess.WRITE)
@@ -174,5 +271,16 @@ func load_from_disk() -> void:
 		var leader := String(e.get("leader", ""))
 		if leader == "" and not members.is_empty():
 			leader = String(members[0])
+		if leader != "" and not members.has(leader):
+			leader = String(members[0]) if not members.is_empty() else ""
+		# Ranks: files from before ranks have none (leader + members); unknown
+		# values fall back to member; exactly one leader, matching `leader`.
+		var ranks := {}
+		var raw_ranks: Variant = e.get("ranks", {})
+		for m in members:
+			var r := String(raw_ranks.get(m, RANK_MEMBER)) if raw_ranks is Dictionary else RANK_MEMBER
+			ranks[m] = RANK_OFFICER if r == RANK_OFFICER else RANK_MEMBER
+		if leader != "":
+			ranks[leader] = RANK_LEADER
 		guilds[String(gid)] = {"id": String(gid), "name": String(e.get("name", "Guild")).left(24),
-			"leader": leader, "members": members, "invites": invites, "storage": inv}
+			"leader": leader, "members": members, "ranks": ranks, "invites": invites, "storage": inv}
