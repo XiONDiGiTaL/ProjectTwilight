@@ -308,6 +308,11 @@ func test_hud_reset_ui_layout_returns_windows(t: SceneTree) -> Variant:
 	var inventory_ok: bool = hud.inventory.position.is_equal_approx(inventory_pos)
 	var expected := ((hud.settings_window.get_viewport_rect().size - hud.settings_window.size) / 2.0).max(Vector2.ZERO)
 	var settings_ok: bool = hud.settings_window.position.is_equal_approx(expected)
+	var feed_ok := false
+	for chip in hud._feed.get_children():
+		for child in chip.get_children():
+			if child is Label and child.text == "UI layout reset.":
+				feed_ok = true
 	for id in saved:
 		settings.set_value("ui_windows", id, saved[id])
 	hud.queue_free()
@@ -316,4 +321,6 @@ func test_hud_reset_ui_layout_returns_windows(t: SceneTree) -> Variant:
 		return "Reset UI Layout should restore the inventory position"
 	if not settings_ok:
 		return "Reset UI Layout should re-center Settings"
+	if not feed_ok:
+		return "Reset UI Layout should confirm through the system feed"
 	return true

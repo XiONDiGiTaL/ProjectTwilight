@@ -352,6 +352,7 @@ func reset_ui_layout() -> void:
 		if node is GlassWindow and node != settings_window:
 			(node as GlassWindow).reset_position()
 	settings_window.center_position()
+	notify("UI layout reset.", UiTheme.ACCENT)
 
 
 # --- World HP bars ------------------------------------------------------------
