@@ -19,7 +19,13 @@ const OVERHEAD_NAME_MAX := 1.25
 const OVERHEAD_NAME_DEFAULT := 0.7
 const OVERHEAD_NAME_STEP := 0.05
 
+## Server-rate presets offered in Settings, as effective multipliers.
+## RuleConfig stores percentages, so 25 here means 2500 (25x).
+const RATE_PRESETS := [1, 25, 50]
+const RATE_PRESET_NONE := 0
+
 signal overhead_name_scale_changed(scale: float)
+signal rate_preset_changed(multiplier: int)
 
 var _cfg := ConfigFile.new()
 
@@ -62,6 +68,21 @@ func overhead_name_font(base: float, minimum := 8) -> int:
 
 func overhead_name_outline(base: float, minimum := 4) -> int:
 	return maxi(minimum, roundi(base * overhead_name_scale()))
+
+
+## The stored UI preset, or RATE_PRESET_NONE when the loaded server rule
+## config is authoritative. Only known presets are accepted.
+func rate_preset() -> int:
+	var preset := int(get_value("rules", "rate_preset", RATE_PRESET_NONE))
+	return preset if RATE_PRESETS.has(preset) else RATE_PRESET_NONE
+
+
+## Remembers the chosen preset; the field applies it live and on every load.
+func set_rate_preset(multiplier: int) -> void:
+	if not RATE_PRESETS.has(multiplier) or multiplier == rate_preset():
+		return
+	set_value("rules", "rate_preset", multiplier)
+	rate_preset_changed.emit(multiplier)
 
 
 func client_path() -> String:

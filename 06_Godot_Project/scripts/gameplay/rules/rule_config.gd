@@ -67,6 +67,17 @@ static func _rate_label(rate: int) -> String:
 	return label.trim_suffix("0").trim_suffix("0").trim_suffix(".")
 
 
+## Applies one whole-number multiplier to Base EXP, Job EXP and drops. The
+## Settings presets use this so all three economy rates stay in step.
+func apply_rate_multiplier(multiplier: int) -> void:
+	if multiplier <= 0:
+		return
+	var percent := clampi(multiplier * 100, 0, 10000)
+	exp_rate = percent
+	job_exp_rate = percent
+	drop_rate = percent
+
+
 func _read_json(path: String) -> void:
 	var txt := FileAccess.get_file_as_string(path)
 	var parsed: Variant = JSON.parse_string(txt)

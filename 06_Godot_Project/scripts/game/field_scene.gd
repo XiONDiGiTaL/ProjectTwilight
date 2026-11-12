@@ -70,6 +70,10 @@ func _ready() -> void:
 		push_error("Could not load map %s" % map_name)
 		return
 	sim = FieldSimulation.new(map.gat, sim_seed)
+	var settings := get_node_or_null("/root/Settings")
+	if settings:
+		settings.rate_preset_changed.connect(_apply_rate_preset)
+		_apply_rate_preset(settings.rate_preset())
 	if not saved.is_empty():
 		player = sim.add_player_from_save(saved)
 	if player == null:
@@ -361,6 +365,14 @@ func attack(target_id: int) -> bool:
 
 
 # --- Saving --------------------------------------------------------------------
+
+## Settings presets override server config rates for this field, live while the
+## window is open. RATE_PRESET_NONE leaves RuleConfig's loaded values alone.
+func _apply_rate_preset(multiplier: int) -> void:
+	if sim == null or multiplier <= 0:
+		return
+	sim.rules.apply_rate_multiplier(multiplier)
+
 
 func save_now(announce := false) -> void:
 	if save_slot == "" or player == null:

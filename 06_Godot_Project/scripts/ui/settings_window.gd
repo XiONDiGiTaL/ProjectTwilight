@@ -11,6 +11,7 @@ const GAME_STORAGE_KEY := "settings_game"
 
 var slider: HSlider
 var value_label: Label
+var rate_buttons: Array[Button] = []
 var reset_button: Button
 var reset_layout_button: Button
 ## Set before add_child(): each surface keeps its own dragged position.
@@ -37,6 +38,27 @@ func _build() -> void:
 	var settings := get_node_or_null("/root/Settings")
 	if settings == null:
 		return
+	body.add_child(UiTheme.label("SERVER RATES · EXP & DROP", 11, UiTheme.ACCENT, 700, 3))
+	var rate_row := HBoxContainer.new()
+	rate_row.add_theme_constant_override("separation", 6)
+	body.add_child(rate_row)
+	var group := ButtonGroup.new()
+	var active := _active_rate_preset(settings)
+	for multiplier in Settings.RATE_PRESETS:
+		var b := Button.new()
+		b.text = "%d×" % multiplier
+		b.tooltip_text = "Set Base EXP, Job EXP and drops to %d×" % multiplier
+		b.toggle_mode = true
+		b.button_group = group
+		b.custom_minimum_size = Vector2(0, 26)
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		b.set_meta("rate_multiplier", multiplier)
+		UiTheme.style_button(b, false, false, 11)
+		b.pressed.connect(func(): settings.set_rate_preset(multiplier))
+		rate_row.add_child(b)
+		rate_buttons.append(b)
+		b.set_pressed_no_signal(multiplier == active)
+	body.add_child(UiTheme.label("BASE EXP · JOB EXP · DROPS", 9, UiTheme.TEXT_DIM, 400, 2))
 	body.add_child(UiTheme.label("OVERHEAD NAME SCALE", 11, UiTheme.ACCENT, 700, 3))
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 10)
@@ -74,6 +96,27 @@ func _build() -> void:
 	UiTheme.style_button(reset_layout_button, false, false, 9)
 	reset_layout_button.pressed.connect(func(): reset_layout_requested.emit())
 	body.add_child(reset_layout_button)
+	if not settings.rate_preset_changed.is_connected(_sync_rate_buttons):
+		settings.rate_preset_changed.connect(_sync_rate_buttons)
+
+
+## The stored preset, else a preset that matches the loaded server config.
+func _active_rate_preset(settings: Node) -> int:
+	var stored: int = settings.rate_preset()
+	if stored != Settings.RATE_PRESET_NONE:
+		return stored
+	var rules := RuleConfig.load_config()
+	if rules.exp_rate != rules.job_exp_rate or rules.exp_rate != rules.drop_rate:
+		return Settings.RATE_PRESET_NONE
+	if rules.exp_rate % 100 != 0:
+		return Settings.RATE_PRESET_NONE
+	var multiplier := rules.exp_rate / 100
+	return multiplier if Settings.RATE_PRESETS.has(multiplier) else Settings.RATE_PRESET_NONE
+
+
+func _sync_rate_buttons(multiplier: int) -> void:
+	for b in rate_buttons:
+		b.set_pressed_no_signal(int(b.get_meta("rate_multiplier", 0)) == multiplier)
 
 
 func _reset_overhead_scale() -> void:

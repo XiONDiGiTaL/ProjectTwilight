@@ -69,6 +69,15 @@ func test_effective_rate_labels(_t) -> Variant:
 	return true
 
 
+func test_rate_multiplier_updates_all_three_rates(_t) -> Variant:
+	var r := RuleConfig.new()
+	r.apply_rate_multiplier(25)
+	if r.exp_rate != 2500 or r.job_exp_rate != 2500 or r.drop_rate != 2500:
+		return "25x should set all three rates to 2500%%: %s" % r.describe()
+	r.apply_rate_multiplier(0)
+	return true if r.exp_rate == 2500 else "an invalid preset should not clear the rates"
+
+
 func test_kv_overrides_and_clamps(_t) -> Variant:
 	var r := RuleConfig.new()
 	r._read_kv("// header comment\nbase_exp_rate: 300\njob_exp_rate = 150\nitem_rate_common: 250\nmax_level: 120\nautoloot: 1\nunknown_key: 5\n", "test.cfg")

@@ -195,6 +195,48 @@ func test_settings_window_updates_scale_live(t: SceneTree) -> Variant:
 	return true
 
 
+func test_settings_window_rate_presets(t: SceneTree) -> Variant:
+	var settings = t.root.get_node_or_null("/root/Settings")
+	if settings == null:
+		return "Settings autoload is missing"
+	var old: int = settings.rate_preset()
+	settings.set_value("rules", "rate_preset", Settings.RATE_PRESET_NONE)
+	var w = SETTINGS_WINDOW.new()
+	t.root.add_child(w)
+	await t.process_frame
+	w.toggle()
+	await t.process_frame
+	var labels: Array = []
+	for b in w.rate_buttons:
+		labels.append(b.text)
+	var labels_ok: bool = labels == ["1×", "25×", "50×"]
+	for b in w.rate_buttons:
+		if int(b.get_meta("rate_multiplier", 0)) == 25:
+			b.pressed.emit()
+	await t.process_frame
+	var stored: bool = settings.rate_preset() == 25
+	var selected := false
+	for b in w.rate_buttons:
+		if int(b.get_meta("rate_multiplier", 0)) == 25:
+			selected = b.button_pressed
+	var live_rule := RuleConfig.new()
+	live_rule.apply_rate_multiplier(settings.rate_preset())
+	var rates_ok: bool = live_rule.exp_rate == 2500 and live_rule.drop_rate == 2500
+	w.toggle(false)
+	w.queue_free()
+	settings.set_value("rules", "rate_preset", old)
+	await t.process_frame
+	if not labels_ok:
+		return "Settings should offer 1x, 25x and 50x presets: %s" % [labels]
+	if not stored:
+		return "choosing a preset should persist it"
+	if not selected:
+		return "the chosen preset button should stay highlighted"
+	if not rates_ok:
+		return "a 25x preset should become 2500%% for EXP and drops"
+	return true
+
+
 func test_hud_settings_button_toggles_overlay(t: SceneTree) -> Variant:
 	var hud := CombatHud.new()
 	t.root.add_child(hud)
