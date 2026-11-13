@@ -43,6 +43,7 @@ The project-wide rules and history are in [`Directive.md`](Directive.md).
 - [ ] Party window and party EXP sharing
 - [ ] Quests and quest log
 - [x] First rAthena world batch: Hornet, Pupa, Creamy, Poporing, Thief Bug, Rocker and Drops, plus connected `prt_fild00`, `prt_fild04` and `prt_fild05` spawn tables
+- [x] Second rAthena world batch: `prt_fild07`/`prt_fild09`, the four-floor `prt_sewb1`–`prt_sewb4` Culvert dungeon, 13 more monsters and a Culvert Guardian entrance
 - [ ] More maps, monsters and dungeon content
 - [ ] Refine, cards and socketing
 - [ ] Trade window

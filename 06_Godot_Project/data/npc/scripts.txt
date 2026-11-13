@@ -21,6 +21,8 @@ pack:rathena/npc/kafras/kafras.txt
 res://data/npc/twilight/prontera_services.txt
 // Guild Keeper in Prontera: opens the shared guild storage with guildopenstorage.
 res://data/npc/twilight/guild_keeper.txt
+// Culvert Guardian: normal entrance from prt_fild05 into the sewer chain.
+res://data/npc/twilight/culvert_guardian.txt
 
 // Warp portals for every map (rAthena include lists; Pre-Renewal overrides last).
 conf:pack:rathena/npc/scripts_warps.conf

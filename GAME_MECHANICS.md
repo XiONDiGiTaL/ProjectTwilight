@@ -37,8 +37,8 @@ Implementation: `scripts/gameplay/combat/combat_rules_prerenewal.gd`, `scripts/g
 | Novice max HP | (35 + 5 × level) × (1 + VIT/100) | Medium (other jobs need HP factors) |
 | EXP distribution | Split by share of damage dealt | Medium |
 | Passive monsters | Retaliate against their attacker; give up beyond 14 cells | Medium |
-| Monster data | Ten Classic monsters in `data/prerenewal/monsters.json`: Poring, Fabre, Lunatic, Hornet, Pupa, Creamy, Poporing, Thief Bug, Rocker and Drops | High (rAthena pre-re `mob_db.yml`, cross-check pending) |
-| Immovable / non-attacker | Pupa stays on its spawn cell and never retaliates (rAthena has no CanMove / CanAttack mode) | High |
+| Monster data | 23 Classic monsters in `data/prerenewal/monsters.json`, including the Prontera-field and Culvert species listed below | High (rAthena pre-re `mob_db.yml`, cross-check pending) |
+| Immovable / non-attacker | Pupa and Thief Bug Egg stay on their spawn cell and never retaliate (rAthena has no CanMove / CanAttack mode) | High |
 
 ## Items and inventory
 
@@ -176,12 +176,14 @@ Implementation: `data/prerenewal/monsters.json`, `data/prerenewal/maps.json`, `f
 
 | Rule | Value | Confidence |
 |---|---|---|
-| New monster batch | Hornet, Pupa, Creamy, Poporing, Thief Bug, Rocker and Drops, using rAthena Pre-Renewal HP, EXP, ATK, DEF/MDEF, stats, element, race, size and motion values | High (rAthena pre-re `mob_db.yml`; Hercules cross-check pending) |
-| Pupa mode | Immovable and non-attacker; it keeps its spawn cell and does not retaliate when hit | High |
+| Prontera-field batch | Hornet, Pupa, Creamy, Poporing, Thief Bug, Rocker, Drops, Savage Babe, Baby Desert Wolf and Condor, using rAthena Pre-Renewal HP, EXP, ATK, DEF/MDEF, stats, element, race, size and motion values | High (rAthena pre-re `mob_db.yml`; Hercules cross-check pending) |
+| Culvert batch | Thief Bug Egg, Familiar, Tarou, Spore, Plankton, Thief Bug Female/Male, Poison Spore, Drainliar and Cramp | High (same source) |
+| Immovable mode | Pupa and Thief Bug Egg keep their spawn cell and never retaliate when hit | High |
 | Drop items | Only items that already exist in `items.json` are listed; missing rAthena items are omitted rather than added as dead IDs | Medium (intentional subset) |
-| New fields | `prt_fild05` west of Prontera, `prt_fild04` beyond it and `prt_fild00` at the northwestern frontier; the three form a connected loop with Prontera | High for connectivity (rAthena warp lines) |
-| Spawn density | Species ratios follow rAthena's Pre-Renewal Prontera-field spawns; counts are halved for the current single-threaded renderer | Medium (deliberate scaling) |
-| Field travel | The new maps use rAthena's own portals rather than duplicated `maps.json` warps | High |
+| New fields | `prt_fild05` west of Prontera, `prt_fild04` beyond it, `prt_fild00` at the northwestern frontier, plus `prt_fild07` and `prt_fild09` on the western road | High for connectivity (rAthena warp lines) |
+| Culvert dungeon | `prt_sewb1`–`prt_sewb4`, entered from the Culvert Guardian at `prt_fild05` (270,212); each floor uses rAthena's own portals and down-warp chain | High |
+| Spawn density | Species ratios follow rAthena's Pre-Renewal map spawns; counts are halved for the current single-threaded renderer | Medium (deliberate scaling) |
+| Field travel | The new maps use rAthena's own portals rather than duplicated `maps.json` warps; the Culvert entrance is a Project Twilight NPC | High |
 
 ## Still to research
 

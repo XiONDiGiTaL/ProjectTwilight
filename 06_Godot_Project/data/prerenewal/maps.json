@@ -123,5 +123,100 @@
       "1002": 20,
       "1004": 35
     }
+  },
+  "prt_fild07": {
+    "name": "Prontera Field",
+    "subtitle": "Northwestern crossroads",
+    "town": false,
+    "respawn": [
+      200,
+      200
+    ],
+    "spawns": {
+      "1052": 40,
+      "1031": 15
+    }
+  },
+  "prt_fild09": {
+    "name": "Prontera Field",
+    "subtitle": "Southwestern hunting grounds",
+    "town": false,
+    "respawn": [
+      200,
+      200
+    ],
+    "spawns": {
+      "1167": 35,
+      "1107": 10,
+      "1009": 5
+    }
+  },
+  "prt_sewb1": {
+    "name": "Prontera Culvert F1",
+    "subtitle": "Beneath the capital",
+    "town": false,
+    "respawn": [
+      164,
+      156
+    ],
+    "spawns": {
+      "1048": 40,
+      "1051": 15,
+      "1005": 5,
+      "1175": 5
+    }
+  },
+  "prt_sewb2": {
+    "name": "Prontera Culvert F2",
+    "subtitle": "Flooded tunnels",
+    "town": false,
+    "respawn": [
+      100,
+      100
+    ],
+    "spawns": {
+      "1048": 10,
+      "1051": 35,
+      "1005": 5,
+      "1014": 10,
+      "1161": 15,
+      "1053": 5,
+      "1175": 30
+    }
+  },
+  "prt_sewb3": {
+    "name": "Prontera Culvert F3",
+    "subtitle": "Thief Bug nest",
+    "town": false,
+    "respawn": [
+      100,
+      106
+    ],
+    "spawns": {
+      "1048": 5,
+      "1051": 10,
+      "1053": 32,
+      "1054": 32,
+      "1175": 7,
+      "1077": 7,
+      "1005": 10
+    }
+  },
+  "prt_sewb4": {
+    "name": "Prontera Culvert F4",
+    "subtitle": "Deepest culvert",
+    "town": false,
+    "respawn": [
+      104,
+      96
+    ],
+    "spawns": {
+      "1048": 5,
+      "1051": 10,
+      "1053": 10,
+      "1054": 35,
+      "1111": 10,
+      "1209": 2
+    }
   }
 }

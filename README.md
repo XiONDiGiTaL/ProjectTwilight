@@ -40,7 +40,7 @@ Captured from the running game with `tests/capture_readme.gd`. The sprites, maps
 
 ## Development status
 
-> Early development, but playable: create a character, train or skip to Prontera, fight, loot, change jobs, travel between maps, and host or join a private co-op session. Music and sound effects play from your own client. Ten monster species now live across Prontera and its connected fields, and co-op has only been tested on one PC.
+> Early development, but playable: create a character, train or skip to Prontera, fight, loot, change jobs, travel between maps, and host or join a private co-op session. Music and sound effects play from your own client. 23 monster species now live across Prontera's connected fields and the four-floor Culvert dungeon, and co-op has only been tested on one PC.
 
 | Area | Status |
 |---|---|
@@ -75,7 +75,7 @@ Captured from the running game with `tests/capture_readme.gd`. The sprites, maps
 | Guild ranks (leader / officer / member) and permissions | ✅ Implemented and tested (local only, not networked) |
 | Guild message of the day and guild chat (`/g`) | ✅ Implemented and tested (local only, not networked) |
 | Job change to all six first jobs; all six first-job skill trees | ✅ Implemented and tested |
-| More skill depth, magic and elements, more maps and monsters | 🔧 First rAthena batch: 7 field monsters and 3 connected Prontera fields |
+| More skill depth, magic and elements, more maps and monsters | 🔧 Two rAthena batches: 23 monster species and 9 new maps, including the four-floor Culvert |
 | First offline playable (character, map, monster, combat, save) | ✅ Playable (`Play-ProjectTwilight.bat`) |
 | eAthena / Hercules compatibility | 🔍 Under investigation, not claimed |
 | Persistent MMO server | 📋 Planned |

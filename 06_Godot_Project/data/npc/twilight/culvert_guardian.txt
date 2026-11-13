@@ -1,0 +1,19 @@
+//===== Project Twilight NPC script =========================
+//= Prontera Culvert entrance, west of the capital. The rAthena
+//= sewer warp chain starts on prt_fild05; this script gives the
+//= player the same entrance without requiring the campaign quest.
+//= Original Project Twilight script (Apache-2.0), rAthena format.
+//============================================================
+
+prt_fild05,270,212,5	script	Culvert Guardian#tw	4_M_SAGE_C,{
+	mes "[Culvert Guardian]";
+	mes "The Prontera Culvert runs beneath the capital. Thief Bugs, Familiars and worse nest in the dark below.";
+	next;
+	if (select("Enter the culvert:Not now") == 1) {
+		warp "prt_sewb1", 131, 247;
+		end;
+	}
+	mes "[Culvert Guardian]";
+	mes "The deep floors are no place for the unprepared.";
+	close;
+}

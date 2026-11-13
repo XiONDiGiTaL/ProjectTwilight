@@ -63,7 +63,9 @@ func test_new_field_monster_sprites(_t) -> Variant:
 	var g := _archive()
 	if g == null:
 		return "SKIP no client configured"
-	for name in ["hornet", "pupa", "creamy", "poporing", "thief_bug", "rocker", "drops"]:
+	for name in ["hornet", "pupa", "creamy", "poporing", "thief_bug", "rocker", "drops",
+			"farmiliar", "condor", "spore", "thief_bug_egg", "thief_bug_female", "thief_bug_male",
+			"poison_spore", "desert_wolf_b", "drainliar", "plankton", "savage_babe", "tarou", "cramp"]:
 		var base: String = "data\\sprite\\몬스터\\" + String(name)
 		var spr := SprFile.decode(g.read(GrfArchive.key_for(base + ".spr")))
 		var act := ActFile.decode(g.read(GrfArchive.key_for(base + ".act")))
