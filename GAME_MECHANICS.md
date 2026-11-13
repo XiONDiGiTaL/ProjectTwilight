@@ -13,8 +13,10 @@ Implementation: `06_Godot_Project/scripts/gameplay/progression/stat_rules_preren
 | FLEE | BaseLv + AGI + bonuses | High | iRO Wiki classic stats page |
 | Perfect dodge | 1 + floor(LUK / 10) | High | iRO Wiki classic |
 | Critical rate | 1 + LUK × 0.3 (%) | High | iRO Wiki classic |
-| Status ATK (melee) | STR + floor(STR/10)² + floor(DEX/5) + floor(LUK/5) | High | iRO Wiki classic. Ranged weapons swap STR and DEX. |
+| Status ATK (melee) | STR + floor(STR/10)² + floor(DEX/5) + floor(LUK/5) | High | iRO Wiki classic. Bows, instruments and whips swap STR and DEX. |
 | MATK range | INT + floor(INT/7)² … INT + floor(INT/5)² | High | iRO Wiki classic |
+| Status-window DEF | hard DEF + soft DEF | High | The second number is the soft-DEF display value below, not raw VIT. |
+| Status-window MDEF | hard MDEF + (INT + floor(VIT/2)) | Medium-high | iRO Wiki classic soft MDEF; hard MDEF from buffs only until MDEF equipment exists. |
 
 ## Combat
 
@@ -27,7 +29,7 @@ Implementation: `scripts/gameplay/combat/combat_rules_prerenewal.gd`, `scripts/g
 | Critical damage | Maximum ATK; ignores FLEE and DEF; no × 1.4 multiplier (that is Renewal) | High |
 | Hard DEF | Percentage reduction (`damage × (100 − DEF) / 100`) | High |
 | Monster soft DEF | VIT + rnd(0, max(0, floor(VIT/20)² − 1)) | High |
-| Player soft DEF | floor(VIT × 0.5) + rnd(floor(VIT × 0.3), max(floor(VIT × 0.3), floor(VIT²/150) − 1)) | Medium-high |
+| Player soft DEF | Display: floor(VIT × 0.5) + max(floor(VIT × 0.3), floor(VIT²/150) − 1). Per hit: the same value with the VIT term rolled from floor(VIT × 0.3) to that maximum. | Medium-high (iRO Wiki Classic display, rAthena pre-re roll) |
 | Minimum damage | 1 | High |
 | ASPD | 200 − (WD − (floor(WD × AGI / 25) + floor(WD × DEX / 100)) / 10), with WD = 50 × BTBA | High (formula) |
 | Attack interval | (200 − ASPD) × 20 ms | High |

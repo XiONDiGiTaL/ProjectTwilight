@@ -84,7 +84,7 @@ func _ready() -> void:
 	right.add_theme_constant_override("h_separation", 14)
 	right.add_theme_constant_override("v_separation", 4)
 	cols.add_child(right)
-	for k in ["ATK", "MATK", "HIT", "FLEE", "CRIT", "ASPD", "DEF", "WEIGHT"]:
+	for k in ["ATK", "MATK", "HIT", "FLEE", "CRIT", "ASPD", "DEF", "MDEF", "WEIGHT"]:
 		right.add_child(UiTheme.label(k, 11, Color(UiTheme.ACCENT, 0.85), 600, 2))
 		var v := UiTheme.label("", 13, UiTheme.TEXT, 600)
 		v.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
@@ -120,5 +120,6 @@ func refresh() -> void:
 	(_derived["FLEE"] as Label).text = "%d + %d" % [_unit.flee(), StatRulesPreRenewal.perfect_dodge(int(st.luk))]
 	(_derived["CRIT"] as Label).text = "%.1f%%" % StatRulesPreRenewal.critical_rate(int(st.luk))
 	(_derived["ASPD"] as Label).text = str(roundi(aspd))
-	(_derived["DEF"] as Label).text = "%d + %d" % [_unit.hard_def, int(st.vit)]
+	(_derived["DEF"] as Label).text = "%d + %d" % [_unit.hard_def, CombatRulesPreRenewal.player_soft_def(int(st.vit))]
+	(_derived["MDEF"] as Label).text = "%d + %d" % [_unit.mdef, ElementRulesPreRenewal.soft_mdef(int(st.int), int(st.vit))]
 	(_derived["WEIGHT"] as Label).text = str(_unit.max_weight())

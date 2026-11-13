@@ -2219,9 +2219,11 @@ func _recalc_player(u: SimUnit) -> void:
 	u.max_hp = CombatRulesPreRenewal.job_max_hp(u.level, int(s.vit), float(j.get("hp_a", 0.0)), int(j.get("hp_b", 5)))
 	u.max_sp = CombatRulesPreRenewal.job_max_sp(u.level, int(s.int), int(j.get("sp_factor", 1)))
 	u.weight_bonus = int(j.get("weight_bonus", 0))
-	u.batk = StatRulesPreRenewal.status_atk(int(s.str), int(s.dex), int(s.luk))
 	var weapon: Dictionary = item_db.get(str(u.equipment.get("weapon", 0)), {})
 	u.weapon_type = String(weapon.get("weapon_type", "fist"))
+	# Bows, instruments and whips are DEX-primary in Pre-Renewal; using the
+	# melee formula here silently gave ranged classes the wrong status ATK.
+	u.batk = StatRulesPreRenewal.status_atk(int(s.str), int(s.dex), int(s.luk), StatRulesPreRenewal.is_ranged_weapon(u.weapon_type))
 	# Bows attack from range; instruments and whips have a short reach.
 	u.attack_range = int(weapon.get("range", 1))
 	var wr := CombatRulesPreRenewal.weapon_atk_range(int(weapon.get("atk", 0)), int(weapon.get("weapon_level", 1)), int(s.dex))

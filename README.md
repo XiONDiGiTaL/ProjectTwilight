@@ -48,7 +48,7 @@ Captured from the running game with `tests/capture_readme.gd`. The sprites, maps
 | Korean (CP949) resource paths | ✅ Implemented and tested |
 | SPR sprites, palettes and ACT animations | ✅ Implemented and tested |
 | Animated sprite rendering and Sprite Viewer tool | ✅ Implemented |
-| Pre-Renewal stat formulas (core) | 🔧 In development |
+| Pre-Renewal stat formulas (core) | 🔧 Core implemented and tested (ranged DEX ATK, soft DEF/MDEF display); refine and ASPD cross-checks pending |
 | Co-op invitation codes | ✅ Implemented and tested |
 | Private co-op (host-authoritative ENet: HOST / JOIN from character select, shared maps, chat, remote NPC dialogs) | ✅ Implemented · tested between two game windows on one PC · LAN/internet and 3+ players not yet verified |
 | Music (client `BGM` folder, per-map table) and sound effects (`data/wav`: weapons, skills, monsters, statuses, UI) | ✅ Implemented and tested |

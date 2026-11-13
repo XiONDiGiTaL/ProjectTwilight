@@ -1,6 +1,9 @@
 # Changelog
 
-## [Unreleased] - 2026-11-12
+## [Unreleased] - 2026-11-13
+
+### Fixed
+- **Pre-Renewal core stat formulas:** bows, instruments and whips now use DEX as the primary stat for status ATK instead of the melee STR formula, so ranged classes no longer lose most of their base damage. The status window also shows the real soft-DEF value (`floor(VIT/2) + max(floor(VIT*0.3), floor(VIT^2/150) - 1)`) instead of raw VIT, and now includes MDEF as hard MDEF plus soft MDEF (`INT + VIT/2`). Per-hit damage still rolls the documented VIT soft-DEF range. New golden-value tests cover the ranged formula, the soft-DEF values at 1/10/30/50/99 VIT, soft MDEF, and a real Archer equipping a bow; suite 257 passed, 0 failed, 0 skipped.
 
 ### Added
 - **Job-change preview:** the Job Guide confirmation now shows the target class's body before the permanent choice. It uses the player's current hair and cloth, applies a class's forced sex, and displays the custom Dread Knight sheet for Dread Knight/Abyss Knight instead of the placeholder Knight body. Normal NPC pages keep the compact dialog; the preview page is raised above the chat window. Tests: a new confirmation-preview case loads the Dread Knight body and verifies the preview hides on normal pages; suite 253 passed, 0 failed, 0 skipped.

@@ -157,3 +157,20 @@ func test_ranges_and_skill_requirements(_t) -> Variant:
 	if dancer.attack_range != 2:
 		return "whip should give attack range 2, got %d" % dancer.attack_range
 	return true if sim.command_use_skill(dancer.id, "DC_SLINGARROW", target.id) else "Dancer skill was rejected with a whip"
+
+
+func test_ranged_weapon_uses_dex_status_atk(_t) -> Variant:
+	var sim := FieldSimulation.new(_gat(), 83)
+	var p := sim.add_player("Ranged", Vector2i(10, 10), {"str": 30, "agi": 10, "vit": 20, "int": 20, "dex": 60, "luk": 10})
+	p.job = "archer"
+	p.level = 40
+	sim._recalc_player(p)
+	var melee := StatRulesPreRenewal.status_atk(30, 60, 10, false)
+	if p.batk != melee:
+		return "unarmed status ATK should use STR, got %d" % p.batk
+	if not _equip(sim, p, BOW):
+		return "Archer could not equip a bow"
+	var expected := StatRulesPreRenewal.status_atk(30, 60, 10, true)
+	if p.batk != expected:
+		return "bow status ATK expected %d, got %d (melee %d)" % [expected, p.batk, melee]
+	return true if p.batk != melee else "bow kept the melee status ATK"

@@ -25,12 +25,21 @@ static func monster_vit_def(vit: int, rng: RandomNumberGenerator) -> int:
 	return vit + (rng.randi_range(0, spread) if spread > 0 else 0)
 
 
-## Player soft DEF (VIT): floor(VIT*0.5) + rnd(floor(VIT*0.3), max(floor(VIT*0.3), floor(VIT^2/150) - 1)).
-## Medium-high confidence.
+## Player soft DEF displayed in the status window (the top of the VIT roll):
+## floor(VIT*0.5) + max(floor(VIT*0.3), floor(VIT^2/150) - 1). High confidence
+## for the display value (iRO Wiki Classic DEF).
+static func player_soft_def(vit: int) -> int:
+	return int(vit * 0.5) + maxi(int(vit * 0.3), vit * vit / 150 - 1)
+
+
+## Player soft DEF used for one hit: the same value with the VIT variance rolled
+## between floor(VIT*0.3) and max(floor(VIT*0.3), floor(VIT^2/150) - 1).
+## Medium-high confidence (rAthena pre-re status_calc_def2).
 static func player_vit_def(vit: int, rng: RandomNumberGenerator) -> int:
-	var lo := int(vit * 0.3)
-	var hi := maxi(lo, vit * vit / 150 - 1)
-	return int(vit * 0.5) + rng.randi_range(lo, hi)
+	var base := int(vit * 0.5)
+	var lo := base + int(vit * 0.3)
+	var hi := player_soft_def(vit)
+	return rng.randi_range(lo, hi) if hi > lo else hi
 
 
 ## Applies hard DEF (percent) then soft DEF (flat). Damage never drops below 1.

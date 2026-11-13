@@ -7,6 +7,10 @@ extends RefCounted
 const MAX_BASE_STAT := 99
 const NOVICE_START_POINTS := 48  # High confidence: 6 stats at 1 + 48 points (iRO Wiki, rAthena pre-re)
 
+## Weapon types whose status ATK uses DEX as the primary stat. Bows are fully
+## ranged; instruments and whips are short-ranged but use the same DEX formula.
+const RANGED_WEAPON_TYPES := ["bow", "instrument", "whip"]
+
 
 ## Points gained when levelling from `old_level` to old_level + 1.
 ## floor(old_level / 5) + 3. Confirmed by the well-known total of 1273 at level 99.
@@ -55,6 +59,10 @@ static func perfect_dodge(luk: int) -> int:
 ## Critical rate shown in the status window, in percent: 1 + LUK * 0.3. High confidence.
 static func critical_rate(luk: int) -> float:
 	return 1.0 + luk * 0.3
+
+
+static func is_ranged_weapon(weapon_type: String) -> bool:
+	return RANGED_WEAPON_TYPES.has(weapon_type)
 
 
 ## Status ATK for melee weapons: STR + floor(STR/10)^2 + floor(DEX/5) + floor(LUK/5).

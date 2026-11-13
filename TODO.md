@@ -38,7 +38,7 @@ The project-wide rules and history are in [`Directive.md`](Directive.md).
 - [x] Archer, Acolyte, Merchant and Thief first-job skill trees
 - [x] Knight, Crusader, Priest and Monk second jobs
 - [x] Canonical second, transcendent and third-job paths for all six families (plus custom Dread Knight / Abyss Knight and Oracle / Spirit Sage)
-- [x] Dedicated second-job and transcendent skill trees for every canonical rank, plus Dread Knight and Oracle
+- [x] Core Pre-Renewal stat formulas: ranged weapons use DEX status ATK; status window shows formula-based soft DEF and soft MDEF
 - [ ] Acolyte Blessing and other supportive buffs
 - [ ] Party window and party EXP sharing
 - [ ] Quests and quest log
