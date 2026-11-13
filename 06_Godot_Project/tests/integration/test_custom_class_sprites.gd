@@ -94,6 +94,39 @@ func test_custom_bodies_load(t: SceneTree) -> Variant:
 	return true
 
 
+func test_job_confirmation_preview(t: SceneTree) -> Variant:
+	var res = t.root.get_node_or_null("/root/RoResources")
+	if res == null:
+		return "SKIP no RoResources autoload"
+	if not res.is_mounted and not res.mount():
+		return "SKIP no Ragnarok client configured"
+	if not res.pack_file("DreadKnight.png"):
+		return "SKIP DreadKnight.png is not installed in the resource pack"
+	var dialog := NpcDialog.new()
+	t.root.add_child(dialog)
+	await t.process_frame
+	dialog.show_page("Job Guide", "Become a Dread Knight?", ["Become a Dread Knight", "Go back"], false,
+		{"male": true, "hair_style": 2, "hair_color": 0, "job_sprite": "기사", "cloth": 0, "job": "dread_knight"})
+	await t.process_frame
+	if dialog._preview == null or not dialog._preview.visible:
+		dialog.queue_free()
+		return "job confirmation did not show the preview"
+	if dialog._preview._sprite == null or dialog._preview._sprite.body_spr == null:
+		dialog.queue_free()
+		return "job preview has no body"
+	if dialog._preview._sprite.body_spr.frame_count() < 100:
+		dialog.queue_free()
+		return "job preview did not load the Dread Knight sheet"
+	dialog.show_page("Job Guide", "Safe travels.", ["Close"])
+	await t.process_frame
+	if dialog._preview.visible:
+		dialog.queue_free()
+		return "preview stayed visible on a normal page"
+	dialog.queue_free()
+	await t.process_frame
+	return true
+
+
 func _any_exists(res: Node, bases: Array) -> bool:
 	for base in bases:
 		if res.exists(base + ".spr") and res.exists(base + ".act"):

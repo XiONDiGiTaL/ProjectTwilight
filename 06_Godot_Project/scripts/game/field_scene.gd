@@ -1286,6 +1286,26 @@ func _job_dialog_start(npc: Dictionary) -> void:
 	hud.dialog.show_page(npc.name, "Your basic training is complete. Which path will you walk?", labels)
 
 
+## Look for the confirmation preview: the target class body with the player's
+## current hair and cloth, using the class's forced sex when it has one.
+func _job_preview(job: String) -> Dictionary:
+	var jd: Dictionary = sim.job_db.get(job, {})
+	var male := player.male
+	var forced := String(jd.get("sex", ""))
+	if forced == "female":
+		male = false
+	elif forced == "male":
+		male = true
+	return {
+		"male": male,
+		"hair_style": player.hair_style,
+		"hair_color": player.hair_color,
+		"job_sprite": String(jd.get("sprite", "초보자")),
+		"cloth": player.cloth_color,
+		"job": job,
+	}
+
+
 func _on_dialog_choice(i: int) -> void:
 	if _net_dialog_open:
 		_net_dialog_open = false
@@ -1302,7 +1322,7 @@ func _on_dialog_choice(i: int) -> void:
 			var note := "" if not (sim.job_db.get(_dialog_job, {}).get("skills", []) as Array).is_empty() else "\n\n(Its guild skills are still being prepared in this build.)"
 			var kit := sim.first_job_weapon_name(_dialog_job)
 			var kit_note := "\n\nGuild issue: %s." % kit if kit != "" else ""
-			hud.dialog.show_page(_dialog_npc.name, "Become a %s? This choice is permanent.%s%s" % [jn, note, kit_note], ["Become a %s" % jn, "Go back"])
+			hud.dialog.show_page(_dialog_npc.name, "Become a %s? This choice is permanent.%s%s" % [jn, note, kit_note], ["Become a %s" % jn, "Go back"], false, _job_preview(_dialog_job))
 		"choose2":
 			if i >= _dialog_choices.size():
 				hud.dialog.close()
@@ -1316,7 +1336,7 @@ func _on_dialog_choice(i: int) -> void:
 				return
 			_dialog_state = "confirm"
 			hud.dialog.show_page(_dialog_npc.name, "Become a %s? Your %s skills stay with you and unspent skill points carry over. This choice is permanent." % [String(jdef.name), String(sim.job_db.get(player.job, {}).get("name", ""))],
-				["Become a %s" % String(jdef.name), "Go back"])
+				["Become a %s" % String(jdef.name), "Go back"], false, _job_preview(_dialog_job))
 		"back":
 			_job_dialog_start(_dialog_npc)
 		"confirm":

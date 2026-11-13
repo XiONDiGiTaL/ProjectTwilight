@@ -9,6 +9,7 @@ signal chosen(index: int)
 var _name: Label
 var _text: Label
 var _choices: HBoxContainer
+var _preview: CharacterPreview
 
 
 func _ready() -> void:
@@ -21,6 +22,11 @@ func _ready() -> void:
 	add_child(col)
 	_name = UiTheme.label("", 13, UiTheme.ACCENT, 600, 4)
 	col.add_child(_name)
+	_preview = CharacterPreview.new()
+	_preview.custom_minimum_size = Vector2(150, 190)
+	_preview.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	_preview.visible = false
+	col.add_child(_preview)
 	_text = UiTheme.label("", 15, UiTheme.TEXT, 400)
 	_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_text.custom_minimum_size = Vector2(560, 60)
@@ -33,11 +39,13 @@ func _ready() -> void:
 
 ## Shows a page of dialogue. choices: Array of button labels. Short choice
 ## lists sit in a row; long ones (menus, warper lists) become a scrolling
-## column. cancellable adds a CANCEL button that emits -1.
-func show_page(speaker: String, text: String, choices: Array, cancellable := false) -> void:
+## column. cancellable adds a CANCEL button that emits -1. look optionally
+## shows a live target-job body above the text (used by job confirmations).
+func show_page(speaker: String, text: String, choices: Array, cancellable := false, look: Dictionary = {}) -> void:
 	_name.text = speaker.to_upper()
 	_text.text = text
 	_text.visible = text != ""
+	_show_preview(look)
 	_clear_choices()
 	var vertical := choices.size() > 4
 	var holder: Container
@@ -79,6 +87,7 @@ func ask_number(speaker: String, text: String, lo: int, hi: int) -> void:
 	_name.text = speaker.to_upper()
 	_text.text = text
 	_text.visible = text != ""
+	_show_preview({})
 	_clear_choices()
 	var spin := SpinBox.new()
 	spin.min_value = lo
@@ -94,6 +103,17 @@ func ask_number(speaker: String, text: String, lo: int, hi: int) -> void:
 	_show()
 
 
+## Shows the target job's body above the page; an empty look hides it.
+func _show_preview(look: Dictionary) -> void:
+	if _preview == null:
+		return
+	_preview.visible = not look.is_empty()
+	if _preview.visible:
+		_preview.set_look(bool(look.get("male", true)), int(look.get("hair_style", 0)),
+			int(look.get("hair_color", 0)), String(look.get("job_sprite", "초보자")),
+			int(look.get("cloth", 0)), String(look.get("job", "")))
+
+
 func _clear_choices() -> void:
 	for c in _choices.get_children():
 		_choices.remove_child(c)
@@ -104,7 +124,10 @@ func _show() -> void:
 	visible = true
 	reset_size()
 	var vp := get_viewport_rect().size
-	position = Vector2(roundf((vp.x - size.x) / 2.0), vp.y - size.y - 96.0)
+	# The confirmation preview makes the page taller; keep it above the chat
+	# window so the target body and the decision text are both readable.
+	var bottom_margin := 250.0 if _preview != null and _preview.visible else 96.0
+	position = Vector2(roundf((vp.x - size.x) / 2.0), vp.y - size.y - bottom_margin)
 
 
 func close() -> void:
