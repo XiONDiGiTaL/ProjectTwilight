@@ -61,7 +61,11 @@ func set_look(male: bool, hair_style: int, hair_color: int, job_sprite := "초�
 	var head := HEAD_DIR + "%s/%d_%s" % [sex, hair_style, sex]
 	var pal: PackedByteArray = res.read("data/palette/머리/머리%d_%s_%d.pal" % [hair_style, sex, hair_color]) if hair_color > 0 else PackedByteArray()
 	var look := PlayerSprites.body_for(res, PlayerSprites.jobs(), job, job_sprite, male)
-	_sprite.setup(look.spr, look.act, SprFile.decode(res.read(head + ".spr")), ActFile.decode(res.read(head + ".act")), pal,
+	var show_head := bool(look.get("has_head", true))
+	_sprite.setup(look.spr, look.act,
+		SprFile.decode(res.read(head + ".spr")) if show_head else null,
+		ActFile.decode(res.read(head + ".act")) if show_head else null,
+		pal if show_head else PackedByteArray(),
 		PlayerSprites.cloth_palette(res, String(look.sprite), male, cloth) if look.source != "sheet" else PackedByteArray())
 	_frame_look()
 	# The container may receive its final size after the menu's first layout.

@@ -1,5 +1,5 @@
 {
-  "_provenance": "Pre-Renewal job data as documented by iRO Wiki classic and the rAthena pre-re job database (facts only). hp_a / hp_b / sp_factor feed MaxHP and MaxSP; btba = base weapon delay per weapon type; sprite = client body sprite name. Canonical second jobs have tier 2 (Job Level 50), transcendent classes tier 3 (Base 99 / Job 50) and third jobs tier 4 (Base 99 / Job 70, Base Level cap 150, Job Level cap 70). Dark Knight and Shaman keep custom continuations (Dread Knight -> Abyss Knight, Oracle -> Spirit Sage) so their IDs do not collide with canonical Lord Knight / High Priest. Third-job skill trees are Project Twilight designs using the existing data-driven skill engine. Canonical job factors and sprite names are Medium confidence; dedicated third-job art is still pending.",
+  "_provenance": "Pre-Renewal job data as documented by iRO Wiki classic and the rAthena pre-re job database (facts only). hp_a / hp_b / sp_factor feed MaxHP and MaxSP; btba = base weapon delay per weapon type; sprite = client body sprite name. Canonical second jobs have tier 2 (Job Level 50), transcendent classes tier 3 (Base 99 / Job 50) and third jobs tier 4 (Base 99 / Job 70, Base Level cap 150, Job Level cap 70). Dark Knight and Shaman keep custom continuations (Dread Knight -> Abyss Knight, Oracle -> Spirit Sage) so their IDs do not collide with canonical Lord Knight / High Priest. Third-job skill trees are Project Twilight designs using the existing data-driven skill engine. Canonical job factors and sprite names are Medium confidence. Dread Knight and Abyss Knight use a locally generated Thanatos-based sheet with the equipped weapon layer; Oracle and Spirit Sage reuse the client's Arch Mage and Soul Ascetic bodies.",
   "novice": {
     "name": "Novice",
     "tier": 0,
@@ -1196,6 +1196,11 @@
     "min_parent_base_level": 99,
     "min_parent_job_level": 50,
     "sprite": "기사",
+    "pack_sprite": {
+      "kind": "sheet",
+      "file": "DreadKnight.png",
+      "map": "res://data/sprites/dread_knight_sheet.json"
+    },
     "hp_a": 1.7,
     "hp_b": 5,
     "sp_factor": 4,
@@ -1222,7 +1227,7 @@
     "min_parent_base_level": 99,
     "min_parent_job_level": 50,
     "sex": "female",
-    "sprite": "프리스트",
+    "sprite": "arch_mage",
     "hp_a": 0.8,
     "hp_b": 5,
     "sp_factor": 9,
@@ -1247,6 +1252,11 @@
     "min_parent_base_level": 99,
     "min_parent_job_level": 70,
     "sprite": "기사",
+    "pack_sprite": {
+      "kind": "sheet",
+      "file": "DreadKnight.png",
+      "map": "res://data/sprites/dread_knight_sheet.json"
+    },
     "hp_a": 2.0,
     "hp_b": 5,
     "sp_factor": 4,
@@ -1274,7 +1284,7 @@
     "min_parent_base_level": 99,
     "min_parent_job_level": 70,
     "sex": "female",
-    "sprite": "프리스트",
+    "sprite": "soul_ascetic",
     "hp_a": 0.9,
     "hp_b": 5,
     "sp_factor": 10,

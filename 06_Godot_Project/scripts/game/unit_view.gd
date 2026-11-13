@@ -16,6 +16,7 @@ var _was_dead := false
 var _feigning := false
 var aura: PlayerAura
 var body_source := ""   # client | pack | sheet | fallback (see PlayerSprites)
+var body_uses_weapon := true
 var name_tag: Label3D   # CPU adventurers show their name; the local player does not
 var _tag_color := Color.WHITE
 
@@ -30,11 +31,15 @@ func build_player(res: Node, male: bool, hair_style: int, hair_color: int) -> bo
 	if bspr == null or bact == null:
 		return false
 	body_source = String(look.source)
-	var pal: PackedByteArray = res.read("data\\palette\\머리\\머리%d_%s_%d.pal" % [hair_style, sex, hair_color]) if hair_color >= 0 else PackedByteArray()
+	body_uses_weapon = bool(look.get("weapon_layer", true))
+	var show_head := bool(look.get("has_head", true))
+	var head_spr: SprFile = SprFile.decode(res.read(head + ".spr")) if show_head else null
+	var head_act: ActFile = ActFile.decode(res.read(head + ".act")) if show_head else null
+	var pal: PackedByteArray = res.read("data\\palette\\머리\\머리%d_%s_%d.pal" % [hair_style, sex, hair_color]) if show_head and hair_color >= 0 else PackedByteArray()
 	sprite = CharacterSprite.new()
 	sprite.actions = CharacterSprite.PLAYER_ACTIONS
 	add_child(sprite)
-	sprite.setup(bspr, bact, SprFile.decode(res.read(head + ".spr")), ActFile.decode(res.read(head + ".act")), pal,
+	sprite.setup(bspr, bact, head_spr, head_act, pal,
 		PlayerSprites.cloth_palette(res, String(look.sprite), male, unit.cloth_color) if look.source != "sheet" else PackedByteArray())
 	if aura == null:
 		aura = PlayerAura.new()
@@ -88,7 +93,7 @@ func update_weapon(res: Node) -> void:
 	if body_source == "pack":
 		bases = PlayerSprites.pack_weapon_paths(PlayerSprites.jobs(), unit.job, _male, suffix)
 		bases.append_array(PlayerSprites.weapon_paths(PlayerSprites.jobs(), unit.job, _male, suffix))
-	elif body_source != "sheet":   # sheet bodies draw their own staff
+	elif body_uses_weapon:
 		bases = PlayerSprites.weapon_paths(PlayerSprites.jobs(), unit.job, _male, suffix)
 	for base in bases:
 		if res.exists(base + ".spr") and res.exists(base + ".act"):

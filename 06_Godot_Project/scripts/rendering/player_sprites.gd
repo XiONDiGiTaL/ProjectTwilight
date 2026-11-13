@@ -30,7 +30,9 @@ static func jobs() -> Dictionary:
 
 
 ## Returns {"spr": SprFile, "act": ActFile, "sprite": String (client name used),
-##          "source": "client"|"pack"|"sheet"|"fallback", "has_head": bool}
+##          "source": "client"|"pack"|"sheet"|"fallback", "has_head": bool,
+##          "weapon_layer": bool}. Sheet bodies may carry their own head or opt
+##          in to the class weapon layers through the map's flags.
 static func body_for(res: Node, job_db: Dictionary, job: String, client_sprite: String, male: bool) -> Dictionary:
 	var sex := "남" if male else "여"
 	var pack: Dictionary = job_db.get(job, {}).get("pack_sprite", {})
@@ -41,16 +43,44 @@ static func body_for(res: Node, job_db: Dictionary, job: String, client_sprite: 
 				var spr := SprFile.decode(res.read(base + ".spr"))
 				var act := ActFile.decode(res.read(base + ".act"))
 				if spr and act:
-					return {"spr": spr, "act": act, "sprite": String(pack.name), "source": "pack", "has_head": true}
+					return {"spr": spr, "act": act, "sprite": String(pack.name), "source": "pack", "has_head": true, "weapon_layer": true}
 		"sheet":
 			var built := sheet_body(res, String(pack.file), String(pack.map))
 			if not built.is_empty():
-				return {"spr": built[0], "act": built[1], "sprite": client_sprite, "source": "sheet", "has_head": true}
-	var cbase := BODY_DIR + "%s/%s_%s" % [sex, client_sprite, sex]
-	var cspr := SprFile.decode(res.read(cbase + ".spr"))
-	var cact := ActFile.decode(res.read(cbase + ".act"))
-	return {"spr": cspr, "act": cact, "sprite": client_sprite,
-		"source": "client" if pack.is_empty() else "fallback", "has_head": true}
+				return {"spr": built[0], "act": built[1], "sprite": client_sprite, "source": "sheet",
+					"has_head": bool(built[2]), "weapon_layer": bool(built[3])}
+	var used_sprite := client_sprite
+	var fallback_source := "client" if pack.is_empty() else "fallback"
+	var built := _client_body(res, used_sprite, male)
+	if built.is_empty():
+		var parent := String(job_db.get(job, {}).get("parent", ""))
+		var seen := {job: true}
+		while parent != "" and not seen.has(parent):
+			seen[parent] = true
+			var parent_sprite := String(job_db.get(parent, {}).get("sprite", ""))
+			if parent_sprite != "" and parent_sprite != used_sprite:
+				built = _client_body(res, parent_sprite, male)
+				if not built.is_empty():
+					used_sprite = parent_sprite
+					fallback_source = "fallback"
+					break
+			parent = String(job_db.get(parent, {}).get("parent", ""))
+	if built.is_empty():
+		return {"spr": null, "act": null, "sprite": used_sprite, "source": fallback_source,
+			"has_head": true, "weapon_layer": true}
+	return {"spr": built[0], "act": built[1], "sprite": used_sprite,
+		"source": fallback_source, "has_head": true, "weapon_layer": true}
+
+
+## Client body pair for one sprite stem, or [] when that body is not installed.
+static func _client_body(res: Node, sprite: String, male: bool) -> Array:
+	if sprite == "":
+		return []
+	var sex := "남" if male else "여"
+	var base := BODY_DIR + "%s/%s_%s" % [sex, sprite, sex]
+	var spr := SprFile.decode(res.read(base + ".spr"))
+	var act := ActFile.decode(res.read(base + ".act"))
+	return [spr, act] if spr != null and act != null else []
 
 
 ## Weapon-layer paths for a class, falling back through its parent jobs when an
@@ -122,9 +152,13 @@ static func sheet_body(res: Node, file: String, map_path: String) -> Array:
 ## SPR (RGBA frames) and ACT (13 groups x 8 directions, feet-relative layers,
 ## head anchor at the neck).
 static func build_from_sheet(img: Image, map: Dictionary) -> Array:
-	var bgp: Array = map.get("bg_sample", [2, 2])
-	var bg := img.get_pixel(int(bgp[0]), int(bgp[1]))
-	var tol := float(map.get("key_tolerance", 54)) / 255.0
+	var transparent := bool(map.get("transparent", false))
+	var bg := Color(0, 0, 0, 0)
+	var tol := 0.0
+	if not transparent:
+		var bgp: Array = map.get("bg_sample", [2, 2])
+		bg = img.get_pixel(int(bgp[0]), int(bgp[1]))
+		tol = float(map.get("key_tolerance", 54)) / 255.0
 	var neck := int(map.get("neck_from_top", 14))
 	var spr := SprFile.new()
 	var index := {}    # frame id -> [sprite index, feet x offset, height, width]
@@ -133,7 +167,8 @@ static func build_from_sheet(img: Image, map: Dictionary) -> Array:
 		var r: Array = frames[id]
 		var rect := Rect2i(int(r[0]), int(r[1]), int(r[2]), int(r[3]))
 		var sub := img.get_region(rect)
-		_key_out(sub, bg, tol)
+		if not transparent:
+			_key_out(sub, bg, tol)
 		# Feet x: centre of the opaque pixels in the bottom 10 rows (keeps the
 		# figure steady when a staff swings out to one side).
 		var sum := 0.0
@@ -173,7 +208,7 @@ static func build_from_sheet(img: Image, map: Dictionary) -> Array:
 					"color": Color.WHITE, "scale": Vector2.ONE, "rotation": 0, "type": 1}
 				fl.append({"layers": [layer], "sound": -1, "anchors": [Vector2i(roundi(cx * 0.0), -h + neck)]})
 			act.actions.append({"frames": fl, "interval": float(gd.get("interval", 150))})
-	return [spr, act]
+	return [spr, act, bool(map.get("has_head", true)), bool(map.get("weapon_layer", false))]
 
 
 ## Removes the sheet background by flood fill from the frame border, so

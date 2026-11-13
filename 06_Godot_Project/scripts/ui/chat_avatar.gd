@@ -113,13 +113,17 @@ static func _render_portrait(contact: Dictionary) -> Texture2D:
 	var body_act: ActFile = look.get("act")
 	if body_spr == null or body_act == null:
 		return null
-	var head_base := HEAD_DIR + "%s/%d_%s" % [sex, int(contact.get("hair_style", 0)), sex]
-	var head_spr := SprFile.decode(res.read(head_base + ".spr"))
-	var head_act := ActFile.decode(res.read(head_base + ".act"))
-	if head_spr == null or head_act == null:
-		return null
+	var show_head := bool(look.get("has_head", true))
+	var head_spr: SprFile = null
+	var head_act: ActFile = null
+	if show_head:
+		var head_base := HEAD_DIR + "%s/%d_%s" % [sex, int(contact.get("hair_style", 0)), sex]
+		head_spr = SprFile.decode(res.read(head_base + ".spr"))
+		head_act = ActFile.decode(res.read(head_base + ".act"))
+		if head_spr == null or head_act == null:
+			return null
 	var hair_palette := PackedByteArray()
-	if int(contact.get("hair_color", 0)) > 0:
+	if show_head and int(contact.get("hair_color", 0)) > 0:
 		hair_palette = res.read("data/palette/머리/머리%d_%s_%d.pal" % [
 			int(contact.get("hair_style", 0)), sex, int(contact.get("hair_color", 0))])
 	var body_palette := PackedByteArray()

@@ -25,6 +25,7 @@ Project Twilight ships **no Gravity content**. At runtime the game reads resourc
 | `2025 Palettes.grf` | Hair and cloth dye palettes | Third-party palette pack |
 | `Dark knight Sprite/` | Dark Knight body and sword layer | GungHo art edited by FXFreitas (packaged as a GM-sprite replacement) |
 | `Shaman.jpg` | Shaman body | Sprite sheet sliced at runtime; only the frame map `data/sprites/shaman_sheet.json` (coordinates) is committed |
+| `DreadKnight.png` | Dread Knight / Abyss Knight body | Generated locally by `tools/build_dread_knight_frames.gd` + `tools/build_dread_knight_sheet.py` from the client's own Thanatos sprite. Body frames omit the built-in sword so the equipped Knight weapon layer draws over them. Recoloured to indigo/violet/charcoal-bone. Only the frame map and builder scripts are committed; the PNG is not redistributed |
 | `rathena/npc/**` | NPC scripts run by the Project Twilight interpreter | rAthena project, GPL-3.0. Fetched by the owner with a sparse git checkout; read at runtime only |
 | `GRADIUS.ttf` | Battle text font | Not redistributed; falls back to the UI font when it is missing |
 
