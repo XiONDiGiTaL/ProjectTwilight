@@ -8,6 +8,12 @@ extends Control
 
 const FIELD_SCENE := "res://scenes/game/field.tscn"
 const MENU_SCENE := "res://scenes/main_menu.tscn"
+const DESIGN_WIDTH := 1280.0
+
+## Horizontal offset that centres the designed 1280-pixel composition on a
+## wider viewport. At 1280 it is zero; 21:9 and wider keep equal side margins.
+static func layout_shift(viewport_width: float) -> float:
+	return maxf(0.0, (viewport_width - DESIGN_WIDTH) * 0.5)
 
 var _item_db: Dictionary = {}
 var _slots: Array = []
@@ -35,6 +41,9 @@ var _aura := "class"
 var _hexagon: StatHexagon
 var _error: Label
 var _confirm_layer: Control
+var _layout_controls: Array[Control] = []
+var _layout_shift := 0.0
+var _confirm_focus_return: Control
 
 
 func _ready() -> void:
@@ -49,14 +58,17 @@ func _ready() -> void:
 	var title := UiTheme.label("SELECT  CHARACTER", 22, UiTheme.TEXT, 300, 8, true)
 	title.position = Vector2(40, 30)
 	add_child(title)
+	_layout_controls.append(title)
 	var sub := UiTheme.label("PROJECT TWILIGHT  ·  OFFLINE", 11, UiTheme.ACCENT, 600, 4)
 	sub.position = Vector2(42, 64)
 	add_child(sub)
+	_layout_controls.append(sub)
 
 	var left := GlassPanel.new()
 	left.position = Vector2(40, 100)
 	left.custom_minimum_size = Vector2(330, 0)
 	add_child(left)
+	_layout_controls.append(left)
 	_slot_list = VBoxContainer.new()
 	_slot_list.add_theme_constant_override("separation", 6)
 	left.add_child(_slot_list)
@@ -65,16 +77,19 @@ func _ready() -> void:
 	_preview.position = Vector2(440, 150)
 	_preview.size = Vector2(300, 380)
 	add_child(_preview)
+	_layout_controls.append(_preview)
 	var platform := _Platform.new()
 	platform.position = Vector2(440, 470)
 	platform.size = Vector2(300, 70)
 	add_child(platform)
+	_layout_controls.append(platform)
 	move_child(platform, get_child_count() - 2)
 
 	_detail_panel = GlassPanel.new()
 	_detail_panel.position = Vector2(800, 100)
 	_detail_panel.custom_minimum_size = Vector2(440, 0)
 	add_child(_detail_panel)
+	_layout_controls.append(_detail_panel)
 	var stack := VBoxContainer.new()
 	_detail_panel.add_child(stack)
 	_detail_box = VBoxContainer.new()
@@ -91,6 +106,9 @@ func _ready() -> void:
 	back.position = Vector2(40, 650)
 	back.pressed.connect(func(): get_tree().change_scene_to_file(MENU_SCENE))
 	add_child(back)
+	_layout_controls.append(back)
+	resized.connect(_layout_columns)
+	_layout_columns.call_deferred()
 	_reload_slots()
 	var audio := get_node_or_null("/root/GameAudio")
 	if audio:
@@ -98,6 +116,18 @@ func _ready() -> void:
 
 
 # --- Slots ------------------------------------------------------------------------
+
+func _layout_columns(viewport_width := -1.0) -> void:
+	var width := viewport_width if viewport_width >= 0.0 else get_viewport_rect().size.x
+	var shift := layout_shift(width)
+	if is_equal_approx(shift, _layout_shift):
+		return
+	var delta := shift - _layout_shift
+	for control in _layout_controls:
+		if is_instance_valid(control):
+			control.position.x += delta
+	_layout_shift = shift
+
 
 func _reload_slots() -> void:
 	_slots = SaveGame.list_slots(CharacterRules.MAX_SLOTS, _item_db, ClassInsignia.classes())
@@ -179,6 +209,8 @@ func _show_details(entry: Dictionary) -> void:
 	var del := Button.new()
 	del.text = "DELETE"
 	UiTheme.style_button(del, false, true)
+	del.focus_mode = Control.FOCUS_ALL
+	del.add_theme_stylebox_override("focus", _focus_ring(UiTheme.HP_LOW))
 	del.pressed.connect(_confirm_delete.bind(entry))
 	buttons.add_child(del)
 	_build_coop_rows(String(entry.slot))
@@ -528,7 +560,32 @@ func _first_used_slot() -> int:
 
 # --- Delete confirmation ------------------------------------------------------------
 
+## Escape cancels the confirmation without deleting. The dialog's safe default
+## focus is KEEP, so pressing Enter immediately cannot destroy a character.
+func _unhandled_input(event: InputEvent) -> void:
+	if _confirm_layer == null:
+		return
+	var cancel: bool = event.is_action_pressed("ui_cancel") or (event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE)
+	if not cancel:
+		return
+	_close_confirm_delete()
+	get_viewport().set_input_as_handled()
+
+
+func _close_confirm_delete(restore_focus := true) -> void:
+	var layer := _confirm_layer
+	_confirm_layer = null
+	if is_instance_valid(layer):
+		layer.queue_free()
+	if restore_focus and is_instance_valid(_confirm_focus_return):
+		_confirm_focus_return.grab_focus.call_deferred()
+	_confirm_focus_return = null
+
+
 func _confirm_delete(entry: Dictionary) -> void:
+	if _confirm_layer != null:
+		return
+	_confirm_focus_return = get_viewport().gui_get_focus_owner()
 	_confirm_layer = Control.new()
 	_confirm_layer.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_confirm_layer.mouse_filter = Control.MOUSE_FILTER_STOP
@@ -553,18 +610,34 @@ func _confirm_delete(entry: Dictionary) -> void:
 	var yes := Button.new()
 	yes.text = "DELETE"
 	UiTheme.style_button(yes, true, true)
+	yes.focus_mode = Control.FOCUS_ALL
+	yes.add_theme_stylebox_override("focus", _focus_ring(UiTheme.HP_LOW))
 	yes.pressed.connect(func():
+		if _confirm_layer == null:
+			return
 		SaveGame.delete(String(entry.slot))
-		_confirm_layer.queue_free()
+		_close_confirm_delete(false)
 		_reload_slots())
 	row.add_child(yes)
 	var no := Button.new()
 	no.text = "KEEP"
 	UiTheme.style_button(no)
-	no.pressed.connect(func(): _confirm_layer.queue_free())
+	no.focus_mode = Control.FOCUS_ALL
+	no.add_theme_stylebox_override("focus", _focus_ring(UiTheme.ACCENT))
+	no.pressed.connect(_close_confirm_delete)
 	row.add_child(no)
+	no.grab_focus.call_deferred()
 	await get_tree().process_frame
 	panel.position = (get_viewport_rect().size - panel.size) / 2.0
+
+
+func _focus_ring(accent: Color) -> StyleBoxFlat:
+	var ring := StyleBoxFlat.new()
+	ring.draw_center = false
+	ring.border_color = accent
+	ring.set_border_width_all(2)
+	ring.set_corner_radius_all(3)
+	return ring
 
 
 func _divider() -> ColorRect:

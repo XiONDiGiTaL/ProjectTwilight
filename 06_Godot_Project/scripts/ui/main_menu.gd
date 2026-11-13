@@ -9,6 +9,7 @@ const RESET_CONFIRMATION := "UI layout reset."
 const RESET_CONFIRMATION_SECONDS := 2.5
 
 var _status: Label
+var _data_prompt: VBoxContainer
 var _path_edit: LineEdit
 var _play: Button
 var _coop: Button
@@ -82,10 +83,13 @@ func _ready() -> void:
 	inner.add_child(coop)
 	_coop = coop
 
-	inner.add_child(UiTheme.label("RAGNAROK DATA FOLDER  ·  CLIENT OR .GRF ARCHIVES  (read-only)", 10, UiTheme.ACCENT, 600, 3))
+	_data_prompt = VBoxContainer.new()
+	_data_prompt.add_theme_constant_override("separation", 4)
+	inner.add_child(_data_prompt)
+	_data_prompt.add_child(UiTheme.label("RAGNAROK DATA FOLDER  ·  CLIENT OR .GRF ARCHIVES  (read-only)", 10, UiTheme.ACCENT, 600, 3))
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 8)
-	inner.add_child(row)
+	_data_prompt.add_child(row)
 	_path_edit = LineEdit.new()
 	_path_edit.placeholder_text = "Client folder, or a folder containing data.grf"
 	_path_edit.text = settings.client_path()
@@ -124,6 +128,8 @@ func _update_status() -> void:
 	_play.disabled = not res.is_mounted
 	if _coop:
 		_coop.disabled = not res.is_mounted
+	if _data_prompt:
+		_data_prompt.visible = not res.is_mounted
 	if res.is_mounted:
 		var n := 0
 		for a in res.archives:

@@ -6,7 +6,161 @@ extends RefCounted
 const TEST_WINDOW := "__ui_layout_test"
 const SETTINGS_WINDOW := preload("res://scripts/ui/settings_window.gd")
 const FIELD_SCENE := preload("res://scripts/game/field_scene.gd")
+const CHARACTER_SELECT_SCRIPT := preload("res://scripts/ui/character_select.gd")
+const CHARACTER_SELECT := preload("res://scenes/ui/character_select.tscn")
+const MAIN_MENU := preload("res://scenes/main_menu.tscn")
+const DELETE_TEST_DIR := "user://ui_delete_test/"
 const SETTINGS_POSITION_TEST := "__settings_position_test"
+
+
+func test_character_select_centres_on_wide_viewports(_t) -> Variant:
+	if not is_equal_approx(CHARACTER_SELECT_SCRIPT.layout_shift(1280.0), 0.0):
+		return "the character-select design should stay at its original origin at 1280"
+	if not is_equal_approx(CHARACTER_SELECT_SCRIPT.layout_shift(1920.0), 320.0):
+		return "1920 should centre the 1280-wide character-select composition"
+	if not is_equal_approx(CHARACTER_SELECT_SCRIPT.layout_shift(2560.0), 640.0):
+		return "ultrawide should centre the character-select composition"
+	return true
+
+
+func test_title_screen_hides_data_prompt_when_mounted(t: SceneTree) -> Variant:
+	var res = t.root.get_node_or_null("RoResources")
+	if res == null:
+		return "RoResources autoload is missing"
+	var menu = MAIN_MENU.instantiate()
+	t.root.add_child(menu)
+	await t.process_frame
+	await t.process_frame
+	if not res.is_mounted:
+		menu.queue_free()
+		await t.process_frame
+		return "SKIP no mounted client data"
+	menu._update_status()
+	var prompt: Control = menu._data_prompt
+	var hidden: bool = prompt != null and not prompt.visible
+	menu.queue_free()
+	await t.process_frame
+	if not hidden:
+		return "the title screen should hide the data-folder prompt when client resources are mounted"
+	return true
+
+
+func test_character_select_delete_flow(t: SceneTree) -> Variant:
+	var old_dir := SaveGame.save_dir
+	SaveGame.save_dir = DELETE_TEST_DIR
+	DirAccess.make_dir_recursive_absolute(DELETE_TEST_DIR)
+	for file in DirAccess.get_files_at(DELETE_TEST_DIR):
+		DirAccess.remove_absolute(DELETE_TEST_DIR + file)
+	var character := CharacterRules.new_character("Delete Me", true, 2, 0, CharacterRules.stats_from_pairs(5, 5, 5))
+	character.cell = [character.cell.x, character.cell.y]
+	var write_error := SaveGame.write("slot1", {
+		"format": SaveGame.FORMAT, "version": SaveGame.VERSION,
+		"saved_at": 0, "character": character,
+	})
+	var scene = CHARACTER_SELECT.instantiate()
+	t.root.add_child(scene)
+	await t.process_frame
+	await t.process_frame
+	var result: Variant = true
+	if write_error != OK:
+		result = "could not create the test save"
+	else:
+		var delete_button := _find_button(scene._detail_box, "DELETE")
+		if delete_button == null:
+			result = "a saved character should offer DELETE"
+		else:
+			delete_button.grab_focus()
+			delete_button.pressed.emit()
+			await t.process_frame
+			await t.process_frame
+			var keep := _find_button(scene._confirm_layer, "KEEP")
+			var confirm := _find_button(scene._confirm_layer, "DELETE")
+			var focus_owner: Control = scene.get_viewport().gui_get_focus_owner()
+			if keep == null or confirm == null:
+				result = "DELETE should open a confirmation with DELETE and KEEP"
+			elif focus_owner != keep:
+				result = "the delete confirmation should focus KEEP by default"
+			else:
+				var escape := InputEventKey.new()
+				escape.keycode = KEY_ESCAPE
+				escape.pressed = true
+				Input.parse_input_event(escape)
+				await t.process_frame
+				await t.process_frame
+				var focus_restored: bool = scene.get_viewport().gui_get_focus_owner() == delete_button
+				if scene._confirm_layer != null or not SaveGame.exists("slot1"):
+					result = "Escape should cancel deletion and keep the save"
+				elif not focus_restored:
+					result = "Escape should return focus to the character's DELETE button"
+				else:
+					delete_button.pressed.emit()
+					await t.process_frame
+					confirm = _find_button(scene._confirm_layer, "DELETE")
+					if confirm == null:
+						result = "the confirmation should reopen after Escape"
+					else:
+						confirm.pressed.emit()
+						confirm.pressed.emit()
+						await t.process_frame
+						await t.process_frame
+						if SaveGame.exists("slot1"):
+							result = "the confirmed DELETE should remove the save file"
+						elif scene._slots.is_empty() or scene._slots[0].ok:
+							result = "the deleted slot should refresh as empty"
+						elif not scene._creating:
+							result = "the deleted slot should open character creation"
+	scene.queue_free()
+	await t.process_frame
+	for file in DirAccess.get_files_at(DELETE_TEST_DIR):
+		DirAccess.remove_absolute(DELETE_TEST_DIR + file)
+	SaveGame.save_dir = old_dir
+	return result
+
+
+func _find_button(node: Node, text: String) -> Button:
+	if node is Button and node.text == text:
+		return node
+	for child in node.get_children():
+		var found := _find_button(child, text)
+		if found != null:
+			return found
+	return null
+
+
+func test_character_select_layout_16_9_and_21_9(t: SceneTree) -> Variant:
+	var scene = CHARACTER_SELECT.instantiate()
+	t.root.add_child(scene)
+	await t.process_frame
+	var left: Control = scene._slot_list.get_parent()
+	var preview: Control = scene._preview
+	var detail: Control = scene._detail_panel
+	var detail_width: float = maxf(detail.size.x, detail.get_combined_minimum_size().x)
+
+	# 1280 logical pixels is the 16:9 design: both side margins are 40 px.
+	scene._layout_columns(1280.0)
+	await t.process_frame
+	var sixteen_margins: bool = is_equal_approx(left.position.x, 40.0) \
+		and is_equal_approx(preview.position.x, 440.0) \
+		and is_equal_approx(detail.position.x, 800.0) \
+		and is_equal_approx(1280.0 - (detail.position.x + detail_width), 40.0)
+
+	# 1680 logical pixels is 21:9 at 720p: equal 200 px shifts and side margins.
+	scene._layout_columns(1680.0)
+	await t.process_frame
+	var wide_left: float = left.position.x
+	var wide_right: float = 1680.0 - (detail.position.x + detail_width)
+	var ultrawide: bool = is_equal_approx(wide_left, 240.0) \
+		and is_equal_approx(preview.position.x, 640.0) \
+		and is_equal_approx(detail.position.x, 1000.0) \
+		and is_equal_approx(wide_left, wide_right) \
+		and preview.position.x + preview.size.x <= 1680.0
+	scene.queue_free()
+	await t.process_frame
+	if not sixteen_margins:
+		return "character select should fit its 16:9 design with 40 px side margins"
+	if not ultrawide:
+		return "character select should centre with equal margins at 21:9"
+	return true
 
 
 func test_labels_are_vertically_centred(_t) -> Variant:
@@ -323,11 +477,11 @@ func test_presentation_settings_reach_the_hud(t: SceneTree) -> Variant:
 	t.root.add_child(hud)
 	await t.process_frame
 	settings.set_ui_hue(0.25)
-	settings.set_chat_size(Vector2(480, 80))
+	settings.set_chat_size(Vector2(480, 180))
 	settings.set_names_hover_only(true)
 	settings.set_camera_view(300, 60, 90)
 	var tint_ok: bool = not hud._root.modulate.is_equal_approx(Color.WHITE)
-	var chat_ok: bool = is_equal_approx(hud.chat.offset_right, 496.0) and is_equal_approx(hud.chat.offset_top, -96.0)
+	var chat_ok: bool = is_equal_approx(hud.chat.offset_right, 496.0) and is_equal_approx(hud.chat.offset_top, -196.0)
 	var names_ok: bool = hud._names_hover_only and is_equal_approx(hud._names_fade_seconds, settings.names_fade_seconds())
 	var camera_ok: bool = settings.camera_view().is_equal_approx(Vector3(300, 60, 90))
 	hud.add_player_plate(77, "Tester", 60, 100, func(): return Vector3.ZERO)
