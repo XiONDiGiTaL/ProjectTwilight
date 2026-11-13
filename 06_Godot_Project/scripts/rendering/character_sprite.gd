@@ -123,6 +123,33 @@ func top_height() -> float:
 	return float(texture.get_height()) * pixel_size
 
 
+## Largest composed idle/walk frame in world units, measured across all eight
+## directions. Menus use this to frame tall hair and side profiles without
+## clipping; the current action is restored before returning.
+func frame_bounds() -> Vector2:
+	if body_spr == null or body_act == null:
+		return Vector2.ZERO
+	var saved_group := group
+	var saved_dir := direction
+	var saved_frame := _frame
+	var out := Vector2.ZERO
+	for g in [Group.IDLE, Group.WALK]:
+		for d in 8:
+			group = g
+			direction = d
+			_frame = 0
+			_refresh()
+			if texture != null:
+				out.x = maxf(out.x, float(texture.get_width()) * pixel_size)
+				out.y = maxf(out.y, float(texture.get_height()) * pixel_size)
+	group = saved_group
+	direction = saved_dir
+	_frame = saved_frame
+	_shown_key = ""
+	_refresh()
+	return out
+
+
 func _process(delta: float) -> void:
 	if body_act == null:
 		return

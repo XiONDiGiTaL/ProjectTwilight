@@ -41,6 +41,7 @@ func _run_all() -> void:
 		preload("res://tests/unit/test_guild_ranks.gd"),
 		preload("res://tests/unit/test_guild_social.gd"),
 		preload("res://tests/unit/test_ui_layout.gd"),
+		preload("res://tests/unit/test_chat_ui.gd"),
 		preload("res://tests/unit/test_rule_config.gd"),
 		preload("res://tests/unit/test_chat_commands.gd"),
 		preload("res://tests/unit/test_resource_mount.gd"),
@@ -51,6 +52,7 @@ func _run_all() -> void:
 		preload("res://tests/unit/test_weapon_types.gd"),
 		preload("res://tests/unit/test_ammo.gd"),
 		preload("res://tests/unit/test_npc_scripts.gd"),
+		preload("res://tests/integration/test_character_preview.gd"),
 		preload("res://tests/integration/test_client_grf.gd"),
 		preload("res://tests/integration/test_client_maps.gd"),
 	]

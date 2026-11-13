@@ -21,6 +21,8 @@ const DAMAGE_TAKEN := Color(1.0, 0.36, 0.42)
 const CRIT := Color(1.0, 0.86, 0.42)
 
 static var _fonts: Dictionary = {}
+static var _hud_styles: Dictionary = {}
+static var _hud_focus: StyleBoxEmpty
 
 
 ## Condensed DIN-style system font (Bahnschrift on Windows), with fallbacks.
@@ -164,26 +166,45 @@ static func style_slider(s: HSlider) -> void:
 
 
 ## Compact dark-glass button for HUD utilities over the bright game world.
+## HUD buttons share their stylebox resources: a chat tab row can create dozens
+## of buttons in one frame, and allocating a fresh set for every tab caused a
+## noticeable spike. The boxes are never mutated after creation.
 static func style_hud_button(b: BaseButton, font_size := 10) -> void:
-	style_button(b, false, false, font_size)
+	b.focus_mode = Control.FOCUS_NONE
+	if b.custom_minimum_size.y < 28.0:
+		b.custom_minimum_size.y = 28.0
+	b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	b.add_theme_font_override("font", font(600, 3))
+	b.add_theme_font_size_override("font_size", font_size)
 	b.add_theme_color_override("font_color", TEXT)
 	b.add_theme_color_override("font_hover_color", Color.WHITE)
 	b.add_theme_color_override("font_pressed_color", Color.WHITE)
-	var make := func(bg_a: float, border_a: float) -> StyleBoxFlat:
-		var sb := StyleBoxFlat.new()
-		sb.bg_color = Color(0.02, 0.05, 0.09, bg_a)
-		sb.border_color = Color(ACCENT, border_a)
-		sb.set_border_width_all(1)
-		sb.set_corner_radius_all(2)
-		sb.content_margin_left = 14
-		sb.content_margin_right = 14
-		sb.content_margin_top = 5
-		sb.content_margin_bottom = 5
-		return sb
-	b.add_theme_stylebox_override("normal", make.call(0.78, 0.5))
-	b.add_theme_stylebox_override("hover", make.call(0.88, 0.9))
-	b.add_theme_stylebox_override("pressed", make.call(0.94, 1.0))
-	b.add_theme_stylebox_override("hover_pressed", make.call(0.94, 1.0))
+	b.add_theme_color_override("font_disabled_color", Color(TEXT_DIM, 0.35))
+	b.add_theme_stylebox_override("normal", _hud_style(0.78, 0.5))
+	b.add_theme_stylebox_override("hover", _hud_style(0.88, 0.9))
+	b.add_theme_stylebox_override("pressed", _hud_style(0.94, 1.0))
+	b.add_theme_stylebox_override("hover_pressed", _hud_style(0.94, 1.0))
+	b.add_theme_stylebox_override("disabled", _hud_style(0.02, 0.12))
+	if _hud_focus == null:
+		_hud_focus = StyleBoxEmpty.new()
+	b.add_theme_stylebox_override("focus", _hud_focus)
+
+
+static func _hud_style(bg_a: float, border_a: float) -> StyleBoxFlat:
+	var key := "%.3f:%.3f" % [bg_a, border_a]
+	if _hud_styles.has(key):
+		return _hud_styles[key]
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.02, 0.05, 0.09, bg_a)
+	sb.border_color = Color(ACCENT, border_a)
+	sb.set_border_width_all(1)
+	sb.set_corner_radius_all(2)
+	sb.content_margin_left = 14
+	sb.content_margin_right = 14
+	sb.content_margin_top = 5
+	sb.content_margin_bottom = 5
+	_hud_styles[key] = sb
+	return sb
 
 
 ## HP colour by remaining fraction (green -> amber -> red), blended smoothly.

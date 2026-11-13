@@ -17,6 +17,8 @@ signal map_entered(map_name: String)          # client: load / reload the field 
 signal dialog_received(kind: String, payload: Dictionary)   # client: NPC dialog from the host
 signal notice_received(text: String, ok: bool)
 signal chat_received(from: String, text: String)
+signal direct_message_received(from: String, text: String)
+signal roster_changed(roster: Array)
 signal peers_changed
 
 enum Mode { OFFLINE, HOST, CLIENT }
@@ -25,6 +27,7 @@ const DEFAULT_PORT := 7350
 const MAX_PLAYERS := 8
 const FRAME_MS := 100.0        # unit state broadcast interval
 const SELF_MS := 250.0         # private state check interval
+const ROSTER_MS := 1000.0      # community roster refresh interval
 const AUTH_TIMEOUT_MS := 8000.0
 const PROTOCOL := 1
 
@@ -43,6 +46,9 @@ var _peers: Dictionary = {}
 var _guilds: GuildStore
 var _local_events: Array = []       # events of the host player's map, for the host's own scene
 var _seed := 1
+var _roster_acc := 0.0
+var _roster_hash := -1
+var _client_roster: Array = []
 
 # --- Client state ---------------------------------------------------------------
 var remote: RemoteSimulation        # attached by the field scene once its map is loaded
@@ -99,6 +105,9 @@ func host(p_port := DEFAULT_PORT, advertised_ip := "") -> String:
 	var ip := advertised_ip if advertised_ip != "" else local_ip()
 	invitation_code = InvitationCode.encode(ip, p_port, _secret)
 	_peers[1] = {"authed": true, "map": "", "unit_id": 0, "name": "", "link": PeerLink.new(), "self_hash": 0, "self_acc": 0.0}
+	_roster_acc = 0.0
+	_roster_hash = -1
+	_client_roster.clear()
 	return invitation_code
 
 
@@ -159,6 +168,51 @@ func player_names() -> Array:
 		if String(_peers[pid].get("name", "")) != "":
 			out.append(String(_peers[pid].name))
 	return out
+
+
+## Live community roster. Hosts derive it from their peer table and map
+## simulations; clients receive the same snapshot from the host. The returned
+## dictionaries are plain data and safe for the UI to keep.
+func directory() -> Array:
+	if mode == Mode.HOST:
+		return _host_directory()
+	if mode == Mode.CLIENT:
+		return _client_roster.duplicate(true)
+	return []
+
+
+func _host_directory() -> Array:
+	var out: Array = []
+	for pid in _peers:
+		var p: Dictionary = _peers[pid]
+		var name := String(p.get("name", ""))
+		var map_name := String(p.get("map", ""))
+		if name == "" or map_name == "" or not _maps.has(map_name):
+			continue
+		var sim: FieldSimulation = _maps[map_name].sim
+		var u: SimUnit = sim.units.get(int(p.get("unit_id", 0)))
+		if u == null:
+			continue
+		out.append({
+			"name": u.name, "job": u.job, "level": u.level, "job_level": u.job_level,
+			"map": String(sim.map_info.get("name", map_name)), "online": true,
+			"male": u.male, "hair_style": u.hair_style, "hair_color": u.hair_color,
+			"cloth_color": u.cloth_color, "sprite": u.sprite,
+		})
+	out.sort_custom(func(a, b): return String(a.name).to_lower() < String(b.name).to_lower())
+	return out
+
+
+func _broadcast_directory() -> void:
+	var roster := _host_directory()
+	var h := roster.hash()
+	if h == _roster_hash:
+		return
+	_roster_hash = h
+	roster_changed.emit(roster)
+	for pid in _peers:
+		if pid != 1 and String(_peers[pid].get("map", "")) != "":
+			_s_roster.rpc_id(pid, roster)
 
 
 func _map_entry(map_name: String, res: Node) -> Dictionary:
@@ -306,6 +360,10 @@ func _process(delta: float) -> void:
 			_broadcast(map_name, evs)
 		if String(_peers[1].get("map", "")) == map_name:
 			_local_events.append_array(evs)
+	_roster_acc += ms
+	if _roster_acc >= ROSTER_MS:
+		_roster_acc = 0.0
+		_broadcast_directory()
 	# Private state, when it changed.
 	for pid in _peers:
 		if pid == 1:
@@ -542,6 +600,9 @@ func _host_chat(pid: int, text: String) -> void:
 	var u: SimUnit = sim.units.get(int(p.unit_id))
 	if u == null:
 		return
+	if line.begins_with("/w ") or line.begins_with("/dm ") or line.begins_with("/tell "):
+		_host_whisper(pid, u, line)
+		return
 	if line.begins_with("@"):
 		var r := ChatCommands.execute(sim, u, line)
 		if r.has("action"):
@@ -564,6 +625,54 @@ func _host_chat(pid: int, text: String) -> void:
 			chat_received.emit(u.name, line)
 		else:
 			_s_chat.rpc_id(other, u.name, line)
+
+
+## Sends a private line to a named player. The caller (DM popup or /w command)
+## receives no synthetic echo; the UI records its own outgoing line.
+func whisper(target: String, text: String) -> void:
+	var clean := text.strip_edges().left(200)
+	if target.strip_edges() == "" or clean == "":
+		return
+	var line := "/w %s %s" % [target.strip_edges(), clean]
+	if mode == Mode.HOST:
+		_host_chat(1, line)
+	elif mode == Mode.CLIENT:
+		_c_chat.rpc_id(1, line)
+
+
+func _host_whisper(pid: int, sender: SimUnit, line: String) -> void:
+	var rest := line.substr(line.find(" ") + 1).strip_edges()
+	var pair := rest.split(" ", false, 1)
+	if pair.size() < 2:
+		_chat_error(pid, "Usage: /w <name> <message>")
+		return
+	var target_name := String(pair[0]).strip_edges()
+	var message := String(pair[1]).strip_edges().left(200)
+	if target_name == "" or message == "":
+		_chat_error(pid, "Usage: /w <name> <message>")
+		return
+	var target_pid := 0
+	for other in _peers:
+		if String(_peers[other].get("name", "")).to_lower() == target_name.to_lower():
+			target_pid = int(other)
+			break
+	if target_pid == 0:
+		_chat_error(pid, "No player named %s is in this session." % target_name)
+		return
+	if target_pid == pid:
+		_chat_error(pid, "You cannot whisper yourself.")
+		return
+	if target_pid == 1:
+		direct_message_received.emit(sender.name, message)
+	else:
+		_s_direct.rpc_id(target_pid, sender.name, message)
+
+
+func _chat_error(pid: int, message: String) -> void:
+	if pid == 1:
+		notice_received.emit(message, false)
+	else:
+		_s_notice.rpc_id(pid, message, false)
 
 
 signal host_action(action: Dictionary)   # host player's @warp etc. (the scene performs it)
@@ -682,6 +791,17 @@ func _s_chat(from: String, text: String) -> void:
 
 
 @rpc("authority", "call_remote", "reliable")
+func _s_direct(from: String, text: String) -> void:
+	direct_message_received.emit(from, text)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _s_roster(roster: Array) -> void:
+	_client_roster = roster.duplicate(true)
+	roster_changed.emit(_client_roster)
+
+
+@rpc("authority", "call_remote", "reliable")
 func _s_kick(reason: String) -> void:
 	_fail(reason)
 
@@ -708,6 +828,9 @@ func leave() -> void:
 	_pending_self = {}
 	local_unit_id = 0
 	local_map = ""
+	_roster_acc = 0.0
+	_roster_hash = -1
+	_client_roster.clear()
 
 
 func _fail(message: String) -> void:

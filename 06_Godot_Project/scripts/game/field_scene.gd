@@ -6,7 +6,7 @@ extends Node3D
 ## Controls: left-click monster = attack, item = pick up, ground = walk.
 ## I / Alt+E = inventory, Alt+A / S = status, Q / Alt+Q = equipment, K / Alt+S = skills,
 ## F1-F9 = hotkey bar, Insert = sit / stand, U = cycle aura, M = minimap,
-## Enter = chat / @commands, Esc = Settings, F12 = save now.
+## Enter = chat / @commands / whispers, Esc = Settings, F12 = save now.
 
 @export var map_name := "prt_fild08"
 @export var start_cell := Vector2i(170, 200)
@@ -161,6 +161,8 @@ func _ready() -> void:
 	hud.hotkeys.bind_unit(player, sim.item_db, sim.skill_db)
 	hud.hotkeys.activate_requested.connect(use_hotkey)
 	hud.chat.submitted.connect(_on_chat_submit)
+	hud.chat.dm_reply_requested.connect(_on_chat_dm_reply)
+	hud.chat.portrait_capture_requested.connect(_capture_portrait)
 	_build_marker()
 	if _net_host:
 		# The simulation was already running (or NetSession will drain its
@@ -179,12 +181,15 @@ func _ready() -> void:
 		hud.notify(loaded_msg, UiTheme.HP_MID)
 	hud.map_banner(String(sim.map_info.get("name", map_name)), String(sim.map_info.get("subtitle", "")))
 	hud.bind_minimap(map.gat, sim, player.id, String(sim.map_info.get("name", map_name)))
+	_refresh_social()
 	_audio = get_node_or_null("/root/GameAudio")
 	if _audio:
 		_audio.play_map_music(map_name)
 	if _net != null:
 		_net.notice_received.connect(_on_net_notice)
 		_net.chat_received.connect(_on_net_chat)
+		_net.direct_message_received.connect(_on_net_dm)
+		_net.roster_changed.connect(_on_roster_changed)
 		_net.session_ended.connect(_leave_to_menu)
 		_net.session_failed.connect(_leave_to_menu)
 		if _net_host:
@@ -257,7 +262,7 @@ func _on_net_notice(text: String, ok: bool) -> void:
 
 
 func _on_net_chat(from: String, text: String) -> void:
-	hud.notify("%s:  %s" % [from, text], UiTheme.TEXT)
+	hud.chat.add_say(from, text)
 	for v in views.values():
 		var uv := v as UnitView
 		if uv.unit != null and uv.unit.is_player() and uv.unit.name == from:
@@ -367,6 +372,23 @@ func _on_chat_submit(text: String) -> void:
 	if line == "@leave" or line == "@quit":
 		_leave_to_menu("")
 		return
+	if line.begins_with("/w ") or line.begins_with("/dm ") or line.begins_with("/tell "):
+		var rest := line.substr(line.find(" ") + 1).strip_edges()
+		var pair := rest.split(" ", false, 1)
+		if pair.size() < 2:
+			hud.chat.add_system("Usage: /w <name> <message>")
+			return
+		var target := String(pair[0]).strip_edges()
+		var message := String(pair[1]).strip_edges()
+		if target == "" or message == "":
+			hud.chat.add_system("Usage: /w <name> <message>")
+			return
+		if _net == null:
+			hud.chat.add_system("Whispers need a co-op session.")
+			return
+		hud.chat.record_outgoing_dm(target, message)
+		_net.whisper(target, message)
+		return
 	if _net != null:
 		if line == "@code":
 			if _net_host:
@@ -385,7 +407,98 @@ func _on_chat_submit(text: String) -> void:
 		_on_chat_action(r.action)
 	var msg := String(r.get("text", ""))
 	if msg != "":
-		hud.notify(msg, UiTheme.ACCENT if bool(r.get("ok", true)) else UiTheme.HP_MID)
+		if line.begins_with("@"):
+			hud.notify(msg, UiTheme.ACCENT if bool(r.get("ok", true)) else UiTheme.HP_MID)
+		else:
+			hud.chat.add_say(player.name, msg.trim_prefix("You say: "), true)
+
+
+func _on_chat_dm_reply(to: String, text: String) -> void:
+	if _net == null:
+		hud.chat.add_system("Whispers need a co-op session.")
+		return
+	_net.whisper(to, text)
+
+
+func _on_net_dm(from: String, text: String) -> void:
+	hud.chat.receive_dm(from, text)
+
+
+func _on_roster_changed(roster: Array) -> void:
+	_set_contacts(roster)
+
+
+## Keeps the community tab current with the live session roster. The local
+## player is always present, even outside co-op, so the portrait and current
+## map have a home in the community view.
+func _refresh_social() -> void:
+	if hud == null or hud.chat == null or player == null:
+		return
+	var roster: Array = _net.directory() if _net != null else []
+	_set_contacts(roster)
+
+
+func _set_contacts(roster: Array) -> void:
+	if hud == null or hud.chat == null or player == null:
+		return
+	var merged: Dictionary = {}
+	for entry in roster:
+		if entry is Dictionary and String(entry.get("name", "")) != "":
+			merged[String(entry.get("name", ""))] = entry
+	var mine := _contact_for(player)
+	mine["self"] = true
+	mine["portrait_path"] = hud.chat.my_portrait()
+	merged[String(mine.get("name", ""))] = mine
+	hud.chat.set_contacts(merged.values())
+
+
+func _contact_for(u: SimUnit) -> Dictionary:
+	var map_label := String(sim.map_info.get("name", map_name))
+	return {
+		"name": u.name,
+		"job": u.job,
+		"level": u.level,
+		"job_level": u.job_level,
+		"map": map_label,
+		"online": true,
+		"male": u.male,
+		"hair_style": u.hair_style,
+		"hair_color": u.hair_color,
+		"cloth_color": u.cloth_color,
+		"sprite": u.sprite,
+	}
+
+
+## Saves a close-up around the player's head as the community avatar. The
+## caller gets the image after the current draw; no game asset is written to
+## the repository, only the player's user:// folder.
+func _capture_portrait() -> void:
+	if player == null or camera == null or not views.has(player.id):
+		return
+	await RenderingServer.frame_post_draw
+	var v: UnitView = views.get(player.id)
+	if v == null:
+		return
+	var at := camera.unproject_position(v.head_position())
+	var image := get_viewport().get_texture().get_image()
+	if image == null:
+		return
+	var rect := Rect2i(roundi(at.x) - 72, roundi(at.y) - 92, 144, 144).intersection(Rect2i(Vector2i.ZERO, image.get_size()))
+	if rect.size.x <= 0 or rect.size.y <= 0:
+		hud.chat.add_system("The portrait frame fell outside the view.")
+		return
+	var crop := image.get_region(rect)
+	crop.resize(96, 96, Image.INTERPOLATE_BILINEAR)
+	DirAccess.make_dir_recursive_absolute("user://avatars")
+	var safe := player.name.to_lower().replace(" ", "_").replace("/", "_")
+	var path := "user://avatars/%s.png" % safe
+	var err := crop.save_png(path)
+	if err != OK:
+		hud.chat.add_system("The portrait could not be saved.")
+		return
+	hud.chat.set_my_portrait(path)
+	_refresh_social()
+	hud.notify("Portrait captured for %s." % player.name, UiTheme.ACCENT)
 
 
 func _on_chat_action(a: Dictionary) -> void:
@@ -953,8 +1066,8 @@ func _consume_events() -> void:
 					hud.storage.refresh()
 					inventory_changed = true
 			"chat":
-				if String(ev.get("channel", "")) == "guild" and ev.id == player.id:
-					hud.notify("[GUILD] %s: %s" % [String(ev.get("from", "?")), String(ev.get("text", ""))], UiTheme.ACCENT)
+				if String(ev.get("channel", "")) == "guild":
+					hud.chat.add_guild(String(ev.get("from", "?")), String(ev.get("text", "")))
 			"guild", "guild_storage":
 				if ev.id == player.id:
 					hud.notify(ev.text, UiTheme.TEXT if ev.ok else UiTheme.HP_MID)
@@ -973,6 +1086,7 @@ func _consume_events() -> void:
 		hud.hotkeys.refresh()
 	if player_changed:
 		hud.update_player(player, sim.next_base_exp(player), sim.next_job_exp(player))
+		_refresh_social()
 		hud.status_window.refresh()
 		hud.inventory.refresh()
 		hud.equipment_window.refresh()

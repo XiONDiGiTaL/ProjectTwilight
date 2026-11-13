@@ -146,6 +146,8 @@ const FEED_MAX := 6
 
 ## Adds a message chip to the bottom-right system feed.
 func notify(text: String, color := UiTheme.TEXT) -> void:
+	if chat != null:
+		chat.add_system(text)
 	var chip := GlassPanel.new()
 	chip.chamfer = 6.0
 	chip.sweep = false
@@ -337,7 +339,8 @@ func _build_chat() -> void:
 	chat.offset_left = 16
 	chat.offset_right = 388   # clear of the centred hotkey bar
 	chat.offset_bottom = -16
-	chat.offset_top = -54
+	chat.offset_top = -246   # Settings.chat_size() takes over once bound
+	chat.settings_requested.connect(toggle_settings)
 
 
 func _apply_chat_size(size: Vector2) -> void:

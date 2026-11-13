@@ -22,6 +22,7 @@ const HELP_LINES := [
 	"@guild create <name>  found or join a guild",
 	"@guild leave       leave your guild",
 	"/g <message>        guild chat (members only)",
+	"/w <name> <message> private message (co-op)",
 	"@exp               your EXP progress",
 	"@job               your class and job level",
 	"@where             current map and cell",

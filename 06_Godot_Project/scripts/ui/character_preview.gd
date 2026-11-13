@@ -7,6 +7,10 @@ extends SubViewportContainer
 const TURN_SECONDS := 0.9
 const BODY_DIR := "data/sprite/인간족/몸통/"
 const HEAD_DIR := "data/sprite/인간족/머리통/"
+## The old fixed 14-unit frame clipped tall hair at the top of the preview.
+## Leave enough room for both the tallest head and the widest side profile.
+const FRAME_MARGIN := 1.25
+const MIN_FRAME_HEIGHT := 14.0
 
 var walking := false
 var _vp: SubViewport
@@ -15,6 +19,9 @@ var _cam: Camera3D
 var _dir := 0
 var _t := 0.0
 var _key := ""
+var _shape_key := ""
+var _framed_shape := ""
+var _framed_bounds := Vector2.ZERO
 
 
 func _init() -> void:
@@ -27,9 +34,11 @@ func _init() -> void:
 	add_child(_vp)
 	_cam = Camera3D.new()
 	_cam.projection = Camera3D.PROJECTION_ORTHOGONAL
-	_cam.size = 14.0
+	_cam.keep_aspect = Camera3D.KEEP_HEIGHT
+	_cam.size = MIN_FRAME_HEIGHT
 	_cam.position = Vector3(0, 5.5, 20)
 	_vp.add_child(_cam)
+	resized.connect(_frame_look)
 	_sprite = CharacterSprite.new()
 	_sprite.billboard = BaseMaterial3D.BILLBOARD_DISABLED
 	_vp.add_child(_sprite)
@@ -41,6 +50,10 @@ func set_look(male: bool, hair_style: int, hair_color: int, job_sprite := "초�
 	if key == _key:
 		return
 	_key = key
+	# Hair/cloth palettes only recolor the same silhouette. Keep the measured
+	# bounds when only a palette changes so steppers do not re-compose all 16
+	# preview frames on every click.
+	_shape_key = "%s:%d:%s:%s" % [male, hair_style, job_sprite, job]
 	var res := get_node_or_null("/root/RoResources")
 	if res == null or not res.is_mounted:
 		return
@@ -50,6 +63,34 @@ func set_look(male: bool, hair_style: int, hair_color: int, job_sprite := "초�
 	var look := PlayerSprites.body_for(res, PlayerSprites.jobs(), job, job_sprite, male)
 	_sprite.setup(look.spr, look.act, SprFile.decode(res.read(head + ".spr")), ActFile.decode(res.read(head + ".act")), pal,
 		PlayerSprites.cloth_palette(res, String(look.sprite), male, cloth) if look.source != "sheet" else PackedByteArray())
+	_frame_look()
+	# The container may receive its final size after the menu's first layout.
+	# Re-frame once more so a tall hairstyle cannot be clipped at either end.
+	_frame_look.call_deferred()
+
+
+## Orthogonal frame height needed to show the whole composed character (feet
+## through the tallest hair pixel), with a little breathing room. `size` on an
+## orthogonal Camera3D is its vertical extent when KEEP_HEIGHT is set.
+static func frame_height(sprite_height: float, sprite_width: float, aspect: float) -> float:
+	var a := aspect if aspect > 0.01 else 300.0 / 380.0
+	var needed := maxf(maxf(sprite_height, 0.0), maxf(sprite_width, 0.0) / a)
+	return maxf(MIN_FRAME_HEIGHT, needed * FRAME_MARGIN)
+
+
+func _frame_look() -> void:
+	if _sprite == null or _sprite.texture == null or _cam == null:
+		return
+	var bounds := _framed_bounds
+	if _shape_key != _framed_shape or bounds == Vector2.ZERO:
+		bounds = _sprite.frame_bounds()
+		if bounds == Vector2.ZERO:
+			return
+		_framed_shape = _shape_key
+		_framed_bounds = bounds
+	var aspect := _vp.size.x / maxf(_vp.size.y, 1.0)
+	_cam.size = frame_height(bounds.y, bounds.x, aspect)
+	_cam.position.y = bounds.y * 0.5
 
 
 ## True if the client has a head sprite for this style.
