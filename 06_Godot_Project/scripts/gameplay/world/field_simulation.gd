@@ -302,6 +302,8 @@ func add_monster(mob_id: String, cell: Vector2i, spawn_radius: int = 0) -> SimUn
 	u.attack_range = int(m.range)
 	u.attack_interval = float(m.attack_delay)
 	u.attack_motion = float(m.attack_motion)
+	u.immovable = bool(m.get("immovable", false))
+	u.non_attacker = bool(m.get("non_attacker", false))
 	u.spawn_cell = cell
 	u.spawn_radius = spawn_radius
 	u.walker = GridWalker.new(_random_cell_near(cell, spawn_radius))
@@ -1784,7 +1786,7 @@ func tick(ms: float) -> void:
 			_pursue_pickup(u)
 		elif u.target_id != 0:
 			_pursue(u)
-		elif not u.is_player():
+		elif not u.is_player() and not u.immovable:
 			_wander(u, ms)
 		u.walker.advance(ms)
 		# Portals move the local player; CPU adventurers stay on their map.
@@ -1809,6 +1811,9 @@ func drain_events() -> Array:
 
 
 func _pursue(u: SimUnit) -> void:
+	if u.non_attacker:
+		u.target_id = 0
+		return
 	var t: SimUnit = units.get(u.target_id)
 	if t == null or t.dead or t.trickdead:
 		u.target_id = 0
@@ -2021,6 +2026,8 @@ func _attack_element(u: SimUnit, ammo: Dictionary) -> String:
 
 
 func _attack(u: SimUnit, t: SimUnit) -> void:
+	if u.non_attacker:
+		return
 	u.attack_cooldown = u.attack_interval
 	var prof := u.combat_profile()
 	if u.queued_skill != "":
@@ -2089,8 +2096,10 @@ func _apply_hit(u: SimUnit, t: SimUnit, r: Dictionary, element := "neutral") -> 
 		_provoke(t, u)
 
 
-## Passive monsters fight back when attacked.
+## Passive monsters fight back when attacked; non-attackers (Pupa) never do.
 func _provoke(victim: SimUnit, attacker: SimUnit) -> void:
+	if victim.non_attacker:
+		return
 	if not victim.is_player() and victim.target_id == 0 and not attacker.trickdead:
 		victim.target_id = attacker.id
 
@@ -2156,7 +2165,7 @@ func _revive(u: SimUnit) -> void:
 
 
 func _wander(u: SimUnit, ms: float) -> void:
-	if u.walker.is_moving():
+	if u.immovable or u.walker.is_moving():
 		return
 	u.idle_timer -= ms
 	if u.idle_timer > 0.0:

@@ -50,6 +50,7 @@ func _run_all() -> void:
 		preload("res://tests/unit/test_rank_skills.gd"),
 		preload("res://tests/unit/test_first_job_skills.gd"),
 		preload("res://tests/unit/test_weapon_types.gd"),
+		preload("res://tests/unit/test_world_content.gd"),
 		preload("res://tests/unit/test_ammo.gd"),
 		preload("res://tests/unit/test_npc_scripts.gd"),
 		preload("res://tests/integration/test_character_preview.gd"),

@@ -1,5 +1,5 @@
 {
-  "_doc": "Per-map data: display names, respawn point, monster spawns (mob id -> count) and warp portals. Warp cells follow the classic Prontera south gate / prt_fild08 north edge layout and were checked against the client's GAT walkability (Medium confidence on exact cells).",
+  "_doc": "Per-map data: display names, respawn point, monster spawns (mob id -> count) and optional warp portals. The Prontera field spawn counts keep the rAthena pre-re species mix but are halved for the current single-threaded renderer; maps without a warps list use rAthena's own portals. Warp cells were checked against the client's GAT walkability (Medium confidence on exact cells).",
   "prontera": {
     "name": "Prontera",
     "subtitle": "Capital of the Rune-Midgarts Kingdom",
@@ -59,7 +59,8 @@
     "spawns": {
       "1002": 25,
       "1063": 12,
-      "1007": 12
+      "1007": 12,
+      "1113": 8
     },
     "warps": [
       {
@@ -75,5 +76,52 @@
         "label": "Prontera"
       }
     ]
+  },
+  "prt_fild05": {
+    "name": "Prontera Field",
+    "subtitle": "West of the capital",
+    "town": false,
+    "respawn": [
+      200,
+      200
+    ],
+    "spawns": {
+      "1002": 35,
+      "1063": 15,
+      "1008": 15,
+      "1051": 5
+    }
+  },
+  "prt_fild04": {
+    "name": "Prontera Field",
+    "subtitle": "Northwest of the capital",
+    "town": false,
+    "respawn": [
+      240,
+      159
+    ],
+    "spawns": {
+      "1052": 35,
+      "1018": 20,
+      "1008": 5,
+      "1002": 15
+    }
+  },
+  "prt_fild00": {
+    "name": "Prontera Field",
+    "subtitle": "Northwestern frontier",
+    "town": false,
+    "respawn": [
+      198,
+      198
+    ],
+    "spawns": {
+      "1018": 5,
+      "1007": 10,
+      "1008": 15,
+      "1063": 15,
+      "1002": 20,
+      "1004": 35
+    }
   }
 }

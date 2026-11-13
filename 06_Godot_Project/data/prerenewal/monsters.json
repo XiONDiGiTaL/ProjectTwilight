@@ -154,5 +154,284 @@
         1100
       ]
     ]
+  },
+  "1004": {
+    "name": "Hornet",
+    "sprite": "hornet",
+    "level": 8,
+    "hp": 169,
+    "sp": 0,
+    "base_exp": 19,
+    "job_exp": 15,
+    "atk": [
+      22,
+      27
+    ],
+    "def": 5,
+    "mdef": 5,
+    "str": 6,
+    "agi": 20,
+    "vit": 8,
+    "int": 10,
+    "dex": 17,
+    "luk": 5,
+    "range": 1,
+    "element": "wind",
+    "element_level": 1,
+    "race": "insect",
+    "size": "small",
+    "walk_speed": 150,
+    "attack_delay": 1292,
+    "attack_motion": 792,
+    "damage_motion": 216,
+    "mode": "passive",
+    "drops": [
+      [
+        909,
+        3500
+      ],
+      [
+        1207,
+        15
+      ]
+    ]
+  },
+  "1008": {
+    "name": "Pupa",
+    "sprite": "pupa",
+    "level": 2,
+    "hp": 427,
+    "sp": 0,
+    "base_exp": 2,
+    "job_exp": 4,
+    "atk": [
+      1,
+      2
+    ],
+    "def": 0,
+    "mdef": 20,
+    "str": 1,
+    "agi": 1,
+    "vit": 1,
+    "int": 0,
+    "dex": 1,
+    "luk": 20,
+    "range": 0,
+    "element": "earth",
+    "element_level": 1,
+    "race": "insect",
+    "size": "small",
+    "walk_speed": 1000,
+    "attack_delay": 1001,
+    "attack_motion": 1,
+    "damage_motion": 1,
+    "mode": "passive",
+    "immovable": true,
+    "non_attacker": true,
+    "drops": [
+      [
+        938,
+        1200
+      ],
+      [
+        2101,
+        2
+      ]
+    ]
+  },
+  "1018": {
+    "name": "Creamy",
+    "sprite": "creamy",
+    "level": 16,
+    "hp": 595,
+    "sp": 0,
+    "base_exp": 105,
+    "job_exp": 70,
+    "atk": [
+      53,
+      64
+    ],
+    "def": 0,
+    "mdef": 30,
+    "str": 1,
+    "agi": 40,
+    "vit": 16,
+    "int": 15,
+    "dex": 16,
+    "luk": 55,
+    "range": 1,
+    "element": "wind",
+    "element_level": 1,
+    "race": "insect",
+    "size": "small",
+    "walk_speed": 150,
+    "attack_delay": 1136,
+    "attack_motion": 720,
+    "damage_motion": 840,
+    "mode": "passive",
+    "drops": []
+  },
+  "1031": {
+    "name": "Poporing",
+    "sprite": "poporing",
+    "level": 14,
+    "hp": 344,
+    "sp": 0,
+    "base_exp": 81,
+    "job_exp": 44,
+    "atk": [
+      59,
+      72
+    ],
+    "def": 0,
+    "mdef": 10,
+    "str": 1,
+    "agi": 14,
+    "vit": 14,
+    "int": 0,
+    "dex": 19,
+    "luk": 15,
+    "range": 1,
+    "element": "poison",
+    "element_level": 1,
+    "race": "plant",
+    "size": "medium",
+    "walk_speed": 300,
+    "attack_delay": 1672,
+    "attack_motion": 672,
+    "damage_motion": 480,
+    "mode": "passive",
+    "drops": [
+      [
+        938,
+        5500
+      ],
+      [
+        512,
+        255
+      ],
+      [
+        1207,
+        5
+      ]
+    ]
+  },
+  "1051": {
+    "name": "Thief Bug",
+    "sprite": "thief_bug",
+    "level": 6,
+    "hp": 126,
+    "sp": 0,
+    "base_exp": 17,
+    "job_exp": 5,
+    "atk": [
+      18,
+      24
+    ],
+    "def": 5,
+    "mdef": 0,
+    "str": 1,
+    "agi": 6,
+    "vit": 6,
+    "int": 0,
+    "dex": 11,
+    "luk": 0,
+    "range": 1,
+    "element": "neutral",
+    "element_level": 3,
+    "race": "insect",
+    "size": "small",
+    "walk_speed": 150,
+    "attack_delay": 1288,
+    "attack_motion": 288,
+    "damage_motion": 768,
+    "mode": "passive",
+    "drops": [
+      [
+        909,
+        2000
+      ]
+    ]
+  },
+  "1052": {
+    "name": "Rocker",
+    "sprite": "rocker",
+    "level": 9,
+    "hp": 198,
+    "sp": 0,
+    "base_exp": 20,
+    "job_exp": 16,
+    "atk": [
+      24,
+      29
+    ],
+    "def": 5,
+    "mdef": 10,
+    "str": 1,
+    "agi": 9,
+    "vit": 18,
+    "int": 10,
+    "dex": 14,
+    "luk": 15,
+    "range": 1,
+    "element": "earth",
+    "element_level": 1,
+    "race": "insect",
+    "size": "medium",
+    "walk_speed": 200,
+    "attack_delay": 1864,
+    "attack_motion": 864,
+    "damage_motion": 540,
+    "mode": "passive",
+    "drops": []
+  },
+  "1113": {
+    "name": "Drops",
+    "sprite": "drops",
+    "level": 3,
+    "hp": 55,
+    "sp": 0,
+    "base_exp": 4,
+    "job_exp": 3,
+    "atk": [
+      10,
+      13
+    ],
+    "def": 0,
+    "mdef": 0,
+    "str": 1,
+    "agi": 3,
+    "vit": 3,
+    "int": 0,
+    "dex": 12,
+    "luk": 15,
+    "range": 1,
+    "element": "fire",
+    "element_level": 1,
+    "race": "plant",
+    "size": "medium",
+    "walk_speed": 400,
+    "attack_delay": 1372,
+    "attack_motion": 672,
+    "damage_motion": 480,
+    "mode": "passive",
+    "drops": [
+      [
+        909,
+        7500
+      ],
+      [
+        938,
+        500
+      ],
+      [
+        512,
+        1900
+      ],
+      [
+        713,
+        1700
+      ]
+    ]
   }
 }

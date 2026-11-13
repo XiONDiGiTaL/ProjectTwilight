@@ -37,7 +37,8 @@ Implementation: `scripts/gameplay/combat/combat_rules_prerenewal.gd`, `scripts/g
 | Novice max HP | (35 + 5 × level) × (1 + VIT/100) | Medium (other jobs need HP factors) |
 | EXP distribution | Split by share of damage dealt | Medium |
 | Passive monsters | Retaliate against their attacker; give up beyond 14 cells | Medium |
-| Monster data | Poring, Fabre, Lunatic in `data/prerenewal/monsters.json` | High, pending Hercules cross-check |
+| Monster data | Ten Classic monsters in `data/prerenewal/monsters.json`: Poring, Fabre, Lunatic, Hornet, Pupa, Creamy, Poporing, Thief Bug, Rocker and Drops | High (rAthena pre-re `mob_db.yml`, cross-check pending) |
+| Immovable / non-attacker | Pupa stays on its spawn cell and never retaliates (rAthena has no CanMove / CanAttack mode) | High |
 
 ## Items and inventory
 
@@ -169,9 +170,22 @@ Implementation: `scripts/gameplay/world/grid_pathfinder.gd`, `grid_walker.gd`. T
 | Click-to-walk range | 64 steps | Medium | Typical client/emulator path limit; needs verification |
 | Direction codes | 0 S, 1 SW, 2 W, 3 NW, 4 N, 5 NE, 6 E, 7 SE | Confirmed | Verified visually against the client's sprite directions |
 
+## Monsters and maps
+
+Implementation: `data/prerenewal/monsters.json`, `data/prerenewal/maps.json`, `field_simulation.gd`. Tests: `test_world_content.gd`, `test_warps.gd`.
+
+| Rule | Value | Confidence |
+|---|---|---|
+| New monster batch | Hornet, Pupa, Creamy, Poporing, Thief Bug, Rocker and Drops, using rAthena Pre-Renewal HP, EXP, ATK, DEF/MDEF, stats, element, race, size and motion values | High (rAthena pre-re `mob_db.yml`; Hercules cross-check pending) |
+| Pupa mode | Immovable and non-attacker; it keeps its spawn cell and does not retaliate when hit | High |
+| Drop items | Only items that already exist in `items.json` are listed; missing rAthena items are omitted rather than added as dead IDs | Medium (intentional subset) |
+| New fields | `prt_fild05` west of Prontera, `prt_fild04` beyond it and `prt_fild00` at the northwestern frontier; the three form a connected loop with Prontera | High for connectivity (rAthena warp lines) |
+| Spawn density | Species ratios follow rAthena's Pre-Renewal Prontera-field spawns; counts are halved for the current single-threaded renderer | Medium (deliberate scaling) |
+| Field travel | The new maps use rAthena's own portals rather than duplicated `maps.json` warps | High |
+
 ## Still to research
 
-Experience tables, ASPD cross-check, DEF/MDEF cross-check, the element table cross-check, the refine table, monster data, skills and drop rates.
+Experience tables, ASPD cross-check, DEF/MDEF cross-check, the element table cross-check, the refine table, the remaining monster data, skills and drop rates.
 
 Each one will be added with its source, cross-checked between the rAthena pre-re database and Hercules. Any disagreement will be listed under *Discrepancies*.
 

@@ -42,6 +42,7 @@ The project-wide rules and history are in [`Directive.md`](Directive.md).
 - [ ] Acolyte Blessing and other supportive buffs
 - [ ] Party window and party EXP sharing
 - [ ] Quests and quest log
+- [x] First rAthena world batch: Hornet, Pupa, Creamy, Poporing, Thief Bug, Rocker and Drops, plus connected `prt_fild00`, `prt_fild04` and `prt_fild05` spawn tables
 - [ ] More maps, monsters and dungeon content
 - [ ] Refine, cards and socketing
 - [ ] Trade window
@@ -56,7 +57,7 @@ The project-wide rules and history are in [`Directive.md`](Directive.md).
 - [ ] Co-op: verify on a real LAN and over the internet, with three or more players; reconnect after a drop; port / advertised-IP fields in the Settings window (they are read from `user://settings.cfg` today)
 - [ ] Co-op: party window, speech bubbles, trading between players, PvP rules
 - [ ] Audio: positional panning, per-map ambient sounds from RSW sound sources, ACT-embedded sound events
-- [ ] More monster species: `monsters.json` has only Poring, Fabre and Lunatic, so most maps are empty of monsters
+- [ ] More monster species: `monsters.json` now has ten Classic species; the remaining fields, dungeons and boss encounters still need data
   - [ ] Host/session lifecycle and invitation-code handshake
   - [ ] Snapshot + command replication, reconnect and late join
   - [ ] Server-authoritative guild and storage actions

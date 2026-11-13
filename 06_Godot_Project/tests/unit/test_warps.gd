@@ -18,8 +18,8 @@ func test_setup_map_populates(_t) -> Variant:
 	for u in sim.units.values():
 		if not u.is_player():
 			monsters += 1
-	if monsters != 49:
-		return "expected 49 field monsters, got %d" % monsters
+	if monsters != 57:
+		return "expected 57 field monsters, got %d" % monsters
 	if sim.warps.size() != 1 or sim.warps[0].to_map != "prontera":
 		return "warps wrong: %s" % str(sim.warps)
 	if sim.npcs.size() != 1 or sim.respawn_cell != Vector2i(170, 200):

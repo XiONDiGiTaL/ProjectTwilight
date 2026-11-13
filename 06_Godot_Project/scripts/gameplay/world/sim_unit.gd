@@ -34,6 +34,9 @@ var walker: GridWalker
 # AI / combat state
 var target_id := 0
 var attack_cooldown := 0.0
+## Pupa-style monsters: rAthena marks these with no CanMove / CanAttack mode.
+var immovable := false
+var non_attacker := false
 var dead := false
 var respawn_in := 0.0          # ms until respawn (monsters) / revive (players)
 var spawn_cell := Vector2i.ZERO
